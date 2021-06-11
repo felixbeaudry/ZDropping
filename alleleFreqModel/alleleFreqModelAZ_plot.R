@@ -33,24 +33,24 @@ setwd('~/Google Drive/Research/Data2/fsj')
 
 ####start A####
 #indivlist
-load("ZDropping/simindivFIXmin2obs.rdata")
+load("ZDropping_all/simindivFIXmin2obs.rdata")
 genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
 
-load("ZDropping/FSJpedgeno_A.rdata")
+load("ZDropping_all/FSJpedgeno_A.rdata")
 ped_AgenoT <- ped_Ageno[ped_Ageno$V2 %in% genotyped_official,] 
 indivlist <- merge(simindivFIXmin2obs,ped_AgenoT[c(1,4)],by.x="USFWS",by.y="V2")
 names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
 
 #samplevar
-load("ZDropping/sampleVar_A_SR14Mar2021.rdata")
+load("ZDropping_all/sampleVar_A_SR14Mar2021.rdata")
 
 #simvar
-load("ZDropping/simVarA_210303_14Mar2021.rdata")
+load("ZDropping_all/simVarA_210303_14Mar2021.rdata")
 
 #names(simVar) <- names(sampleVar)
 #bothVars <- rbind.data.frame(sampleVar,simVar)
 
-load("ZDropping/allVar_boot_A_w3.4mb_04Jun2021.rdata")
+load("ZDropping_all/allVar_boot_A_w3.4mb_04Jun2021.rdata")
 
 #allVar_join <- left_join(bothVars,allVar_q, by = c("Year", "Category"))
 #allVar_join$q5_dev <- allVar_join$avg - allVar_join$q5
@@ -742,20 +742,20 @@ alleleFreqVarAvg1_A <- alleleFreqVarAvg2
 ####start Z####
 
 #indivlist
-load("ZDropping/simindivFIXmin2obs.rdata")
-ped<-read.table('ZDropping/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+load("ZDropping_all/simindivFIXmin2obs.rdata")
+ped<-read.table('ZDropping_all/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
 pedinfo <- ped[,1:5]
 colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
 indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
 indivlist <- indivlist[order(indivlist$Year),]
 
 #samplevar
-load("ZDropping/sampleVar_Z_SR11Jan2021.rdata")
+load("ZDropping_all/sampleVar_Z_SR11Jan2021.rdata")
 
 #simvar
-load("ZDropping/simVarZ_11Jan2021.rdata")
+load("ZDropping_all/simVarZ_11Jan2021.rdata")
 
-load("ZDropping/allVar_boot_Z_w3.4mb_08Jun2021.rdata")
+load("ZDropping_all/allVar_boot_Z_w3.4mb_08Jun2021.rdata")
 
 ## Number of all & genotyped indivs; proportion of indivs in each category
 
@@ -1558,13 +1558,12 @@ alleleFreqVarAvg1_AZ$fullCat[alleleFreqVarAvg1_AZ$Category == "FBsq" ] <- "Femal
  "Male Immigrant"  , "Female Immigrant",     "Cov(Mi,Fi)"    ,   "Cov(Mi,Mb)"    ,       "Cov(Fi,Fb)"    ,  
        "Cov(Mi,Fb)"   ,  "Cov(Fi,Mb)"  ))
 
- AZ_
+ AZ_variances_plot <- 
 ggplot(alleleFreqVarAvg1_AZ[alleleFreqVarAvg1_AZ$FullCat %in% c( "Male Survivor"   , "Female Survivor" ,"Male Birth"    ,   "Female Birth"   ,"Male Immigrant"  , "Female Immigrant"), ],aes(x=prop.A,y=prop.Z)) + 
-  geom_abline(intercept = 0,slope=(5/3),alpha=0.5,linetype="dotted") +
-  
+
   geom_abline(intercept = 0,slope=(4/3),alpha=0.5,linetype="dotted") +
-  geom_abline(intercept = 0,slope=1,alpha=0.5,linetype="dashed") +
-  geom_abline(intercept = 0,slope=(2/3),alpha=0.5,linetype="dotted") +
+  geom_abline(intercept = 0,slope=1,alpha=0.5) +
+  geom_abline(intercept = 0,slope=(2/3),alpha=0.5,linetype="dashed") +
   
   facet_wrap(~ FullCat,scales="free",ncol = 2) + 
   geom_smooth(method="lm",color="black") +  
@@ -1580,23 +1579,28 @@ theme(strip.background =element_rect(fill="white"))
 
 
 
-
+ AZ_Covariances_plot <- 
+   
 ggplot(alleleFreqVarAvg1_AZ[alleleFreqVarAvg1_AZ$FullCat %in% c("Cov(Ms,Fs)"   ,"Cov(Mb,Fb)"    ,   "Cov(Ms,Fb)"    , "Cov(Ms,Mb)"     ,  "Cov(Fs,Mb)"    ,"Cov(Mi,Fi)"    ,   "Cov(Mi,Mb)"    ,        "Cov(Mi,Fb)"   ,  "Cov(Fi,Mb)" ), ],aes(x=prop.A,y=prop.Z)) + 
   geom_abline(intercept = 0,slope=(4/3),alpha=0.5,linetype="dotted") +
-  geom_abline(intercept = 0,slope=1,alpha=0.5,linetype="dashed") +
-  geom_abline(intercept = 0,slope=(2/3),alpha=0.5,linetype="dotted") +
+  geom_abline(intercept = 0,slope=1,alpha=0.5) +
+  geom_abline(intercept = 0,slope=(2/3),alpha=0.5,linetype="dashed") +
   
   facet_wrap(~ FullCat,scales="free") + 
   geom_smooth(method="lm",color="black") +  
   geom_point(aes(color=as.factor(Year))) + 
   #geom_text(aes(color=as.factor(Year),label=as.factor(Year))) + 
   labs(x=Avarp_title,y=Zvarp_title,color="Year") + 
-  #guides(color=FALSE) +
+  guides(color=FALSE) +
   theme_bw(base_size = 16) + 
   scale_x_continuous(guide = guide_axis(check.overlap = TRUE))+
   theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
   theme(strip.background =element_rect(fill="white")) 
 
+ plot_grid(AZ_variances_plot,  AZ_Covariances_plot, labels = c('A', 'B'), label_size = 12,ncol = 2, align = 'h',axis='tb')
+ 
+ 
+ 
 ####Mend and Fam####
 alleleFreqVarAvg1_newBsq_A <- 
   rbind.data.frame(
