@@ -1,7 +1,6 @@
-#29 May 2019
-#Rose Driscoll
+#Jun 11 2021
+#Rose Driscoll & Felix Beaudry
 #script to plot the genetic contributions of male and female immigrants for autosomes and Z
-#simplified version with just the plotting commands
 
 library(dplyr)
 library(ggplot2)
@@ -11,15 +10,15 @@ library(forcats)
 library(plyr)
 library(fitdistrplus)
 library(vcd)
+library(foreach)
+#setwd('~/Google Drive/Research/Data2/fsj/databases')
+#load('all_tables_v2.rdata')
 
-setwd('~/Google Drive/Research/Data2/fsj/animal_models')
-load('all_tables_v2.rdata')
-
-setwd('~/Google Drive/Research/Data2/fsj/ZDropping')
+setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all')
 
 #import
-load("simindivFIXmin2obs.rdata")
-load("FSJpedgeno_A.rdata")
+#load("simindivFIXmin2obs.rdata")
+#load("FSJpedgeno_A.rdata")
 
 # load Rdata file 
 load("plotImmGenContrib_tidy_20190529.Rdata")
@@ -53,37 +52,16 @@ immdata <- dplyr::select(indivdata, Indiv, ImmCohort)
 # And join the immigrant cohorts to the pedigree
 pedigree_immdata <- left_join(pedigree, immdata, by = "Indiv")
 
-# Figure out which imms end up breeding
-pedigree_immdata_breeder_imms <- filter(pedigree_immdata, !is.na(ImmCohort)) %>%
-  mutate(does_breed = ifelse(Indiv %in% pedigree_immdata$Dad, TRUE, 
-                             ifelse(Indiv %in% pedigree_immdata$Mom, TRUE, FALSE))) %>%
-  filter(does_breed == TRUE)
+pedigree_immdata_tally <- pedigree_immdata %>% group_by(Sex,ImmCohort) %>% tally()
 
-# Now count up how many imms that end up breeding come in each year
-pedigree_immdata_breeder_imms_count <- group_by(pedigree_immdata_breeder_imms, ImmCohort, Sex) %>%
-  dplyr::summarize(num_imms = n()) %>%
-  complete(ImmCohort, Sex, fill = list(num_imms = 0)) %>%
-  filter(!is.na(ImmCohort))
-
-#males & females diverging from 0?
-pedigree_immdata_breeder_imms_count_males_negative <- mutate(pedigree_immdata_breeder_imms_count, num_imms_males_negative = ifelse(Sex==1, -num_imms, num_imms))
-
-# what if I do males & females diverging from 0 and include those that breed and those that don't
-
-pedigree_immdata_imms_count <- group_by(pedigree_immdata_breeder_nonbreeder_imms, ImmCohort, Sex) %>%
-  dplyr::summarize(num_imms = n()) %>%
-  complete(ImmCohort, Sex,  fill = list(num_imms = 0)) %>%
-  filter(!is.na(ImmCohort))
-year=1991
-
-#for(year in c(1991:2012)){
-library(foreach)
-
-pedigree_immdata_ratios <- foreach(year=c(1991:2012),.combine=rbind) %do% {
-  tmp <- pedigree_immdata_imms_count[pedigree_immdata_imms_count$ImmCohort == year,]
-  res <- chisq.test(c(tmp$num_imms[tmp$Sex == 1],tmp$num_imms[tmp$Sex == 2]), p = c(0.5,0.5))
-  cbind(year,"p"=res$p.value,"f"=(tmp$num_imms[tmp$Sex == 2]/(tmp$num_imms[tmp$Sex == 2]+tmp$num_imms[tmp$Sex == 1]) ),"t"=(tmp$num_imms[tmp$Sex == 2]+tmp$num_imms[tmp$Sex == 1]))
+pedigree_immdata_ratios <- foreach(year= c(1992:2012),.combine=rbind) %do% {
+#for(year in c(1992:2012)){
+  #  print(year)
+  tmp <- pedigree_immdata_tally[pedigree_immdata_tally$ImmCohort == year,]
+  res <- chisq.test(c(na.omit(tmp$n[tmp$Sex == 1]),na.omit(tmp$n[tmp$Sex == 2])), p = c(0.5,0.5))
+  cbind(year,"p"=res$p.value,"f"=(na.omit(tmp$n[tmp$Sex == 2])/(na.omit(tmp$n[tmp$Sex == 2])+na.omit(tmp$n[tmp$Sex == 1])) ),"t"=(na.omit(tmp$n[tmp$Sex == 2])+na.omit(tmp$n[tmp$Sex == 1])),"u"=na.omit(tmp$n[tmp$Sex == 0]))
 }
+
 pedigree_immdata_ratios <- as.data.frame(pedigree_immdata_ratios)
 length(pedigree_immdata_ratios$p[pedigree_immdata_ratios$f > 0.5])
 length(pedigree_immdata_ratios$p[pedigree_immdata_ratios$p < 0.05])
@@ -92,7 +70,7 @@ max(pedigree_immdata_ratios$f)
 mean(pedigree_immdata_ratios$f)
 min(pedigree_immdata_ratios$t)
 max(pedigree_immdata_ratios$t)
-
+mean(pedigree_immdata_ratios$u)
 
 pedigree_immdata_imms_perc <- 
   pedigree_immdata_imms_count %>%
