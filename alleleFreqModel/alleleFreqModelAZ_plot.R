@@ -1697,7 +1697,7 @@ newBsq_ZA$Birth[newBsq_ZA$Category == "MBsq_fam"] <- "Family Size"
 newBsq_ZA$SexCat[newBsq_ZA$Category == "MBsq_mend"] <- "Male"
 newBsq_ZA$Birth[newBsq_ZA$Category == "MBsq_mend"] <- "Mendelian Noise"
 
-#mendFam_ZA_plot <- 
+mendFam_ZA_plot <- 
   
 ggplot(newBsq_ZA,aes(x=prop.A,y=prop.Z)) + 
   geom_abline(intercept = 0,slope=(4/3),alpha=0.5,linetype="dotted") +
