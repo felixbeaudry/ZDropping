@@ -72,13 +72,7 @@ min(pedigree_immdata_ratios$t)
 max(pedigree_immdata_ratios$t)
 mean(pedigree_immdata_ratios$u)
 
-pedigree_immdata_imms_perc <- 
-  pedigree_immdata_imms_count %>%
-  group_by( ImmCohort) %>% transmute(Sex, percent = num_imms/sum(num_imms))
-ggplot(pedigree_immdata_imms_perc,aes(x=ImmCohort,y=percent,fill=as.factor(Sex))) + 
-  geom_bar( stat='identity') +
- # facet_grid(does_breed ~ .) + 
-  theme_bw()
+
 
 
 # Figure out which imms end up breeding
@@ -90,8 +84,7 @@ pedigree_immdata_breeder_nonbreeder_imms_count <- group_by(pedigree_immdata_bree
   dplyr::summarize(num_imms = n()) %>%
   complete(ImmCohort, Sex, does_breed, fill = list(num_imms = 0)) %>%
   filter(!is.na(ImmCohort))
-pedigree_immdata_breeder_nonbreeder_imms_perc <- pedigree_immdata_breeder_nonbreeder_imms_count %>%
-  group_by( ImmCohort,does_breed) %>% transmute(Sex, percent = num_imms/sum(num_imms))
+
 
 
 ggplot(pedigree_immdata_breeder_nonbreeder_imms_perc,aes(x=ImmCohort,y=percent,fill=as.factor(Sex))) + 
@@ -161,6 +154,9 @@ sexed_unsexed_breed_nonbreed__plot <- plot_grid(sexed_breed_nonbreed, unsexed_br
 
 # Autosomal contributions
 
+
+
+
 A_imm_gen_contribs <- 
   ggplot(simsumImmA_from1990) + 
   geom_ribbon(aes(x = year, ymin = q1, ymax = q3, fill = as.factor(allele)), alpha=0.3) +
@@ -172,6 +168,7 @@ A_imm_gen_contribs <-
   plottheme + 
   theme(legend.position='none',plot.margin=unit(c(0.2,0.1,0,0.15),'cm'))
 
+0.46380017/(0.28938797 + 0.46380017)
 # Z contributions
 
 Z_imm_gen_contribs <- 
@@ -185,6 +182,7 @@ Z_imm_gen_contribs <-
   plottheme + 
   theme(legend.position='none',plot.margin=unit(c(0.2,0.1,0,0.15),'cm'))
 
+0.37537395/(0.37537395 + 0.37889238)
 
 ####compare A and Z ####
 names(simsumImmZ_from1990) <- c("year"  , "allele" ,"mean_Z" ,  "q1_Z"   ,  "q3_Z"    )

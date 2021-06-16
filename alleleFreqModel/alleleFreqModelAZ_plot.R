@@ -1,6 +1,6 @@
+##June 11 2021
+## Rose Driscoll and Felix Beaudry
 ## Plotting results of Z allele frequency model + simulations to estimate error
-## 20200513
-## Rose Driscoll
 
 
 ## Setup
@@ -1599,7 +1599,10 @@ ggplot(alleleFreqVarAvg1_AZ[alleleFreqVarAvg1_AZ$FullCat %in% c("Cov(Ms,Fs)"   ,
 
  plot_grid(AZ_variances_plot,  AZ_Covariances_plot, labels = c('A', 'B'), label_size = 12,ncol = 2, align = 'h',axis='tb')
  
+ alleleFreqVarAvg1_AZ$prop.A[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"]
  
+ cov( alleleFreqVarAvg1_AZ$prop.A[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"],alleleFreqVarAvg1_AZ$prop.Z[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"])
+ cor( alleleFreqVarAvg1_AZ$prop.A[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"],alleleFreqVarAvg1_AZ$prop.Z[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"])
  
 ####Mend and Fam####
 alleleFreqVarAvg1_newBsq_A <- 

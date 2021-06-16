@@ -1,5 +1,5 @@
-#29 May 2019
-#Rose Driscoll
+#15 June 2021
+#Rose Driscoll and Felix Beaudry
 #script to plot the genetic & genealogical contributions of male and female breeders for autosomes and Z
 #simplified version with just the plotting commands
 
@@ -13,24 +13,19 @@ library(cowplot)
 # load Rdata file 
 setwd('~/Google Drive/Research/Data2/fsj/Zdropping')
 
-load("plotIndivGenContrib_tidy_20190529.Rdata")
-# code to produce all of these tables from raw data is in plotIndivGenContrib_tidy_20190425.R
+load("plotIndivGenContrib_tidy_20190529.Rdata") # code to produce all of these tables from raw data is in plotIndivGenContrib_tidy_20190425.R
 
-# Nancy's plot theme
+#plot theme
 
-font = 12
-
-plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3), 
+plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3),
                     axis.ticks = element_line(colour = "black",size=0.2),
                     axis.text = element_text(colour="black"), panel.grid.major = element_blank(),
-                    panel.grid.minor = element_blank(), panel.background = element_rect(fill="white"), 
-                    plot.background = element_rect(fill = "white"),  
-                    axis.text.x = element_text(size=font), 
-                    axis.text.y = element_text(size=font), 
-                    axis.title = element_text(size=font+1), 
-                    plot.title = element_text(size=font+2), 
+                    panel.grid.minor = element_blank(), panel.background = element_rect(fill="white"),
+                    plot.background = element_rect(fill = "white"),
+                    axis.text.x = element_text(size=6), axis.text.y = element_text(size=6),
+                    axis.title = element_text(size=7), plot.title = element_text(size=8),
                     legend.position="right", legend.text = element_text(size=7),
-                    legend.title = element_text(size=font+2), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(1,"cm"))
+                    legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(1,"cm"))
 
 
 ####Pop Level distrbutions####
@@ -102,11 +97,11 @@ max(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestli
 A_contribs_vs_descendants <- 
   ggplot(indiv_contribs_prop_nestlings_2013, aes(x = prop_2013_nestlings, y = auto_mean, color = Sex, fill = Sex)) +
   geom_point(alpha = 0.75, size = 0.3)+
-  geom_smooth(method = "lm", alpha = 0.25, size = 0.3)+
+  geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
   geom_abline(slope = 1, linetype = "dashed", color = "gray") +
   scale_color_manual(values = c("cornflowerblue", "indianred1"))+
   scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
-  labs(x = "Genealogical contribution in 2013", y = "Exp. A. gen. contrib. in 2013")+
+  labs(x = "Genealogical contribution in 2013", y = "Autosomal expected \ngenetic contrib. in 2013")+
   plottheme+
   theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) + ylim(0,0.04)
 
@@ -117,11 +112,11 @@ summary(A_FM_mod_lm)
 Z_contribs_vs_descendants <- 
   ggplot(indiv_contribs_prop_nestlings_2013, aes(x = prop_2013_nestlings, y = Z_mean, color = Sex, fill = Sex)) +
   geom_point(alpha = 0.75, size = 0.3)+
-  geom_smooth(method = "lm", alpha = 0.25, size = 0.3)+
+  geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
   geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
   scale_color_manual(values = c("cornflowerblue", "indianred1"))+
   scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
-  labs(x = "Genealogical contribution in 2013", y = "Exp. Z gen. contrib. in 2013")+
+  labs(x = "Genealogical contribution in 2013", y = "Z expected genetic contrib. in 2013")+
   plottheme+
   theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) + ylim(0,0.04)
 
@@ -132,18 +127,18 @@ summary(Z_FM_mod_lm)
 
 A_vs_Z_contribs <- 
   ggplot(indiv_contribs_A_Z_2013_sex, aes(x = auto_mean, y = Z_mean)) +
-    geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
-    geom_abline(slope = (2/1)*(1/3),  linetype = "dashed", color = "indianred1") +
-    geom_abline(slope = (2/1)*(2/3),  linetype = "dashed", color = "cornflowerblue") +
+    geom_abline(slope = 1,  linetype = "dashed", color = "gray", size = 0.5) +
+    geom_abline(slope = (2/1)*(1/3),  linetype = "dashed", color = "indianred1", size = 0.5) +
+    geom_abline(slope = (2/1)*(2/3),  linetype = "dashed", color = "cornflowerblue", size = 0.5) +
     
     geom_point(aes(color = Sex), alpha = 0.75, size = 0.3)+
   
-    geom_smooth(method = "lm", alpha = 0.25, size = 0.3,color="black")+
-    geom_smooth(method = "lm", alpha = 0.25, size = 0.3, aes(color = Sex))+
+    geom_smooth(method = "lm", alpha = 0.3, size = 0.5,color="black")+
+    geom_smooth(method = "lm", alpha = 0.3, size = 0.5, aes(color = Sex))+
     guides(color=FALSE)+
     scale_color_manual(values = c("cornflowerblue", "indianred1"))+
     scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
-    labs(x = "Exp. A. genetic contrib. in 2013", y = "Exp. Z genetic contrib. in 2013")+
+    labs(x = "Autosomal expected \ngenetic contrib. in 2013", y = "Z expected genetic contrib. in 2013")+
     plottheme + 
     ylim(0,0.04) 
 
@@ -176,7 +171,7 @@ summary(AZ_mod)
 
 
 plot_grid(A_contribs_vs_descendants, Z_contribs_vs_descendants, A_vs_Z_contribs,  ncol = 3, labels = "AUTO", align = 'hv',axis='tblr')
-ggsave('fig2_EGC_AZ_6x2.pdf', width = 12, height = 4, units ='in')
+#ggsave('fig2_EGC_AZ_6x2.pdf', width = 12, height = 4, units ='in')
 
 
 
