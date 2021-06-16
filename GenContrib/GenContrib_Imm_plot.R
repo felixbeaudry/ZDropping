@@ -11,22 +11,8 @@ library(plyr)
 library(fitdistrplus)
 library(vcd)
 library(foreach)
-#setwd('~/Google Drive/Research/Data2/fsj/databases')
-#load('all_tables_v2.rdata')
 
-setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all')
-
-#import
-#load("simindivFIXmin2obs.rdata")
-#load("FSJpedgeno_A.rdata")
-
-# load Rdata file 
-load("plotImmGenContrib_tidy_20190529.Rdata")
-pedigree_immdata_count <- ungroup(pedigree_immdata_count)
-
-# code to produce all of these tables from raw data is in plotImmGenContrib_tidy_20190418.R
-
-# Nancy's plot theme
+# plot theme
 plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3), 
                     axis.ticks = element_line(colour = "black",size=0.2),
                     axis.text = element_text(colour="black"), panel.grid.major = element_blank(),
@@ -38,81 +24,60 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
                     legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(1,"cm"))
 
 
-####demo_plot####
+setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all')
+
+##import
+# code to produce all of these tables from raw data is in plotImmGenContrib_tidy_20190418.R
+load("plotImmGenContrib_tidy_20190529.Rdata")
+pedigree_immdata_count <- ungroup(pedigree_immdata_count)
+
 # Read in and tidy pedigree
 ped <- read.table("FSJpedgeno_Zsexlinked.ped", header = FALSE, sep = " ", stringsAsFactors = FALSE)
 pedigree <- ped[,1:6]
 colnames(pedigree) <- c("Fam", "Indiv", "Dad", "Mom", "Sex", "Pheno")
 # Read in immigrant cohort data
 indivdata <- read.table("IndivDataUSFWS.txt", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+
+##subset
 # just need immigrant cohorts
 immdata <- dplyr::select(indivdata, Indiv, ImmCohort)
 
-
 # And join the immigrant cohorts to the pedigree
 pedigree_immdata <- left_join(pedigree, immdata, by = "Indiv")
-
-pedigree_immdata_tally <- pedigree_immdata %>% group_by(Sex,ImmCohort) %>% tally()
-
-pedigree_immdata_ratios <- foreach(year= c(1992:2012),.combine=rbind) %do% {
-#for(year in c(1992:2012)){
-  #  print(year)
-  tmp <- pedigree_immdata_tally[pedigree_immdata_tally$ImmCohort == year,]
-  res <- chisq.test(c(na.omit(tmp$n[tmp$Sex == 1]),na.omit(tmp$n[tmp$Sex == 2])), p = c(0.5,0.5))
-  cbind(year,"p"=res$p.value,"f"=(na.omit(tmp$n[tmp$Sex == 2])/(na.omit(tmp$n[tmp$Sex == 2])+na.omit(tmp$n[tmp$Sex == 1])) ),"t"=(na.omit(tmp$n[tmp$Sex == 2])+na.omit(tmp$n[tmp$Sex == 1])),"u"=na.omit(tmp$n[tmp$Sex == 0]))
-}
-
-pedigree_immdata_ratios <- as.data.frame(pedigree_immdata_ratios)
-length(pedigree_immdata_ratios$p[pedigree_immdata_ratios$f > 0.5])
-length(pedigree_immdata_ratios$p[pedigree_immdata_ratios$p < 0.05])
-min(pedigree_immdata_ratios$f)
-max(pedigree_immdata_ratios$f)
-mean(pedigree_immdata_ratios$f)
-min(pedigree_immdata_ratios$t)
-max(pedigree_immdata_ratios$t)
-mean(pedigree_immdata_ratios$u)
-
-
-
 
 # Figure out which imms end up breeding
 pedigree_immdata_breeder_nonbreeder_imms <- filter(pedigree_immdata, !is.na(ImmCohort)) %>%
   mutate(does_breed = ifelse(Indiv %in% pedigree_immdata$Dad, TRUE, 
                              ifelse(Indiv %in% pedigree_immdata$Mom, TRUE, FALSE)))
+
 # Now count up how many imms that end up breeding or not come in each year
 pedigree_immdata_breeder_nonbreeder_imms_count <- group_by(pedigree_immdata_breeder_nonbreeder_imms, ImmCohort, Sex, does_breed) %>%
   dplyr::summarize(num_imms = n()) %>%
   complete(ImmCohort, Sex, does_breed, fill = list(num_imms = 0)) %>%
   filter(!is.na(ImmCohort))
 
-
-
-ggplot(pedigree_immdata_breeder_nonbreeder_imms_perc,aes(x=ImmCohort,y=percent,fill=as.factor(Sex))) + 
-  geom_bar( stat='identity') +
-  facet_grid(does_breed ~ .) + theme_bw()
-
+#chi square goodness of fit test for sex ratio bias - removed because chi squared does not stand for small sample sizes
 pedigree_immdata_breeder_ratios <- foreach(year=c(1991:2012),.combine=rbind) %do% {
   tmp <- pedigree_immdata_breeder_nonbreeder_imms_count[pedigree_immdata_breeder_nonbreeder_imms_count$ImmCohort == year & pedigree_immdata_breeder_nonbreeder_imms_count$does_breed == TRUE,]
-  res <- chisq.test(c(tmp$num_imms[tmp$Sex == 1],tmp$num_imms[tmp$Sex == 2]), p = c(0.5,0.5))
-  cbind(year,"p"=res$p.value,"f"=(tmp$num_imms[tmp$Sex == 2]/(tmp$num_imms[tmp$Sex == 2]+tmp$num_imms[tmp$Sex == 1]) ),"t"=(tmp$num_imms[tmp$Sex == 2]+tmp$num_imms[tmp$Sex == 1]))
+  res_chi <- chisq.test(c(tmp$num_imms[tmp$Sex == 1],tmp$num_imms[tmp$Sex == 2]), p = c(0.5,0.5))
+ # res_fish <- fisher.test(c(tmp$num_imms[tmp$Sex == 1],tmp$num_imms[tmp$Sex == 2]),)
+  
+  
+  cbind(year,"t"=(tmp$num_imms[tmp$Sex == 2]+tmp$num_imms[tmp$Sex == 1]),"f"=(tmp$num_imms[tmp$Sex == 2]/(tmp$num_imms[tmp$Sex == 2]+tmp$num_imms[tmp$Sex == 1])),"p"=res_chi$p.value)
 }
 
 
 pedigree_immdata_breeder_ratios <- as.data.frame(pedigree_immdata_breeder_ratios)
 length(pedigree_immdata_breeder_ratios$p[pedigree_immdata_breeder_ratios$f > 0.5])
-length(pedigree_immdata_breeder_ratios$p[pedigree_immdata_breeder_ratios$p < 0.05])
+#length(pedigree_immdata_breeder_ratios$p[pedigree_immdata_breeder_ratios$p < (0.05/length(pedigree_immdata_breeder_ratios$year))])
 
-min(pedigree_immdata_breeder_ratios$f)
-max(pedigree_immdata_breeder_ratios$f)
-mean(pedigree_immdata_breeder_ratios$f)
+#ggplot(pedigree_immdata_breeder_ratios,aes(x=year,y=f)) + geom_point() + theme_bw() + geom_hline(yintercept = 0.5)
 
-min(pedigree_immdata_breeder_ratios$t)
-max(pedigree_immdata_breeder_ratios$t)
-
-ggplot(pedigree_immdata_breeder_ratios,aes(x=year,y=f)) + geom_point()
-
-year_immi_lm <- lm(year~t*f,data=pedigree_immdata_breeder_ratios)
+year_immi_lm <- lm(t~year,data=pedigree_immdata_breeder_ratios)
 summary(year_immi_lm)
+
+year_immi_sex_lm <- lm(f~t*year,data=pedigree_immdata_breeder_ratios)
+summary(year_immi_sex_lm)
 
 
 # make males negative
@@ -154,9 +119,6 @@ sexed_unsexed_breed_nonbreed__plot <- plot_grid(sexed_breed_nonbreed, unsexed_br
 
 # Autosomal contributions
 
-
-
-
 A_imm_gen_contribs <- 
   ggplot(simsumImmA_from1990) + 
   geom_ribbon(aes(x = year, ymin = q1, ymax = q3, fill = as.factor(allele)), alpha=0.3) +
@@ -168,7 +130,7 @@ A_imm_gen_contribs <-
   plottheme + 
   theme(legend.position='none',plot.margin=unit(c(0.2,0.1,0,0.15),'cm'))
 
-0.46380017/(0.28938797 + 0.46380017)
+
 # Z contributions
 
 Z_imm_gen_contribs <- 
@@ -182,7 +144,6 @@ Z_imm_gen_contribs <-
   plottheme + 
   theme(legend.position='none',plot.margin=unit(c(0.2,0.1,0,0.15),'cm'))
 
-0.37537395/(0.37537395 + 0.37889238)
 
 ####compare A and Z ####
 names(simsumImmZ_from1990) <- c("year"  , "allele" ,"mean_Z" ,  "q1_Z"   ,  "q3_Z"    )
@@ -192,34 +153,8 @@ simsumImm_from1990 <- left_join(simsumImmZ_from1990,simsumImmA_from1990,by=c("ye
 simsumImm_from1990$allele[simsumImm_from1990$allele == 2] <- "M"
 simsumImm_from1990$allele[simsumImm_from1990$allele == 3] <- "F"
 
-AZ_immicontrib_plot <-
-ggplot(simsumImm_from1990,aes(y=mean_Z,x=mean_A)) +
-  geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
-  geom_abline(slope = (2/1)*(1/3),  linetype = "dashed", color = "indianred1") +
-  geom_abline(slope = (2/1)*(2/3),  linetype = "dashed", color = "cornflowerblue") +
-  geom_point(size=2,aes(color=as.factor(allele))) +
-  scale_color_manual(values = c( "indianred1","cornflowerblue"))+
-  scale_fill_manual(values = c("indianred1","cornflowerblue"))+
-  guides(color=FALSE)+
- # geom_smooth(method="lm",color="black") +
- # geom_smooth(method="lm",aes(color=as.factor(allele))) +
-  geom_errorbar(aes(ymax =  q3_Z, ymin =  q1_Z,color=as.factor(allele))) +
-  geom_errorbarh(aes(xmax =  q3_A, xmin =  q1_A,color=as.factor(allele))) +
-  labs(x = "Mean A Immigrant Contrib.", y = "Mean Z Immigrant Contrib.") +plottheme 
- # theme_bw(base_size = 18)+
- # theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),  plot.margin = unit(c(15,5.5,5.5,5.5), "pt"))
 
 
-ggplot(simsumImm_from1990,aes(y=mean_Z,x=mean_A,color=year,shape=as.factor(allele))) +
-  geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
-  geom_abline(slope = (2/1)*(1/3),  linetype = "dashed", color = "indianred1") +
-  geom_abline(slope = (2/1)*(2/3),  linetype = "dashed", color = "cornflowerblue") +
-  geom_point(size=2) +
-  geom_errorbar(aes(ymax =  q3_Z, ymin =  q1_Z)) +
-  geom_errorbarh(aes(xmax =  q3_A, xmin =  q1_A)) +
-  labs(x = "Mean A", y = "Mean Z",title="Cumul. Contrib. of Immigrants") +
-  theme_bw(base_size = 18)+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),  plot.margin = unit(c(15,5.5,5.5,5.5), "pt"))
 
 AZ_mod <- lm(mean_A ~ 0 + mean_Z , data=simsumImm_from1990)  
 summary(AZ_mod)  
@@ -229,14 +164,9 @@ summary(AZ_mod)
 
 simsumImm_from1990$ZA <-  0.5 * (simsumImm_from1990$mean_Z/simsumImm_from1990$mean_A) 
 
-ggplot(simsumImm_from1990,aes(x=year,y=ZA,color=as.factor(allele))) + geom_point() + geom_line() + stat_smooth() +
-  theme_bw(base_size = 22) + scale_color_manual(values=c(   '#00ADEF',   '#00A550'  )) +labs(x="Year",y="Z/A E(H)",color="Sex")
 
 
 
-####Full Plotting ####
-
-plot_grid(sexed_unsexed_breed_nonbreed__plot, A_imm_gen_contribs,AZ_immicontrib_plot, Z_imm_gen_contribs,ncol = 2,labels = c("A","C","B","D"), label_size = 12,align = 'hv',axis='tbrl')
 
 
 ggplot(simsumImm_from1990,aes(y=mean_Z/mean_A,x=year)) +
