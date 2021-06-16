@@ -11,12 +11,11 @@ library(kinship2)
 library(cowplot)
 
 # load Rdata file 
-setwd('~/Google Drive/Research/Data2/fsj/Zdropping')
+setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all/')
 
 load("plotIndivGenContrib_tidy_20190529.Rdata") # code to produce all of these tables from raw data is in plotIndivGenContrib_tidy_20190425.R
 
 #plot theme
-
 plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3),
                     axis.ticks = element_line(colour = "black",size=0.2),
                     axis.text = element_text(colour="black"), panel.grid.major = element_blank(),
@@ -28,72 +27,71 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
                     legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(1,"cm"))
 
 
-####Pop Level distrbutions####
+####Pop Level distributions####
 #genetic (A & Z) vs. genealogical contributions in 2013 for all 926 breeders
 
-# Part A: genealogical vs. autosomal genetic contributions
-
-# Plot the number of descendants against autosomal genetic contributions
-ggplot(indiv_contribs_prop_nestlings_2013, aes(x = prop_2013_nestlings, color = Sex, fill = Sex)) +
-  geom_histogram(position="dodge")+
-  scale_color_manual(values = c("cornflowerblue", "indianred1"))+
-  scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
-  labs(x = "Genealogical contribution in 2013")+
-  plottheme+
-  theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt"))
-
-length(is.na(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==2]))
+#count of individuals with zero descendants in 2013
 length(is.na(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==1]))
+length(is.na(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==2]))
 
-mean(na.omit(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==2]))#females
+## genealogical contributions
+#range and mean genealogical contributions for males with >0 descendants in 2013
+min(na.omit(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==1]))
+max(na.omit(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==1]))
 mean(na.omit(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==1]))#males
 
+#range and mean genealogical contributions for females with >0 descendants in 2013
 min(na.omit(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==2]))
-min(na.omit(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==1]))
-
 max(na.omit(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==2]))
-max(na.omit(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==1]))
+mean(na.omit(indiv_contribs_prop_nestlings_2013$prop_2013_nestlings[indiv_contribs_prop_nestlings_2013$Sex ==2]))#females
 
-
-ggplot(indiv_contribs_prop_nestlings_2013, aes(x = auto_mean, color = Sex, fill = Sex)) +
-  geom_histogram(position="dodge")+
-  scale_color_manual(values = c("cornflowerblue", "indianred1"))+
-  scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
-  labs(x = "Exp. A. gen. contrib. in 2013")+
-  plottheme+
-  theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) 
-
-mean(na.omit(indiv_contribs_prop_nestlings_2013$auto_mean[indiv_contribs_prop_nestlings_2013$Sex ==2]))#females
+###expected genetic contributions
+##Autosomal
+#range and mean expected contributions for males with >0 descendants in 2013
+min(na.omit(indiv_contribs_prop_nestlings_2013$auto_mean[indiv_contribs_prop_nestlings_2013$Sex ==1 & !is.na(indiv_contribs_prop_nestlings_2013$num_descendants_2013)]))
+max(na.omit(indiv_contribs_prop_nestlings_2013$auto_mean[indiv_contribs_prop_nestlings_2013$Sex ==1]))
 mean(na.omit(indiv_contribs_prop_nestlings_2013$auto_mean[indiv_contribs_prop_nestlings_2013$Sex ==1]))#males
 
+#range and mean expected contributions for females with >0 descendants in 2013
 min(na.omit(indiv_contribs_prop_nestlings_2013$auto_mean[indiv_contribs_prop_nestlings_2013$Sex ==2 & !is.na(indiv_contribs_prop_nestlings_2013$num_descendants_2013)]))
-min(na.omit(indiv_contribs_prop_nestlings_2013$auto_mean[indiv_contribs_prop_nestlings_2013$Sex ==1 & !is.na(indiv_contribs_prop_nestlings_2013$num_descendants_2013)]))
-
 max(na.omit(indiv_contribs_prop_nestlings_2013$auto_mean[indiv_contribs_prop_nestlings_2013$Sex ==2]))
-max(na.omit(indiv_contribs_prop_nestlings_2013$auto_mean[indiv_contribs_prop_nestlings_2013$Sex ==1]))
+mean(na.omit(indiv_contribs_prop_nestlings_2013$auto_mean[indiv_contribs_prop_nestlings_2013$Sex ==2]))#females
 
-
-
-ggplot(indiv_contribs_prop_nestlings_2013, aes(x = Z_mean, color = Sex, fill = Sex)) +
-  geom_histogram(position="dodge")+
-  scale_color_manual(values = c("cornflowerblue", "indianred1"))+
-  scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
-  labs(x = "Exp. Z. gen. contrib. in 2013")+
-  plottheme+
-  theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) 
-
-
-
-mean(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestlings_2013$Sex ==2]))#females
+##Z
+#males
+min(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestlings_2013$Sex ==1 & !is.na(indiv_contribs_prop_nestlings_2013$num_descendants_2013) ]))
+max(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestlings_2013$Sex ==1]))
 mean(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestlings_2013$Sex ==1]))#males
 
+#females
 min(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestlings_2013$Sex ==2 & !is.na(indiv_contribs_prop_nestlings_2013$num_descendants_2013)]))
-min(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestlings_2013$Sex ==1 & !is.na(indiv_contribs_prop_nestlings_2013$num_descendants_2013) ]))
-
 max(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestlings_2013$Sex ==2]))
-max(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestlings_2013$Sex ==1]))
+mean(na.omit(indiv_contribs_prop_nestlings_2013$Z_mean[indiv_contribs_prop_nestlings_2013$Sex ==2]))#females
 
 ####descents vs genes####
+#genealogical vs autosomal expected model
+A_FM_mod_lm <- lm(auto_mean ~  prop_2013_nestlings*Sex  , data=indiv_contribs_prop_nestlings_2013)  
+summary(A_FM_mod_lm)
+
+#genealogical vs Z expected model
+Z_FM_mod_lm <- lm(Z_mean ~  prop_2013_nestlings*Sex  , data=indiv_contribs_prop_nestlings_2013)  
+summary(Z_FM_mod_lm)
+
+-0.0327305/0.0539405 #sex effect
+
+
+#AZ
+
+AZ_mod <- lm(Z_mean ~  auto_mean  , data=indiv_contribs_A_Z_2013_sex)  
+summary(AZ_mod)  
+
+AZ_mods_sex <- lm(Z_mean ~  auto_mean*Sex  , data=indiv_contribs_A_Z_2013_sex)  
+summary(AZ_mods_sex)  
+
+-5.690e-01/1.239e+00
+1.239e+00 - 5.690e-01
+
+#plot
 A_contribs_vs_descendants <- 
   ggplot(indiv_contribs_prop_nestlings_2013, aes(x = prop_2013_nestlings, y = auto_mean, color = Sex, fill = Sex)) +
   geom_point(alpha = 0.75, size = 0.3)+
@@ -105,9 +103,6 @@ A_contribs_vs_descendants <-
   plottheme+
   theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) + ylim(0,0.04)
 
-#A_FM_mod_lm <- lm(prop_2013_nestlings ~  0 + auto_mean  , data=indiv_contribs_A_Z_2013_sex[indiv_contribs_A_Z_2013_sex$Sex == 1,])  
-A_FM_mod_lm <- lm(prop_2013_nestlings ~  auto_mean*Sex  , data=indiv_contribs_prop_nestlings_2013)  
-summary(A_FM_mod_lm)
 
 Z_contribs_vs_descendants <- 
   ggplot(indiv_contribs_prop_nestlings_2013, aes(x = prop_2013_nestlings, y = Z_mean, color = Sex, fill = Sex)) +
@@ -119,11 +114,6 @@ Z_contribs_vs_descendants <-
   labs(x = "Genealogical contribution in 2013", y = "Z expected genetic contrib. in 2013")+
   plottheme+
   theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) + ylim(0,0.04)
-
-Z_FM_mod_lm <- lm(prop_2013_nestlings ~  Z_mean*Sex  , data=indiv_contribs_prop_nestlings_2013)  
-summary(Z_FM_mod_lm)
-
-# Part C: autosomal genetic vs. Z genetic contributions
 
 A_vs_Z_contribs <- 
   ggplot(indiv_contribs_A_Z_2013_sex, aes(x = auto_mean, y = Z_mean)) +
@@ -141,33 +131,6 @@ A_vs_Z_contribs <-
     labs(x = "Autosomal expected \ngenetic contrib. in 2013", y = "Z expected genetic contrib. in 2013")+
     plottheme + 
     ylim(0,0.04) 
-
-
-
-#models
-  
-
-
-AZ_mod <- lm(Z_mean ~  auto_mean  , data=indiv_contribs_A_Z_2013_sex)  
-summary(AZ_mod_m)  
-
-AZ_mods_sex <- lm(Z_mean ~  auto_mean*Sex  , data=indiv_contribs_A_Z_2013_sex)  
-summary(AZ_mods_sex)  
-
-
-AZ_mod_m <- lm(Z_mean ~  auto_mean  , data=indiv_contribs_A_Z_2013_sex[indiv_contribs_A_Z_2013_sex$Sex == 1,])  
-AZ_mod_f <- lm(Z_mean ~  auto_mean  , data=indiv_contribs_A_Z_2013_sex[indiv_contribs_A_Z_2013_sex$Sex == 2,])  
-summary(AZ_mod_m)  
-summary(AZ_mod_f)  
-
-
-AZ_mod <- lm(auto_mean ~ Z_mean , data=indiv_contribs_A_Z_2013_sex)  
-summary(AZ_mod)  
-
-AZ_mod <- lm(Z_mean ~  auto_mean, data=indiv_contribs_A_Z_2013_sex)  
-summary(AZ_mod)  
-
-
 
 
 plot_grid(A_contribs_vs_descendants, Z_contribs_vs_descendants, A_vs_Z_contribs,  ncol = 3, labels = "AUTO", align = 'hv',axis='tblr')
