@@ -1,9 +1,8 @@
-##June 11 2021
+## Plotting results of A & Z allele frequency model + simulations to estimate error
 ## Rose Driscoll and Felix Beaudry
-## Plotting results of Z allele frequency model + simulations to estimate error
+##July 7 2021
 
-
-## Setup
+setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all')
 
 library(plyr)
 library(ggplot2)
@@ -11,11 +10,9 @@ library(RColorBrewer)
 library(viridis)
 library(scales)
 library(dplyr)
-
 library(directlabels)
 library(cowplot)
 '%ni%' <- function(x,y)!('%in%'(x,y))
-
 library(PNWColors)
 
 #plottheme for manuscript
@@ -29,57 +26,47 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
                     legend.position="right", legend.text = element_text(size=7),
                     legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(0.25,"cm"))
 
-setwd('~/Google Drive/Research/Data2/fsj')
 
-####start A####
-#indivlist
-load("ZDropping_all/simindivFIXmin2obs.rdata")
+####start calculations for autosomal loci####
+
+#load tables
+load("simindivFIXmin2obs.rdata")
 genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
 
-load("ZDropping_all/FSJpedgeno_A.rdata")
+load("FSJpedgeno_A.rdata")
 ped_AgenoT <- ped_Ageno[ped_Ageno$V2 %in% genotyped_official,] 
 indivlist <- merge(simindivFIXmin2obs,ped_AgenoT[c(1,4)],by.x="USFWS",by.y="V2")
 names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
 
-#samplevar
-load("ZDropping_all/sampleVar_A_SR14Mar2021.rdata")
 
-#simvar
-load("ZDropping_all/simVarA_210303_14Mar2021.rdata")
+load("sampleVar_A_SR14Mar2021.rdata") #samplevar
+load("simVarA_210303_14Mar2021.rdata") #simvar
+load("allVar_boot_A_w3.4mb_24Jul2021.rdata") #bootstrap
 
-#names(simVar) <- names(sampleVar)
-#bothVars <- rbind.data.frame(sampleVar,simVar)
 
-load("ZDropping_all/allVar_boot_A_w3.4mb_04Jun2021.rdata")
-
-#allVar_join <- left_join(bothVars,allVar_q, by = c("Year", "Category"))
-#allVar_join$q5_dev <- allVar_join$avg - allVar_join$q5
-#allVar_join$q95_dev <-  allVar_join$q95 - allVar_join$avg
 
 ## Number of all & genotyped indivs; proportion of indivs in each category
-
 counts<-ddply(indivlist,.(Year,Category,Sex),summarize,genotyped=sum(Genotyped=='Y'),
               total=length(Category))
 counts['genotyped']<-2*counts$genotyped
-counts['total']<-2*counts$tota
+counts['total']<-2*counts$total
+
 countsAll<-ddply(indivlist,.(Year,Sex),summarize,genotyped=sum(Genotyped=='Y'),
                  total=length(Category))
 countsAll['genotyped']<-2*countsAll$genotyped
 countsAll['total']<-2*countsAll$total
 
+#proportion of indivs that are in each category and also genotyped 
 propMS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='survivor' & counts$Sex==1,'total']/(countsAll[countsAll$Year==x & countsAll$Sex==1,'total']+countsAll[countsAll$Year==x & countsAll$Sex==2,'total']))
 propFS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='survivor' & counts$Sex==2,'total']/(countsAll[countsAll$Year==x & countsAll$Sex==1,'total']+countsAll[countsAll$Year==x & countsAll$Sex==2,'total']))
 propMI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='immigrant' & counts$Sex==1,'total']/(countsAll[countsAll$Year==x & countsAll$Sex==1,'total']+countsAll[countsAll$Year==x & countsAll$Sex==2,'total']))
 propFI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='immigrant' & counts$Sex==2,'total']/(countsAll[countsAll$Year==x & countsAll$Sex==1,'total']+countsAll[countsAll$Year==x & countsAll$Sex==2,'total']))
 propMB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='nestling' & counts$Sex==1,'total']/(countsAll[countsAll$Year==x & countsAll$Sex==1,'total']+countsAll[countsAll$Year==x & countsAll$Sex==2,'total']))
 propFB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='nestling' & counts$Sex==2,'total']/(countsAll[countsAll$Year==x & countsAll$Sex==1,'total']+countsAll[countsAll$Year==x & countsAll$Sex==2,'total']))
-# I think this is proportion of indivs that are in each category and also genotyped? 
-# so it is out of total # indivs for that year
+
+#make tables
 prop<-data.frame(propMS=propMS,propFS=propFS,propMI=propMI,propFI=propFI,propMB=propMB,propFB=propFB)
 rownames(prop)<-c(2000:2013)
-#rowSums(prop)
-#Doesn't add to 1 but I think this is because of ungenotyped indivs
-
 
 alleleFreqVarAvg<-data.frame(Year=rep(c(2000:2013),each=21),
                              Category=rep(c('MSsq','FSsq','MIsq','FIsq','MBsq','FBsq',
@@ -89,7 +76,8 @@ alleleFreqVarAvg<-data.frame(Year=rep(c(2000:2013),each=21),
                                             'FSMI','FSMB','FIMB'),14),
                              stringsAsFactors=FALSE)
 
-#square terms
+#calculate final terms for each year, according to formula: (roughly) fraction of population * (change in frequency - error)
+#also calculate bootstrap quantiles 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   ((prop[yr,'propMS'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xMs-xt','avg'] 
@@ -711,20 +699,14 @@ newBsq_A <-rbind(data.frame(Year=c(2000:2013),Category=rep('MBsq_mend',14),
                  data.frame(Year=c(2000:2013),Category=rep('FBsq_fam',14),
                             avg=famFAvg,stringsAsFactors=FALSE))
 
-# Remove immigrant covariance and mom-daughter Z inheritance
+####normalize terms####
 
+#remove irrelevant covariance terms
 alleleFreqVarAvg2<-alleleFreqVarAvg[
-                                     
-  alleleFreqVarAvg$Category != 'MSMI' 
+                                     alleleFreqVarAvg$Category != 'MSMI' 
                                      & alleleFreqVarAvg$Category != 'FSFI'
                                      & alleleFreqVarAvg$Category != 'MSFI'
                                      & alleleFreqVarAvg$Category != 'FSMI'
-                                     
-                                    # &alleleFreqVarAvg$Category != 'MBsq'  #remove birth
-                                    # & alleleFreqVarAvg$Category != 'FBsq' #remove birth, (so not duplicate with Mendel)
-                                     
-                                   #  & alleleFreqVarAvg$Category != 'FIFB'
-                                   #  & alleleFreqVarAvg$Category != 'FSFB'
                                      ,]
 
 # Find sum for each year and calculate proportion for each category
@@ -735,34 +717,45 @@ alleleFreqVarAvg2$prop<-alleleFreqVarAvg2$avg/alleleFreqVarAvg2$sum
 alleleFreqVarAvg2$q5_prop <- alleleFreqVarAvg2$q5 / alleleFreqVarAvg2$sum
 alleleFreqVarAvg2$q95_prop <- alleleFreqVarAvg2$q95 / alleleFreqVarAvg2$sum
 
-
 alleleFreqVarAvg1_A <- alleleFreqVarAvg2
 
 
 ####start Z####
 
+
+
 #indivlist
-load("ZDropping_all/simindivFIXmin2obs.rdata")
-ped<-read.table('ZDropping_all/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+load("simindivFIXmin2obs.rdata")
+ped<-read.table('FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
 pedinfo <- ped[,1:5]
 colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
 indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
 indivlist <- indivlist[order(indivlist$Year),]
 
-#samplevar
-load("ZDropping_all/sampleVar_Z_SR11Jan2021.rdata")
+load("sampleVar_Z_SR11Jan2021.rdata") #samplevar
+load("simVarZ_11Jan2021.rdata") #simvar
+#load("allVar_boot_Z_w3.4mb_08Jun2021.rdata") #bootstrap
 
-#simvar
-load("ZDropping_all/simVarZ_11Jan2021.rdata")
+load("allVar_int_boot_Z_w3.4mb_30Jul2021.rdata") #bootstrap
 
-load("ZDropping_all/allVar_boot_Z_w3.4mb_08Jun2021.rdata")
+
+col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
+
+allVar_s <-  allVar[,col_sample]
+
+allVar_q <- allVar[,c(1:2)]
+
+allVar_q$q5 <- apply(allVar_s, 1, function(x) quantile(x,.05,na.rm = T))
+allVar_q$q95 <- apply(allVar_s, 1, function(x) quantile(x,.95,na.rm = T))
+allVar_q$se <- apply(X=allVar_s,1,function(x) sd(x)/sqrt(length(x)))
+
 
 ## Number of all & genotyped indivs; proportion of indivs in each category
-
 counts<-ddply(indivlist,.(Year,category,Sex),summarize,genotyped=sum(genotyped=='Y'),
               total=length(category))
 counts[counts$Sex==1,'genotyped']<-2*counts$genotyped[counts$Sex==1]
 counts[counts$Sex==1,'total']<-2*counts$total[counts$Sex==1]
+
 countsAll<-ddply(indivlist,.(Year,Sex),summarize,genotyped=sum(genotyped=='Y'),
                  total=length(category))
 countsAll[countsAll$Sex==1,'genotyped']<-2*countsAll$genotyped[countsAll$Sex==1]
@@ -774,13 +767,9 @@ propMI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=
 propFI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='immigrant' & counts$Sex==2,'total']/(countsAll[countsAll$Year==x & countsAll$Sex==1,'total']+countsAll[countsAll$Year==x & countsAll$Sex==2,'total']))
 propMB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='nestling' & counts$Sex==1,'total']/(countsAll[countsAll$Year==x & countsAll$Sex==1,'total']+countsAll[countsAll$Year==x & countsAll$Sex==2,'total']))
 propFB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='nestling' & counts$Sex==2,'total']/(countsAll[countsAll$Year==x & countsAll$Sex==1,'total']+countsAll[countsAll$Year==x & countsAll$Sex==2,'total']))
-# I think this is proportion of indivs that are in each category and also genotyped? 
-# so it is out of total # indivs for that year
+
 prop<-data.frame(propMS=propMS,propFS=propFS,propMI=propMI,propFI=propFI,propMB=propMB,propFB=propFB)
 rownames(prop)<-c(2000:2013)
-#rowSums(prop)
-#Doesn't add to 1 but I think this is because of ungenotyped indivs
-
 
 alleleFreqVarAvg<-data.frame(Year=rep(c(2000:2013),each=21),
                              Category=rep(c('MSsq','FSsq','MIsq','FIsq','MBsq','FBsq',
@@ -1410,62 +1399,93 @@ newBsq_Z <-rbind(data.frame(Year=c(2000:2013),Category=rep('MBsq_mend',14),
                  data.frame(Year=c(2000:2013),Category=rep('FBsq_fam',14),
                             avg=famFAvg,stringsAsFactors=FALSE))
 
+####normalize Z terms####
 
-# Remove immigrant covariance and mom-daughter Z inheritance
-
-alleleFreqVarAvg2<-alleleFreqVarAvg[#alleleFreqVarAvg$Category != 'MBsq'  #remove birth
-                                    #& alleleFreqVarAvg$Category != 'FBsq' #remove birth, (so not duplicate with Mendel)
-                                    
-  alleleFreqVarAvg$Category != 'MSMI' 
+alleleFreqVarAvg2<-alleleFreqVarAvg[
+                              
+                                     alleleFreqVarAvg$Category != 'MSMI' 
                                     & alleleFreqVarAvg$Category != 'FSFI'
                                     & alleleFreqVarAvg$Category != 'MSFI'
                                     & alleleFreqVarAvg$Category != 'FSMI'
                                     
+                                    # Remove immigrant covariance and mom-daughter Z inheritance
+                                    
                                     & alleleFreqVarAvg$Category != 'FIFB'
                                     & alleleFreqVarAvg$Category != 'FSFB',]
-
-#alleleFreqVarAvg2$q5 <- NA
-#alleleFreqVarAvg2$q95 <- NA
 
 
 # Find sum for each year and calculate proportion for each category
 alleleFreqVarAvg2$sum<-laply(alleleFreqVarAvg2$Year,function(x)   sum(alleleFreqVarAvg2[alleleFreqVarAvg2$Year==x,'avg']))
 
 alleleFreqVarAvg2$prop<-alleleFreqVarAvg2$avg/alleleFreqVarAvg2$sum
-
 alleleFreqVarAvg2$q5_prop <- alleleFreqVarAvg2$q5 / alleleFreqVarAvg2$sum
 alleleFreqVarAvg2$q95_prop <- alleleFreqVarAvg2$q95 / alleleFreqVarAvg2$sum
 
 alleleFreqVarAvg1_Z <- alleleFreqVarAvg2
 
 ####combine A and Z####
+#stack
 AZ_AFVA<-rbind.data.frame(
   cbind.data.frame(alleleFreqVarAvg1_A,"chrom"="A"),
   cbind.data.frame(alleleFreqVarAvg1_Z,"chrom"="Z")
 )
+#merge
+alleleFreqVarAvg1_AZ <- left_join(alleleFreqVarAvg1_A,alleleFreqVarAvg1_Z,by=c("Year"="Year","Category"="Category"))
 
-####label supercategories####
-AZ_AFVA$faccat <- factor(AZ_AFVA$Category,
-                         levels = 
+####categories and sexes####
+detach(package:plyr)
 
-c("MSsq", "MIsq","MBsq",
-  "MSMB" , "MIMB"  ,"FBsq",
-  "FSsq"  , "FIsq",
-  "FSFB"   , "FIFB"    , 
-  "MSFS"   ,   "MBFB"  ,     "MIFI"   , 
-  "MSFB"    ,   "MIFB"   ,   "FSMB"   ,   "FIMB"     
-   ))
-
-AZ_AFVA$Supercategory<-factor(ifelse(AZ_AFVA$Category=='MIFI' | AZ_AFVA$Category=='MIsq' |  AZ_AFVA$Category=='FIsq','Immigrant',
-                              ifelse(AZ_AFVA$Category=='MIMB' | AZ_AFVA$Category=='FIFB' | AZ_AFVA$Category=='MIFB' |  AZ_AFVA$Category=='FIMB', 'Cov(I,B)',
-                              ifelse( AZ_AFVA$Category=='MBFB' | AZ_AFVA$Category=='MBsq' | AZ_AFVA$Category=='FBsq', 'Birth',
-                              ifelse(AZ_AFVA$Category=='MSMB' | AZ_AFVA$Category=='FSFB' | AZ_AFVA$Category=='MSFB' | AZ_AFVA$Category=='FSMB', 'Cov(S,B)',
-                              ifelse(AZ_AFVA$Category=='MSsq' |AZ_AFVA$Category=='FSsq' | AZ_AFVA$Category=='MSFS', 'Survivor', NA))))),
-                              levels = c('Immigrant', 'Cov(I,B)', 'Birth','Cov(S,B)','Survivor'))
-
+#set sex label & factor
 AZ_AFVA$SexCat[AZ_AFVA$Category %in% c("FSsq","FIsq","FBsq","FIFB","FSFB")] <- "Female"
 AZ_AFVA$SexCat[AZ_AFVA$Category %in% c("MSsq","MIsq","MBsq","MIMB","MSMB")] <- "Male"
 AZ_AFVA$SexCat[AZ_AFVA$Category %in% c("FIMB","FSMB","MIFB","MSFB","MBFB","MSFS","MIFI")] <- "Cov(F,M)"
+AZ_AFVA$sexCat <- factor(AZ_AFVA$SexCat,levels=c("Female" ,"Male"    ,   "Cov(F,M)"))
+
+AZ_AFVA_sex <- 
+  AZ_AFVA %>% group_by(chrom,Year) %>% 
+  mutate(sex_sum=sum(avg)) %>% 
+  group_by(chrom,Year,SexCat) %>% 
+  mutate(sexCat_sum=sum(avg)/sex_sum) 
+
+AZ_AFVA_sex_only <- unique(AZ_AFVA_sex[,c(1,10,12:14)])
+AZ_AFVA_sex_only$SexCat = factor(AZ_AFVA_sex_only$sexCat, levels=c('Cov(F,M)','Female','Male'))
+
+sex_stack_plot <- 
+  ggplot() + 
+  geom_hline(yintercept = 0,alpha=0.5)+
+  geom_hline(yintercept = 1,alpha=0.5)+
+  
+  geom_bar(data=AZ_AFVA_sex_only, aes(x=Year, y=sexCat_sum,fill=SexCat,group=SexCat), stat='identity',alpha=0.75) +
+  
+  facet_grid(chrom~.,scales="free",space="free") + 
+  labs(y="Proportion",x="Year") +
+  theme_bw(base_size = 16) + 
+  theme(strip.background =element_rect(fill="white")) +
+  scale_fill_manual("Category",values=c("mediumpurple","indianred1","cornflowerblue")) + 
+  guides(color=FALSE)  + 
+  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) +
+  scale_y_continuous(breaks=c(0,0.5,1))
+
+#set factor order 
+AZ_AFVA$faccat <- factor(AZ_AFVA$Category,
+                         levels = 
+                           c("MSsq", "MIsq","MBsq",
+                             "MSMB" , "MIMB"  ,"FBsq",
+                             "FSsq"  , "FIsq",
+                             "FSFB"   , "FIFB"    , 
+                             "MSFS"   ,   "MBFB"  ,     "MIFI"   , 
+                             "MSFB"    ,   "MIFB"   ,   "FSMB"   ,   "FIMB"     
+                           ))
+
+#set demographic group label & factor
+AZ_AFVA$Supercategory<-factor(ifelse(AZ_AFVA$Category=='MIFI' | AZ_AFVA$Category=='MIsq' |  AZ_AFVA$Category=='FIsq','Immigrant',
+                                     ifelse(AZ_AFVA$Category=='MIMB' | AZ_AFVA$Category=='FIFB' | AZ_AFVA$Category=='MIFB' |  AZ_AFVA$Category=='FIMB', 'Cov(I,B)',
+                                            ifelse( AZ_AFVA$Category=='MBFB' | AZ_AFVA$Category=='MBsq' | AZ_AFVA$Category=='FBsq', 'Birth',
+                                                    ifelse(AZ_AFVA$Category=='MSMB' | AZ_AFVA$Category=='FSFB' | AZ_AFVA$Category=='MSFB' | AZ_AFVA$Category=='FSMB', 'Cov(S,B)',
+                                                           ifelse(AZ_AFVA$Category=='MSsq' |AZ_AFVA$Category=='FSsq' | AZ_AFVA$Category=='MSFS', 'Survivor', NA))))),
+                              levels = c('Immigrant', 'Cov(I,B)', 'Birth','Cov(S,B)','Survivor'))
+
+AZ_AFVA$supercategory <- factor(AZ_AFVA$Supercategory,levels=c("Survivor","Birth","Cov(S,B)","Immigrant","Cov(I,B)"))
 
 AZ_AFVA$Category2 <- AZ_AFVA$Category
 AZ_AFVA$Category2[AZ_AFVA$Category %in% c("FSsq","MSsq","MSFS")] <- "S"
@@ -1474,62 +1494,98 @@ AZ_AFVA$Category2[AZ_AFVA$Category %in% c("FBsq","MBsq","MBFB")] <- "B"
 AZ_AFVA$Category2[AZ_AFVA$Category %in% c("MIMB","FIFB")] <- "IB"
 AZ_AFVA$Category2[AZ_AFVA$Category %in% c("MSMB","FSFB")] <- "SB"
 
-AZ_AFVA$Category3 <- AZ_AFVA$Category2
-#AZ_AFVA$Category3[AZ_AFVA$Category %in% c("FIMB","FSMB")] <- "FM"
-#AZ_AFVA$Category3[AZ_AFVA$Category %in% c("MIFB","MSFB")] <- "MF"
-
-
+#set sex covariances
 AZ_AFVA$Category4 <- NA
 AZ_AFVA$Category4[AZ_AFVA$Category %in% c("FIMB","FSMB")] <- "FM"
 AZ_AFVA$Category4[AZ_AFVA$Category %in% c("MIFB","MSFB")] <- "MF"
 
 
-####plot####
-varp_title <- expression(paste("Proportion of ",Delta, "p variance"))
+AZ_AFVA_cat <- 
+  AZ_AFVA %>% group_by(chrom,Year) %>% 
+  mutate(cat_sum=sum(avg)) %>% 
+  group_by(chrom,Year,supercategory) %>% 
+  mutate(catCat_sum=sum(avg)/cat_sum) 
 
 
-AZ_AFVA$supercategory <- factor(AZ_AFVA$Supercategory,levels=c("Survivor","Birth","Cov(S,B)","Immigrant","Cov(I,B)"))
-AZ_AFVA$sexCat <- factor(AZ_AFVA$SexCat,levels=c("Female" ,"Male"    ,   "Cov(F,M)"))
+AZ_AFVA_cat_only <- unique(AZ_AFVA_cat[,c(1,10,15,18:19)])
+AZ_AFVA_cat_only$supercategory = factor(AZ_AFVA_cat_only$supercategory, levels=c('Cov(I,B)','Immigrant','Cov(S,B)','Birth','Survivor'))
 
-#fills_to_use <-c(pnw_palettes$Bay[1,3],pnw_palettes$Winter[1,2], pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,1],pnw_palettes$Winter[1,4],pnw_palettes$Bay[1,4],pnw_palettes$Bay[1,5])
-fills_to_use <-c(pnw_palettes$Bay[1,3],pnw_palettes$Winter[1,2],"#DD4124", pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,1],pnw_palettes$Winter[1,4],"#E77A66",pnw_palettes$Bay[1,4],pnw_palettes$Bay[1,5])
+fills_to_use_cat <-c(pnw_palettes$Bay[1,1],pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,5], pnw_palettes$Bay[1,3],pnw_palettes$Bay[1,4])
 
-
-ggplot(data=AZ_AFVA, aes(x=Year, y=prop)) + 
+cat_stack_plot <- 
+  ggplot() + 
   geom_hline(yintercept = 0,alpha=0.5)+
   
- # geom_ribbon(aes(x = Year, ymin = q5_prop, ymax = q95_prop, linetype=chrom),alpha=0.5,fill="gray",color="black") +
-  geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category3,linetype=chrom), width=.1,alpha=0.5) +
+  geom_hline(yintercept = 1,alpha=0.5)+
   
-  geom_point(aes(color=Category3),alpha=0.5 ) + 
-  geom_line(aes(linetype=chrom,color=Category3)) + 
-  guides(color=FALSE,linetype=FALSE) +
+  geom_bar(data=AZ_AFVA_cat_only, aes(x=Year, y=catCat_sum,fill=supercategory,group=supercategory), stat='identity',alpha=0.75) +
+  
+  facet_grid(chrom~.,scales="free",space="free") + 
+  labs(y="Proportion",x="Year") +
+  theme_bw(base_size = 16) + 
+  theme(strip.background =element_rect(fill="white")) +
+  scale_fill_manual("Category",values=fills_to_use_cat) + 
+  guides(color=FALSE)  + 
+  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) +
+  scale_y_continuous(breaks=c(0,0.5,1))
+
+
+####plot fig. 4B####
+plot_grid(sex_stack_plot,  cat_stack_plot,  labels = c('B', 'C'), ncol = 1, align = 'v',axis='rl')
+
+####label supercategories for stack####
+
+
+
+#plotting parameters
+varp_title <- expression(paste("Proportion of ",Delta, "p variance"))
+Avarp_title <- expression(paste("Autosomal Variance ",Delta, "p"))
+Zvarp_title <- expression(paste("Z Variance ",Delta, "p"))
+
+fills_to_use <-c(pnw_palettes$Bay[1,3],pnw_palettes$Winter[1,2],"#DD4124", pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,1],pnw_palettes$Winter[1,4],"#E77A66",pnw_palettes$Bay[1,4],pnw_palettes$Bay[1,5])
+
+####Plot Fig. 5####
+
+AZ_AFVA$year_adj <- AZ_AFVA$Year 
+AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] <- AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] + 0.25
+
+
+ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
+  geom_hline(yintercept = 0,alpha=0.5)+
+  
+  geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category2,linetype=chrom), width=.1,alpha=0.5) +
+  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
+  
+  geom_point(aes(color=Category2,shape=chrom)) + 
+ guides(color=FALSE) +
   facet_grid(  supercategory ~sexCat,scales="free")+
   
   theme_bw(base_size = 16) + 
   scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
-  scale_color_manual(
-    #breaks=c("FM","MF"),
-                     values=fills_to_use)+  
-  
+  scale_color_manual(values=fills_to_use)+  
+  scale_shape_manual(values=c(1,16)) +
+ # scale_linetype_manual(values=c("solid","dashed")) +
   labs(y=varp_title,x="Year",color="Category",linetype="") + 
   theme(strip.background =element_rect(fill="white")) +
-  geom_dl(aes(label = Category4,color=Category3), method = list("last.qp",cex = 1,dl.trans(x = x + .2))) +
-  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) 
+  geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 1,dl.trans(x = x + .2))) +
+  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) #+ 
+#  coord_cartesian(ylim = c(-0.25, 0.5))
+  #ylim(-0.2,0.5)
 
+min(AZ_AFVA$prop[AZ_AFVA$supercategory == "Birth"])
+max(AZ_AFVA$prop[AZ_AFVA$supercategory == "Birth"])
 
+min(AZ_AFVA$prop[AZ_AFVA$supercategory == "Survivor"])
+max(AZ_AFVA$prop[AZ_AFVA$supercategory == "Survivor"])
 
+####label supercategories for merge####
 
- alleleFreqVarAvg1_AZ <-  left_join(alleleFreqVarAvg1_A,alleleFreqVarAvg1_Z,by=c("Year"="Year","Category"="Category"))
 names(alleleFreqVarAvg1_AZ) <- 
 c("Year"   ,    "Category" ,"avg.A"   ,   "q5.A"   ,    "q95.A"    ,  "sum.A"  ,   
 "prop.A"  ,   "q5_prop.A",  "q95_prop.A","avg.Z"    ,  "q5.Z"     ,  "q95.Z" ,    
  "sum.Z"      ,"prop.Z"  ,   "q5_prop.Z",  "q95_prop.Z")
 
-
-Avarp_title <- expression(paste("Autosomal Variance ",Delta, "p"))
-Zvarp_title <- expression(paste("Z Variance ",Delta, "p"))
-
+#rename in full
 alleleFreqVarAvg1_AZ$fullCat[alleleFreqVarAvg1_AZ$Category == "MSsq"] <- "Male Survivor"
 alleleFreqVarAvg1_AZ$fullCat[alleleFreqVarAvg1_AZ$Category ==  "MIsq"] <- "Male Immigrant"
 alleleFreqVarAvg1_AZ$fullCat[alleleFreqVarAvg1_AZ$Category ==  "MBsq"] <- "Male Birth"
@@ -1548,26 +1604,23 @@ alleleFreqVarAvg1_AZ$fullCat[alleleFreqVarAvg1_AZ$Category == "FBsq" ] <- "Femal
  alleleFreqVarAvg1_AZ$fullCat[alleleFreqVarAvg1_AZ$Category ==  "FSMB" ]<- "Cov(Fs,Mb)"
  alleleFreqVarAvg1_AZ$fullCat[alleleFreqVarAvg1_AZ$Category ==  "FIMB"]<- "Cov(Fi,Mb)"
 
- unique(alleleFreqVarAvg1_AZ$fullCat)
- 
+#set factors
  alleleFreqVarAvg1_AZ$FullCat <- factor(alleleFreqVarAvg1_AZ$fullCat, 
                                 levels=c(
- "Male Survivor"   , "Female Survivor" , "Cov(Ms,Fs)"   ,
- "Male Birth"    ,   "Female Birth"   ,  "Cov(Mb,Fb)"    ,   "Cov(Ms,Fb)"    , "Cov(Ms,Mb)"     ,  "Cov(Fs,Fb)"  ,"Cov(Fs,Mb)"    ,
- 
- "Male Immigrant"  , "Female Immigrant",     "Cov(Mi,Fi)"    ,   "Cov(Mi,Mb)"    ,       "Cov(Fi,Fb)"    ,  
-       "Cov(Mi,Fb)"   ,  "Cov(Fi,Mb)"  ))
+ "Male Survivor"   , "Female Survivor" , "Cov(Ms,Fs)"   , "Cov(Mb,Fb)"    ,   "Cov(Ms,Fb)"    ,
+ "Male Birth"    ,   "Female Birth"   ,   "Cov(Ms,Mb)"     ,  "Cov(Fs,Mb)"    ,  "Cov(Mi,Fb)"   ,
+ "Male Immigrant"  , "Female Immigrant",     "Cov(Mi,Fi)"    ,   "Cov(Mi,Mb)"    ,     
+        "Cov(Fi,Mb)"  ,"Cov(Fs,Fb)","Cov(Fi,Fb)"))
 
- AZ_variances_plot <- 
-ggplot(alleleFreqVarAvg1_AZ[alleleFreqVarAvg1_AZ$FullCat %in% c( "Male Survivor"   , "Female Survivor" ,"Male Birth"    ,   "Female Birth"   ,"Male Immigrant"  , "Female Immigrant"), ],aes(x=prop.A,y=prop.Z)) + 
-
+ #Fig S6
+ ggplot(alleleFreqVarAvg1_AZ[alleleFreqVarAvg1_AZ$FullCat %ni% c("Cov(Fs,Fb)","Cov(Fi,Fb)"),],aes(x=prop.A,y=prop.Z)) +   
   geom_abline(intercept = 0,slope=(4/3),alpha=0.5,linetype="dotted") +
   geom_abline(intercept = 0,slope=1,alpha=0.5) +
   geom_abline(intercept = 0,slope=(2/3),alpha=0.5,linetype="dashed") +
   
-  facet_wrap(~ FullCat,scales="free",ncol = 2) + 
+  facet_wrap(~ FullCat,scales="free",ncol=5) + 
   geom_smooth(method="lm",color="black") +  
-  geom_point(aes(color=as.factor(Year))) + 
+  geom_point() + 
   #geom_text(aes(color=as.factor(Year),label=as.factor(Year))) + 
   labs(x=Avarp_title,y=Zvarp_title,color="Year") + 
   guides(color=FALSE) +
@@ -1575,65 +1628,49 @@ ggplot(alleleFreqVarAvg1_AZ[alleleFreqVarAvg1_AZ$FullCat %in% c( "Male Survivor"
   scale_x_continuous(guide = guide_axis(check.overlap = TRUE))+
   theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
 theme(strip.background =element_rect(fill="white")) 
-  
 
 
 
- AZ_Covariances_plot <- 
-   
-ggplot(alleleFreqVarAvg1_AZ[alleleFreqVarAvg1_AZ$FullCat %in% c("Cov(Ms,Fs)"   ,"Cov(Mb,Fb)"    ,   "Cov(Ms,Fb)"    , "Cov(Ms,Mb)"     ,  "Cov(Fs,Mb)"    ,"Cov(Mi,Fi)"    ,   "Cov(Mi,Mb)"    ,        "Cov(Mi,Fb)"   ,  "Cov(Fi,Mb)" ), ],aes(x=prop.A,y=prop.Z)) + 
-  geom_abline(intercept = 0,slope=(4/3),alpha=0.5,linetype="dotted") +
-  geom_abline(intercept = 0,slope=1,alpha=0.5) +
-  geom_abline(intercept = 0,slope=(2/3),alpha=0.5,linetype="dashed") +
-  
-  facet_wrap(~ FullCat,scales="free") + 
-  geom_smooth(method="lm",color="black") +  
-  geom_point(aes(color=as.factor(Year))) + 
-  #geom_text(aes(color=as.factor(Year),label=as.factor(Year))) + 
-  labs(x=Avarp_title,y=Zvarp_title,color="Year") + 
-  guides(color=FALSE) +
-  theme_bw(base_size = 16) + 
-  scale_x_continuous(guide = guide_axis(check.overlap = TRUE))+
-  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
-  theme(strip.background =element_rect(fill="white")) 
 
- plot_grid(AZ_variances_plot,  AZ_Covariances_plot, labels = c('A', 'B'), label_size = 12,ncol = 2, align = 'h',axis='tb')
- 
- alleleFreqVarAvg1_AZ$prop.A[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"]
- 
- cov( alleleFreqVarAvg1_AZ$prop.A[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"],alleleFreqVarAvg1_AZ$prop.Z[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"])
- cor( alleleFreqVarAvg1_AZ$prop.A[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"],alleleFreqVarAvg1_AZ$prop.Z[alleleFreqVarAvg1_AZ$FullCat == "Female Immigrant"])
- 
+
 ####Mend and Fam####
+##Autosomal
+#re-calculate proportions without births
 alleleFreqVarAvg1_newBsq_A <- 
-  rbind.data.frame(
+rbind.data.frame(
   alleleFreqVarAvg1_A[alleleFreqVarAvg1_A$Category %ni% c("MBsq","FBsq"),c(1:3)],
-newBsq_A
+  newBsq_A
 )
+alleleFreqVarAvg1_newBsq_A$sum<-lapply(alleleFreqVarAvg1_newBsq_A$Year,function(x)   sum(alleleFreqVarAvg1_newBsq_A[alleleFreqVarAvg1_newBsq_A$Year==x,'avg']))
+alleleFreqVarAvg1_newBsq_A$avg <- as.numeric(alleleFreqVarAvg1_newBsq_A$avg)
+alleleFreqVarAvg1_newBsq_A$sum <- as.numeric(alleleFreqVarAvg1_newBsq_A$sum)
 
-alleleFreqVarAvg1_newBsq_A$sum<-laply(alleleFreqVarAvg1_newBsq_A$Year,function(x)   sum(alleleFreqVarAvg1_newBsq_A[alleleFreqVarAvg1_newBsq_A$Year==x,'avg']))
 alleleFreqVarAvg1_newBsq_A$prop<-alleleFreqVarAvg1_newBsq_A$avg/alleleFreqVarAvg1_newBsq_A$sum
 
+#re-add births for comparison
 alleleFreqVarAvg1_newBsq_A <- 
   rbind.data.frame(
-    alleleFreqVarAvg1_A[alleleFreqVarAvg1_A$Category %in% c("MBsq","FBsq"),],
+    alleleFreqVarAvg1_A[alleleFreqVarAvg1_A$Category %in% c("MBsq","FBsq"),c(1,2,3,6,7)],
     alleleFreqVarAvg1_newBsq_A
   )
 alleleFreqVarAvg1_newBsq_A$chrom <- "Autosomal"
 
-
+#Z
 alleleFreqVarAvg1_newBsq_Z <- 
   rbind.data.frame(
     alleleFreqVarAvg1_Z[alleleFreqVarAvg1_Z$Category %ni% c("MBsq","FBsq"),c(1:3)],
     newBsq_Z
   )
 
-alleleFreqVarAvg1_newBsq_Z$sum<-laply(alleleFreqVarAvg1_newBsq_Z$Year,function(x)   sum(alleleFreqVarAvg1_newBsq_Z[alleleFreqVarAvg1_newBsq_Z$Year==x,'avg']))
+alleleFreqVarAvg1_newBsq_Z$sum<-lapply(alleleFreqVarAvg1_newBsq_Z$Year,function(x)   sum(alleleFreqVarAvg1_newBsq_Z[alleleFreqVarAvg1_newBsq_Z$Year==x,'avg']))
+alleleFreqVarAvg1_newBsq_Z$avg <- as.numeric(alleleFreqVarAvg1_newBsq_Z$avg)
+alleleFreqVarAvg1_newBsq_Z$sum <- as.numeric(alleleFreqVarAvg1_newBsq_Z$sum)
+
 alleleFreqVarAvg1_newBsq_Z$prop<-alleleFreqVarAvg1_newBsq_Z$avg/alleleFreqVarAvg1_newBsq_Z$sum
 
 alleleFreqVarAvg1_newBsq_Z <- 
   rbind.data.frame(
-    alleleFreqVarAvg1_Z[alleleFreqVarAvg1_Z$Category %in% c("MBsq","FBsq"),],
+    alleleFreqVarAvg1_Z[alleleFreqVarAvg1_Z$Category %in% c("MBsq","FBsq"),c(1,2,3,6,7)],
     alleleFreqVarAvg1_newBsq_Z
   )
 alleleFreqVarAvg1_newBsq_Z$chrom <- "Z"
@@ -1654,25 +1691,21 @@ newBsq$bCat[newBsq$Category %in% c("MBsq","FBsq")] <- "Birth Total"
 
 #varp_birth_title <- expression(paste("Variance ",Delta, "p Birth"))
 
-
-mendFam_year_plot <- 
+#fig S8
+#mendFam_year_plot <- 
 ggplot() + 
   geom_hline(yintercept = 0,alpha=0.2)+
-  
-  # stat_smooth(data=AZ_sexCat, aes(x=Year, y=prop,color=SexCat),alpha=1,linetype="dashed",method="lm",se=FALSE) +
-  geom_line(data=newBsq[newBsq$bCat == "Birth Total",], aes(x=Year, y=prop,linetype=bCat),alpha=0.2,linetype="longdash") +
-
+ # geom_line(data=newBsq[newBsq$bCat == "Birth Total",], aes(x=Year, y=prop,linetype=bCat),alpha=0.2,linetype="longdash") +
   geom_line(data=newBsq[newBsq$bCat %in% c("Family Size","Mendelian Noise"),], aes(x=Year, y=prop,color=sexCat,group=bCat),position="stack",alpha=0.2) +
   geom_point(data=newBsq[newBsq$bCat %in% c("Family Size","Mendelian Noise"),], aes(x=Year, y=prop,color=sexCat,shape=bCat),position="stack") +
   facet_grid(chrom~sexCat) + 
   labs(y=varp_title,x="Year",linetype="Birth Term",color="Sex",shape="Birth Term") +
   theme_bw(base_size = 16) + 
   theme(strip.background =element_rect(fill="white")) +
-  # scale_color_manual("Category",values=pal) + 
    guides(color=FALSE)  + 
   scale_color_manual(values=c("indianred1","cornflowerblue" )) + 
   theme( panel.grid.minor = element_blank()) +
-  scale_shape_manual(values=c(1,16)) +
+  scale_shape_manual(values=c(3,4)) +
   theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) #+
   
   theme(
@@ -1700,8 +1733,9 @@ newBsq_ZA$Birth[newBsq_ZA$Category == "MBsq_fam"] <- "Family Size"
 newBsq_ZA$SexCat[newBsq_ZA$Category == "MBsq_mend"] <- "Male"
 newBsq_ZA$Birth[newBsq_ZA$Category == "MBsq_mend"] <- "Mendelian Noise"
 
-mendFam_ZA_plot <- 
-  
+#mendFam_ZA_plot <- 
+newBsq_ZA <- newBsq_ZA[!is.na(newBsq_ZA$Birth),]
+#fig s9  
 ggplot(newBsq_ZA,aes(x=prop.A,y=prop.Z)) + 
   geom_abline(intercept = 0,slope=(4/3),alpha=0.5,linetype="dotted") +
   
@@ -1710,134 +1744,18 @@ ggplot(newBsq_ZA,aes(x=prop.A,y=prop.Z)) +
   
   facet_grid(Birth~ SexCat,scales="free") + 
   geom_smooth(method="lm",color="black") +  
-  geom_point(aes(color=as.factor(Year))) + 
+  geom_point(aes(color=as.factor(SexCat),shape=Birth)) + 
   #geom_text(aes(color=as.factor(Year),label=as.factor(Year))) + 
   labs(x=Avarp_title,y=Zvarp_title,color="Year") + 
-  #guides(color=FALSE) +
+  guides() +
+  scale_shape_manual(values=c(3,4)) + 
   theme_bw(base_size = 16) + 
   scale_x_continuous(guide = guide_axis(check.overlap = TRUE))+
   theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
-  theme(strip.background =element_rect(fill="white")) 
-
-
-
-plot_grid(mendFam_year_plot,  mendFam_ZA_plot,  labels = c('A', 'B'), ncol = 1, align = 'v',axis='rl')
-
-
-####sexes####
-detach(package:plyr)
-
-AZ_AFVA_sex <- 
-  AZ_AFVA %>% group_by(chrom,Year) %>% 
-  mutate(sex_sum=sum(avg)) %>% 
-  group_by(chrom,Year,SexCat) %>% 
-  mutate(sexCat_sum=sum(avg)/sex_sum) 
-
-AZ_AFVA_sex_only <- unique(AZ_AFVA_sex[,c(1,10,18,20)])
-AZ_AFVA_sex_only$SexCat = factor(AZ_AFVA_sex_only$sexCat, levels=c('Cov(F,M)','Female','Male'))
-
-sex_stack_plot <- 
-ggplot() + 
-  geom_hline(yintercept = 0,alpha=0.5)+
-  geom_hline(yintercept = 1,alpha=0.5)+
-  
-  geom_bar(data=AZ_AFVA_sex_only, aes(x=Year, y=sexCat_sum,fill=SexCat,group=SexCat), stat='identity',alpha=0.75) +
-
-  facet_grid(chrom~.,scales="free",space="free") + 
-  labs(y="Proportion",x="Year") +
-  theme_bw(base_size = 16) + 
   theme(strip.background =element_rect(fill="white")) +
-  scale_fill_manual("Category",values=c("mediumpurple","indianred1","cornflowerblue")) + 
-  guides(color=FALSE)  + 
-  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) +
-   scale_y_continuous(breaks=c(0,0.5,1))
-
-AFVA_sex_ZA <- left_join(
-  AZ_AFVA_sex[AZ_AFVA_sex$chrom == "Z",c(1:3,20)],
-  AZ_AFVA_sex[AZ_AFVA_sex$chrom == "A",c(1:3,20)], by=c("Year"="Year","Category"="Category")
-)
-names(AFVA_sex_ZA) <- c("Year","Category","avg.Z","sum.Z","avg.A","sum.A")
-
-AFVA_sex_ZA$Sex[AFVA_sex_ZA$Category %in% c("FSsq","FIsq","FBsq","FIFB","FSFB")] <- "Female"
-AFVA_sex_ZA$Sex[AFVA_sex_ZA$Category %in% c("MSsq","MIsq","MBsq","MIMB","MSMB")] <- "Male"
-AFVA_sex_ZA$Sex[AFVA_sex_ZA$Category %in% c("FIMB","FSMB","MIFB","MSFB","MBFB","MSFS","MIFI")] <- "Cov(F,M)"
-
-ggplot(AFVA_sex_ZA[AFVA_sex_ZA$Year %ni% c(2006,2012),],aes(x=sum.A,y=sum.Z,color=Sex)) + 
-  
-  geom_abline(intercept = 0,slope=(4/3),linetype="dashed",color="cornflowerblue") +
-  geom_abline(intercept = 0,slope=(2/3),linetype="dashed",color="indianred1") +
-  
-  #facet_grid(SexCat~ Birth,scales="free") + 
-  geom_smooth(method="lm") +  
- # geom_point() + 
-  geom_text(aes(label=Year))+
-  #geom_text(aes(color=as.factor(Year),label=as.factor(Year))) + 
-  labs(x=Avarp_title,y=Zvarp_title,color="Year") + 
-  #guides(color=FALSE) +
-  theme_bw(base_size = 16) + 
-  scale_color_manual(values=c("mediumpurple", "indianred1","cornflowerblue")) + 
-  
-  scale_x_continuous(guide = guide_axis(check.overlap = TRUE))+
-  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
-  theme(strip.background =element_rect(fill="white")) 
-
-
-AZ_AFVA_cat <- 
-  AZ_AFVA %>% group_by(chrom,Year) %>% 
-  mutate(cat_sum=sum(avg)) %>% 
-  group_by(chrom,Year,supercategory) %>% 
-  mutate(catCat_sum=sum(avg)/cat_sum) 
-
-
-AZ_AFVA_cat_only <- unique(AZ_AFVA_cat[,c(1,10,17,20)])
-AZ_AFVA_cat_only$supercategory = factor(AZ_AFVA_cat_only$supercategory, levels=c('Cov(I,B)','Immigrant','Cov(S,B)','Birth','Survivor'))
-
-fills_to_use_cat <-c(pnw_palettes$Bay[1,1],pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,5], pnw_palettes$Bay[1,3],pnw_palettes$Bay[1,4])
-
-cat_stack_plot <- 
-ggplot() + 
-  geom_hline(yintercept = 0,alpha=0.5)+
-  geom_hline(yintercept = 1,alpha=0.5)+
-  
-  geom_bar(data=AZ_AFVA_cat_only, aes(x=Year, y=catCat_sum,fill=supercategory,group=supercategory), stat='identity',alpha=0.75) +
-  
-  facet_grid(chrom~.,scales="free",space="free") + 
-  labs(y="Proportion",x="Year") +
-  theme_bw(base_size = 16) + 
-  theme(strip.background =element_rect(fill="white")) +
-  scale_fill_manual("Category",values=fills_to_use_cat) + 
-  guides(color=FALSE)  + 
-  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) +
-  scale_y_continuous(breaks=c(0,0.5,1))
+  scale_color_manual(values=c("indianred1","cornflowerblue" )) 
+ 
 
 
 
-plot_grid(sex_stack_plot,  cat_stack_plot,  labels = c('A', 'B'), ncol = 1, align = 'v',axis='rl')
-
-##immigration over time
-par(mfrow=c(2,2))
-plot(laply(c(2000:2013), function(x) {
-  yr<-as.character(x)
-  (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMi-xt','avg'] 
-    - simVar[simVar$Year==x & simVar$category=='errMI-errT',3] 
-    - 2*simVar[simVar$Year==x & simVar$category=='pMipterrMIerrT',3])
-}),ylab = "p_MI",xlab="year",x=c(2000:2013))
-
-plot(laply(c(2000:2013), function(x) {
-  yr<-as.character(x)
-  (prop[yr,'propMI'])
-}),ylab = "propMI",xlab="year",x=c(2000:2013))
-
-plot(laply(c(2000:2013), function(x) {
-  yr<-as.character(x)
-  (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFi-xt','avg'] 
-    - simVar[simVar$Year==x & simVar$category=='errFI-errT',3] 
-    - 2*simVar[simVar$Year==x & simVar$category=='pFipterrFIerrT',3])
-}),ylab = "p_FI",xlab="year",x=c(2000:2013))
-
-plot(laply(c(2000:2013), function(x) {
-  yr<-as.character(x)
-  (prop[yr,'propFI'])
-}),ylab = "propFI",xlab="year",x=c(2000:2013))
-#abline(lm(year ~ propFI))
 

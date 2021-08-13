@@ -1,3 +1,7 @@
+#script to estimate variance in variance in allele frequency change over time by bootstrapping  for Z loci
+#Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
+#Last updated: Jul 7 2021
+
 library(plyr)
 library(tidyr)
 library(foreach)
@@ -7,19 +11,19 @@ library(data.table)
 `%notin%` <- Negate(`%in%`)
 `%ni%` <- Negate(`%in%`)
 
-setwd('~/Google Drive/Research/Data2/fsj')
 
-#get input files
+
+####get input files####
 #list of indiv in each Category each year
-load("ZDropping/simindivFIXmin2obs.rdata")
+load("simindivFIXmin2obs.rdata")
 names(simindivFIXmin2obs) <- c('Year','Indiv','Category','Genotyped','Mom','Dad')
 
-load("ZDropping/indivlistgenoZ.rdata")
+load("indivlistgenoZ.rdata")
 
 names(indivlistgeno)[c(1,3,4)]<-c('Indiv','Category','Genotyped')
 
 #Z SNP info
-ZSNPS <- fread('ZDropping/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05.map')
+ZSNPS <- fread('FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05.map')
 ZSNPS <- ZSNPS[ZSNPS$V1 == 39 ,]
 
 names(indivlistgeno)[c(8:length(indivlistgeno))]<-ZSNPS$V2
@@ -27,7 +31,7 @@ names(indivlistgeno)[c(8:length(indivlistgeno))]<-ZSNPS$V2
 indivlist <- indivlistgeno[c(1:7)]
 names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
 
-#estimate values that are constant across SNPs
+####estimate values that are constant across SNPs###
 samplePars<-data.frame(Year=c(1998:2013),stringsAsFactors=FALSE)
 
 samplePars[samplePars$Year==1998,'Nt']<- 2*length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==1,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==2,1]) + 2*length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==1,1]) +
@@ -58,17 +62,12 @@ for(yr in c(1999:2013)){
 }
 
 ####sim unchanging parameters####
-#ped_Zgeno <- indivlistgeno[,-c(2:4)]
-ped<-read.table('ZDropping/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+
+ped<-read.table('FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
 pedinfo <- ped[,1:5]
 colnames(pedinfo) <- c("Family", "Indiv", "Dad", "Mom", "Sex")
 
 indivlist_sim <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='Indiv')
-
-#pedinfo <- indivlistgeno[,c(1,5:7)]
-#colnames(pedinfo) <- c( "Indiv", "Dad", "Mom", "Sex")
-#add sex data to indivlist_sim - can't use indivlistgeno for this as we need to include unGenotyped birds
-#indivlist_sim <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(1,4)],by='Indiv')
 
 #sort indivlist_sim
 indivlist_sim <- indivlist_sim[order(indivlist_sim$Year),]
@@ -94,14 +93,11 @@ simindivgenoDads<-
 simindivgenoNestlings<-
   simindivgeno[simindivgeno$Category=='nestling' & !is.na(simindivgeno$Mom),]
 
-
 #estimate values that vary with SNP
 ####start bootstrap####
 markersInPedOrder <- cbind.data.frame("SNPs"=names(indivlistgeno[,-c(1:7)]),"rank"=c(1:length(indivlistgeno[,-c(1:7)])))
-#markersInPedOrder <- separate(markersInPedOrder, SNPs, c("SNP","one"),   sep = "_", remove = TRUE, convert = FALSE, extra = "merge", fill = "left")[,-2]
 
-#chip <- fread('genome/marey_crow.txt')
-chip <- fread('genome/crimap/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
+chip <- fread('FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
 
 chip_Z <- chip[chip$NewScaff == "ScYP8k310HRSCAF43chZ" ,] # only Z & 
 
@@ -169,14 +165,14 @@ allVar <-
   )
 
 
-#windows <- unique(na.omit(markersInPedOrder_chip_A$bootstrap)) #which(windows %in% 315)
 
 
 ####start the loop####
 loop=1
 
-#win=1
-for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
+boots <- sample(unique(na.omit(markersInPedOrder_chip_Z$bootstrap)), 1000, replace=T)
+
+for(win in boots){
   cat(win,"\n")
   
   #n = number of Genotyped individuals, x = sample allele frequency
@@ -203,28 +199,23 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   markers <- markersInPedOrder_chip_Z$SNP[markersInPedOrder_chip_Z$bootstrap == win]
   markers <- c(na.omit(markers))
   
-  #snp = "s1046p171642"
   for(snp in markers){ 
     sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]<-
       2*sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==1,snp])) +
       sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==2,snp]))
     
-
     sampleFreq[SNPyr==1998 & SNPcat=='xt',snp]<-
       sum(indivlistgeno[igYear==1998,snp],na.rm=TRUE)/
       sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]
     
-  
     for(year in c(1999:2013)){
       genoYr<-indivlistgeno[igYear==year,]
       
       sampleFreq[SNPyr==year & SNPcat=='nt',snp]<-
         2*sum(!is.na(genoYr[genoYr$Sex==1,snp])) + sum(!is.na(genoYr[genoYr$Sex==2,snp]))
     
-      
       sampleFreq[SNPyr==year & SNPcat=='xt',snp]<-sum(genoYr[,snp],na.rm=TRUE)/
         sampleFreq[SNPyr==year & SNPcat=='nt',snp]
-      
       
       sampleFreq[SNPyr==year & SNPcat=='nMs',snp]<-
         2*sum(!is.na(genoYr[genoYr$Category=='survivor'&genoYr$Sex==1,snp]))
@@ -546,9 +537,9 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     #these.moms.of.daughters<-simindivgenoNestlings[simindivgenoNestlings$Year==year
     #& simindivgenoNestlings$Sex==2,'Mom']
     #these.moms.of.sons<-simindivgenoNestlings[simindivgenoNestlings$Year==year,'Mom']
-    
     #these.moms.of.daughters<-simindivgenoNestlings$Mom[simindivgenoNestlings$Year==year
     #                                                   & simindivgenoNestlings$Sex==2]
+    
     #get a list of the moms of this year's male nestlings
     these.moms.of.sons<-simindivgenoNestlings[simindivgenoNestlings$Year==year
                                               & simindivgenoNestlings$Sex==1, "Mom"]
@@ -568,10 +559,6 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     moms.of.sons.geno<-simindivgenoAll[these.moms.of.sons,]
     dads.of.daughters.geno<-simindivgenoAll[these.dads.of.daughters,]
     dads.of.sons.geno<-simindivgenoAll[these.dads.of.sons,]
-    
-    #setdiff(moms.of.sons.geno$Indiv, these.moms.of.sons)
-    #"1053-56749"
-    #simindivgenoNestlings[simindivgenoNestlings$Mom == "1053-56749",]
     
     #check that all parents are Genotyped (NOT NA)
     #stopifnot(all(!is.na(moms.of.daughters.geno[,8:(nloci+7)])))
@@ -595,7 +582,6 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     simindivgenoAll[simindivgenoAll$Indiv %in% these.female.nestlings,8:(nloci+7)] <- female.nestling.geno
     simindivgenoAll[simindivgenoAll$Indiv %in% these.male.nestlings,8:(nloci+7)] <- male.nestling.geno
     
-  # unique(simindivgenoAll$Indiv[simindivgenoAll$Indiv %in% these.female.nestlings])
     #check that the nestlings now have genotypes (not NA)
     stopifnot(all(!is.na(simindivgenoAll[these.female.nestlings,8:(nloci+7)])))
     stopifnot(all(!is.na(simindivgenoAll[these.male.nestlings,8:(nloci+7)])))
@@ -604,11 +590,7 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   
   #now we want to have each indiv appear multiple times again
   simdataTrue<-merge(indivlist,simindivgenoAll[,c(1,8:(nloci+7))], by.x='Indiv',by.y='Indiv',all.x=TRUE)	
- # simdataTrue_tmp <- join(indivlist,simindivgenoAll[,c(1,8:(nloci+7))])
-  
-  
-  #save
-#simindivgenoAll[c(1:10),c(1:10)]
+
   
   #get number of all Genotyped indivs by Category and in total
   counts<-ddply(indivlist,.(Year,Category,Sex),summarize,Genotyped=sum(Genotyped=='Y'),
@@ -631,20 +613,10 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   
   #calculate population (p) and sample allele freq (x)
   #and the error in allele freq estimation due to sampling: err = x-p
-  ### don't need E [hypergeometric error]
-  #parallelize
-  
+
   #create data frame to hold simulated allele freqs
   simAlleleFreq<-data.frame(Year=integer(),Category=character(),stringsAsFactors=FALSE)
   
-  #parallelize snps
-  #cores=detectCores() #uncomment these two lines if you want to use more than 4 cores
-  #cl <- makeCluster(cores[1]-1) #not to overload your computer
-  
-  #cl <- makeCluster(4) #use 4 cores
-  #registerDoParallel(cl)
-  
-  #1998
   year<-1998
   sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
     #create data frame to hold allele freqs & error
@@ -653,18 +625,6 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     
     frqYr1<-tmp$Year
     frqCat1<-tmp$Category
-    
-    #calculate mean allele frequencies for all simulated data -> pt & Genotyped birds -> xt
-    #add to 3rd column of `temp`
-    #  tmp[frqYr1==year & frqCat1=='pMt',3]<-mean(simdataTrue[simdataTrue$Year==year
-    #                                                         &simdataTrue$Sex==1,i])/2
-    #  tmp[frqYr1==year & frqCat1=='xMt',3]<-mean(simdataSample[simdataSample$Year==year
-    #                                                           &simdataSample$Sex==1,i])/2
-    #  tmp[frqYr1==year & frqCat1=='pFt',3]<-mean(simdataTrue[simdataTrue$Year==year
-    #                                                         &simdataTrue$Sex==2,i])
-    #  tmp[frqYr1==year & frqCat1=='xFt',3]<-mean(simdataSample[simdataSample$Year==year
-    #                                                           &simdataSample$Sex==2,i])
-    
     
     tmp[frqYr1==year & frqCat1=='pt',3]<-
       sum(simdataTrue[simdataTrue$Year==year,i],na.rm=TRUE)/
@@ -678,11 +638,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     
     tmp[,3]
   }
-  #stopCluster(cl)
-  
-  #save the data from this year
 
-  
+
   #Names for the values we just calculated (year and Category/parameter)
   simName<-data.frame(Year=rep(year,each=3),Category=c('pt','sxt','errT'),
                       stringsAsFactors=FALSE)
@@ -693,9 +650,7 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   #Add the simulation data to simAlleleFreq (we'll collect the data from all years here)
   simAlleleFreq<-rbind(simAlleleFreq,sim1)
   
-  #simAlleleFreq[c(1:10),c(1:10)]
-  
-  #year = 1999
+
   for(year in c(1999:2013)){
     #get moms of sons, dads of sons, and dads of daughters for this year
     
@@ -739,11 +694,6 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
                                         by.y='Indiv',all.x=TRUE)
     #many of the rows in this table are NAs because of the sampling
     
-    #parallelize snps
-    # cl <- makeCluster(4) #use 4 cores
-    # registerDoParallel(cl)
-    
-    #i = 9
     #for each snp
     sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
       #make a data frame to put all these parameters in for each year
@@ -773,28 +723,18 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
       #pFdad = allele frequency of all fathers of daughters,
       #and likewise xMdad, xMmom, errMdad, errMmom, etc.
       
-      #Note: this seems like it's using t+1 and t instead of t and t-1.
-      #Shouldn't make a difference to the results (as long as we keep track of what t is)
-      #But it's not consistent with the way we're doing the equations in the SI...
-      
-      #Also I believe we don't need 'pFmom','xFmom','errFmom' 
-      #These terms aren't in my equations - moms don't contribute to daughters and all that
       
       frqYr1<-tmp$Year
       frqCat1<-tmp$Category
       
       #pt is just the mean of all of the simulated data (no sampling)
       tmp[frqYr1==year & frqCat1=='pt',3]<-
-        #  mean(simdataTrue[simdataTrue$Year==year & simdataTrue$Sex==1,i])/2
-        #   sum(simdataTrue[simdataTrue$Year==year& simdataTrue$Sex==1,i],na.rm=TRUE)/   ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,i]))))
-        
         sum(simdataTrue[simdataTrue$Year==year,i],na.rm=TRUE)/
         ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,i])))
          +(sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==2,i]))))
       
       #xt is the mean of the sampled simulated data
       tmp[frqYr1==year & frqCat1=='sxt',3]<-
-        #  mean(simdataSample[simdataSample$Year==year & simdataSample$Sex==1,i])/2
         sum(simdataSample[simdataSample$Year==year,i],na.rm=TRUE)/
         ((2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==1,i])))
          +(sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==2,i]))))
@@ -857,9 +797,6 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
       
       tmp[,3]
     }
-    # stopCluster(cl)
-    #sim <- tmp[,3]
-    #save p and x results from this year (in case run gets interrupted)
 
     #categories (parameter names) and years to combine with the results of our calculations
     simName<-data.frame(Year=rep(year,each=70),Category=c(
@@ -887,7 +824,6 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     #combine with simAlleleFreq which is where we are collecting the results from all the snps
     simAlleleFreq<-rbind(simAlleleFreq,sim1)
   }
-  #simAlleleFreq[c(1:10),c(1:10)]
   
   
   #calculate error and allele freq differences between each Category and the year before
@@ -899,8 +835,6 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   simAlleleFreq[frqYr==1998 & frqCat=='errT',c(3:(nloci+2))]<-
     simAlleleFreq[frqYr==1998 & frqCat=='sxt',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==1998 & frqCat=='pt',c(3:(nloci+2))]
-  
-
   
   #calcuate error for each year based on difference b/w p and x
   for(year in c(1999:2013)){
@@ -1022,11 +956,11 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
       0.5*(simAlleleFreq[frqYr==year & frqCat=='pMmom',c(3:(nloci+2))]+
              simAlleleFreq[frqYr==year & frqCat=='pMdad',c(3:(nloci+2))])
     #here we also multiply mom by 0.5 since her contribution makes up only 1/2 of her son's genotype
-    #see comment @ line 334 in alleleFreqModelZ_sample.R
-    simAlleleFreq[frqYr==year & frqCat=='pFfam',c(3:(nloci+2))]<-
+
+        simAlleleFreq[frqYr==year & frqCat=='pFfam',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='pFdad',c(3:(nloci+2))]
     #here we don't multiply dad by 0.5 since his contribution makes up 100% of his daughter's genotype
-    #see comment @ line 338 in alleleFreqModelZ_sample.R
+
     
     simAlleleFreq[frqYr==year & frqCat=='pMmend',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='pMb',c(3:(nloci+2))]-
@@ -1046,12 +980,11 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
       0.5*(simAlleleFreq[frqYr==year & frqCat=='sxMmom',c(3:(nloci+2))]+
              simAlleleFreq[frqYr==year & frqCat=='sxMdad',c(3:(nloci+2))])
     #here we also multiply mom by 0.5 since her contribution makes up only 1/2 of her son's genotype
-    #see comment @ line 334 in alleleFreqModelZ_sample.R
-    simAlleleFreq[frqYr==year & frqCat=='sxFfam',c(3:(nloci+2))]<-
+
+        simAlleleFreq[frqYr==year & frqCat=='sxFfam',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='sxFdad',c(3:(nloci+2))]
     #here we don't multiply dad by 0.5 since his contribution makes up 100% of his daughter's genotype
-    #see comment @ line 338 in alleleFreqModelZ_sample.R
-    
+
     simAlleleFreq[frqYr==year & frqCat=='sxMmend',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='sxMb',c(3:(nloci+2))]-
       simAlleleFreq[frqYr==year & frqCat=='sxMfam',c(3:(nloci+2))]
@@ -1070,12 +1003,11 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
       0.5*(simAlleleFreq[frqYr==year & frqCat=='errMmom',c(3:(nloci+2))]+
              simAlleleFreq[frqYr==year & frqCat=='errMdad',c(3:(nloci+2))])
     #here we also multiply mom by 0.5 since her contribution makes up only 1/2 of her son's genotype
-    #see comment @ line 334 in alleleFreqModelZ_sample.R
-    simAlleleFreq[frqYr==year & frqCat=='errFFAM',c(3:(nloci+2))]<-
+
+        simAlleleFreq[frqYr==year & frqCat=='errFFAM',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='errFdad',c(3:(nloci+2))]
     #here we don't multiply dad by 0.5 since his contribution makes up 100% of his daughter's genotype
-    #see comment @ line 338 in alleleFreqModelZ_sample.R
-    
+
     simAlleleFreq[frqYr==year & frqCat=='errMMEND',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='errMB',c(3:(nloci+2))]-
       simAlleleFreq[frqYr==year & frqCat=='errMFAM',c(3:(nloci+2))]
@@ -1474,8 +1406,6 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   }
   
   
-#save output
-#save(simVar,file=paste("simVarA_210303_",today,".rdata",sep=''))
 names(simVar) <- names(sampleVar)
 
 allVar_tmp <- rbind.data.frame(sampleVar,simVar)
@@ -1483,14 +1413,28 @@ allVar[,(loop+2)] <- allVar_tmp[,3]
 names(allVar)[(loop+2)] <- paste("bs",win,sep="")
 loop = loop +1
 }
+
 today<-format(Sys.Date(),format="%d%b%Y")
 
-#save(allVar,file=paste("ZDropping/allVar_boot_Z_tmp_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+#calculate quantiles
 allVar_q <- allVar[,c(1:2)]
 
 allVar_q$q5 <- apply(allVar[,-c(1:2)], 1, function(x) quantile(x,.05,na.rm = T))
 allVar_q$q95 <- apply(allVar[,-c(1:2)], 1, function(x) quantile(x,.95,na.rm = T))
+std <- function(x) sd(x)/sqrt(length(x))
+
+allVar_q$se <- std(allVar[,-c(1:2)])
+
+save(allVar,file=paste("allVar_int_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+
+save(allVar_q,file=paste("allVar_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
 
 
-save(allVar_q,file=paste("ZDropping/allVar_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+
+
+
+
+
+
+
 

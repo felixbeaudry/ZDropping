@@ -1,27 +1,25 @@
 #script to model variance in allele frequency change over time
-#estimate sample values using real data
-#Nancy Chen & Rose Driscoll
-#Last updated: 15 May 2020
+#estimate sample values using real data for Z loci
+#Nancy Chen, Rose Driscoll & Felix Beaudry
+#Last updated: 7 July 2021
 
 library(plyr)
-setwd('~/Google Drive/Research/Data2/fsj')
 
-#get input files
+
+####get & make starting data.frames####
 #list of indiv in each category each year
-#indivlist<-read.table('IndivDataUSFWS.txt',header=TRUE,sep="\t",stringsAsFactors=FALSE)
-load("ZDropping/simindivFIXmin2obs.rdata")
+load("simindivFIXmin2obs.rdata")
 
 #genotype data
-ped<-read.table('ZDropping/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+ped<-read.table('FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
 
-#tmpped<-ped[ped[,7] != 0,] #remove ungenotyped
+#subset pedigree for genotyped individuals
 Genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
 tmpped<-ped[ped$V2 %in% Genotyped_official,]
 pedgeno<-tmpped[,2:5]
 
 #convert genotype data to one column per SNP
-#cycle through SNPs
-for (x in seq(7,504,by=2)) {
+for (x in seq(7,504,by=2)) { #cycle through SNPs
 	thisped<-tmpped[,c(x,x+1)]
 	thisped$geno<-rowSums(thisped[,1:2])-2
 	thisped[thisped$geno<0,'geno']<-NA
@@ -29,8 +27,9 @@ for (x in seq(7,504,by=2)) {
 }
 names(pedgeno)<-c('Indiv','Dad','Mom','Sex',c(1:249))
 
+#add genotype info to pedigree
 indivlistgeno<-merge(simindivFIXmin2obs[,1:4],pedgeno[,c(1:4,5:253)],by.x='USFWS',by.y='Indiv')
-#keeping sex column here
+
 
 #correct female genotypes to indicate that they are heterozygous (1 instead of 2)
 indivlistgeno[indivlistgeno[,7]==2,8:256] <- indivlistgeno[indivlistgeno[,7]==2,8:256]/2
@@ -42,23 +41,24 @@ save(indivlistgeno,file='indivlistgenoZ.rdata')
 indivlist <- merge(simindivFIXmin2obs,pedgeno[c(1,4)],by.x="USFWS",by.y="Indiv")
 names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
 
-#estimate values that are constant across SNPs
+####values constant across SNPs####
 samplePars<-data.frame(Year=c(1998:2013),stringsAsFactors=FALSE)
 
-samplePars[samplePars$Year==1998,'Nt']<- 2*length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==1,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==2,1]) + 2*length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==1,1]) +
-  2*length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==2,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==2,1]) + 2*length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==1,1])
+samplePars[samplePars$Year==1998,'Nt']<- 
+  2*length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==1,1]) + 
+  2*length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==1,1]) +
+  2*length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==1,1]) +
+  length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==2,1]) + 
+  length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==2,1]) + 
+  length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==2,1]) 
 
-#samplePars[samplePars$Year==1998,'NMt']<-length(indivlist[indivlist$Year==1998&indivlist$Sex==1,1])
-#samplePars[samplePars$Year==1998,'NFt']<-length(indivlist[indivlist$Year==1998&indivlist$Sex==2,1])
+#calculate chromosomes by demographic category for each year
 for(yr in c(1999:2013)){
+  
 	samYr<-samplePars$Year
-	
 	indivYr<-indivlist[which(indivlist$Year==yr),]
+	
 	#number of inds each yr in each category (total, survivors, immigrants, nestlings of each sex)
-	
-	
-	#samplePars[samYr==yr,'NMt']<-2*length(indivYr[indivYr$Sex==1,1])
-	#samplePars[samYr==yr,'NFt']<-length(indivYr[indivYr$Sex==2,1])
 	samplePars[samYr==yr,'NMs']<-2*length(indivYr[indivYr$Category=='survivor'&indivYr$Sex==1,1])
 	samplePars[samYr==yr,'NFs']<-length(indivYr[indivYr$Category=='survivor'&indivYr$Sex==2,1])
 	samplePars[samYr==yr,'NMi']<-2*length(indivYr[indivYr$Category=='immigrant'&indivYr$Sex==1,1])
@@ -77,79 +77,74 @@ for(yr in c(1999:2013)){
 	samplePars[samYr==yr,'propFB']<-samplePars[samYr==yr,'NFb']/samplePars[samYr==yr,'Nt']
 }
 
-#estimate values that vary with SNP
+####allele frequencies####
 #n = number of genotyped individuals, x = sample allele frequency
 #calculate allele freq
 sampleFreq<-data.frame(Year=rep(c(1999:2013),each=30),Category=rep(c(
   'nt','xt','xt1-xt',
-#  'nMt','xMt','nFt','xFt', 'xMt1-xMt','xFt1-xFt',
   'nMs','xMs','nFs','xFs', 'xMs-xt','xFs-xt',
   'nMi','xMi','nFi','xFi', 'xMi-xt','xFi-xt',
   'nMb','xMb','nFb','xFb', 'xMb-xt','xFb-xt',
   'xMdad','xFdad','xMmom','xMfam','xFfam','xMmend','xFmend','xMfam-xt','xFfam-xt'),15),
   stringsAsFactors=FALSE)
+
 # 'xMdad', 'xFdad', 'xMmom', and 'xFmom' are the frequencies with which males transmit an 
 # allele to their sons, males transmit an allele to their daughters, females transmit an 
 # allele to their sons, and females transmit an allele to their daughters respectively
 # Omit xFmom for the Z as females never transmit their Z to their daughters
+
 sampleFreq<-rbind(data.frame(Year=rep(1998,2),Category=c('nt','xt'),
 	stringsAsFactors=FALSE),sampleFreq)
+
+#make loop variables
 SNPyr<-sampleFreq$Year
 SNPcat<-sampleFreq$Category
 igYear<-indivlistgeno$Year
 
+#for each SNP, calculate number of genotyped chromosomes and use that to calculate allele frequency in each year
 for(snp in names(indivlistgeno)[8:256]){
+
   # number of genotyped chromosomes
 	sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]<-
 		2*sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==1,snp])) +
 	  sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==2,snp]))
 	
-	#sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]<-
-	#  sampleFreq[SNPyr==1998 & SNPcat=='nMt',snp]+sampleFreq[SNPyr==1998 & SNPcat=='nFt',snp]
-
-	#sampleFreq[SNPyr==1998 & SNPcat=='xt',snp]<-sum(indivlistgeno[igYear==1998,snp],
-	#  na.rm=TRUE)/sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]
-	
+	#allele frequency
 	sampleFreq[SNPyr==1998 & SNPcat=='xt',snp]<-
 	  sum(indivlistgeno[igYear==1998,snp],na.rm=TRUE)/
 	  sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]
 	
-	
-#	sampleFreq[SNPyr==1998 & SNPcat=='xFt',snp]<-sum(indivlistgeno[igYear==1998&indivlistgeno$Sex==2,snp],
-#	  na.rm=TRUE)/sampleFreq[SNPyr==1998 & SNPcat=='nFt',snp]
-
 	for(year in c(1999:2013)){
 		genoYr<-indivlistgeno[igYear==year,]
 		
+		# number of genotyped chromosomes
 		sampleFreq[SNPyr==year & SNPcat=='nt',snp]<-
 		  2*sum(!is.na(genoYr[genoYr$Sex==1,snp])) + sum(!is.na(genoYr[genoYr$Sex==2,snp]))
-		
-		#sampleFreq[SNPyr==year & SNPcat=='nt',snp]<-
-		#  sampleFreq[SNPyr==year & SNPcat=='nMt',snp]+sampleFreq[SNPyr==year & SNPcat=='nFt',snp]
-
-		#sampleFreq[SNPyr==year & SNPcat=='xt',snp]<-sum(genoYr[,snp],na.rm=TRUE)/
-		#  sampleFreq[SNPyr==year & SNPcat=='nt',snp]
-		
 		sampleFreq[SNPyr==year & SNPcat=='xt',snp]<-sum(genoYr[,snp],na.rm=TRUE)/
 			sampleFreq[SNPyr==year & SNPcat=='nt',snp]
-
 
 		sampleFreq[SNPyr==year & SNPcat=='nMs',snp]<-
 			2*sum(!is.na(genoYr[genoYr$category=='survivor'&genoYr$Sex==1,snp]))
 		sampleFreq[SNPyr==year & SNPcat=='nFs',snp]<-
 		  sum(!is.na(genoYr[genoYr$category=='survivor'&genoYr$Sex==2,snp]))
 		
+		sampleFreq[SNPyr==year & SNPcat=='nMi',snp]<-
+		  2*sum(!is.na(genoYr[genoYr$category=='immigrant'&genoYr$Sex==1,snp]))
+		sampleFreq[SNPyr==year & SNPcat=='nFi',snp]<-
+		  sum(!is.na(genoYr[genoYr$category=='immigrant'&genoYr$Sex==2,snp]))
+		
+		sampleFreq[SNPyr==year & SNPcat=='nMb',snp]<-
+		  2*sum(!is.na(genoYr[genoYr$category=='nestling'&genoYr$Sex==1,snp]))
+		sampleFreq[SNPyr==year & SNPcat=='nFb',snp]<-
+		  sum(!is.na(genoYr[genoYr$category=='nestling'&genoYr$Sex==2,snp]))
+		
+		#allele frequency
 		sampleFreq[SNPyr==year & SNPcat=='xMs',snp]<-
 			sum(genoYr[genoYr$category=='survivor'&genoYr$Sex==1,snp],na.rm=TRUE)/
 			sampleFreq[SNPyr==year & SNPcat=='nMs',snp]
 		sampleFreq[SNPyr==year & SNPcat=='xFs',snp]<-
 		  sum(genoYr[genoYr$category=='survivor'&genoYr$Sex==2,snp],na.rm=TRUE)/
 		  sampleFreq[SNPyr==year & SNPcat=='nFs',snp]
-		
-		sampleFreq[SNPyr==year & SNPcat=='nMi',snp]<-
-			2*sum(!is.na(genoYr[genoYr$category=='immigrant'&genoYr$Sex==1,snp]))
-		sampleFreq[SNPyr==year & SNPcat=='nFi',snp]<-
-		  sum(!is.na(genoYr[genoYr$category=='immigrant'&genoYr$Sex==2,snp]))
 		
 		sampleFreq[SNPyr==year & SNPcat=='xMi',snp]<-
 			ifelse(sampleFreq[SNPyr==year & SNPcat=='nMi',snp]==0,0,
@@ -160,11 +155,6 @@ for(snp in names(indivlistgeno)[8:256]){
 		         sum(genoYr[genoYr$category=='immigrant'&genoYr$Sex==2,snp],na.rm=TRUE)/
 		           sampleFreq[SNPyr==year & SNPcat=='nFi',snp])
 		
-		sampleFreq[SNPyr==year & SNPcat=='nMb',snp]<-
-			2*sum(!is.na(genoYr[genoYr$category=='nestling'&genoYr$Sex==1,snp]))
-		sampleFreq[SNPyr==year & SNPcat=='nFb',snp]<-
-		  sum(!is.na(genoYr[genoYr$category=='nestling'&genoYr$Sex==2,snp]))
-		
 		sampleFreq[SNPyr==year & SNPcat=='xMb',snp]<-
 			sum(genoYr[genoYr$category=='nestling'&genoYr$Sex==1,snp],na.rm=TRUE)/
 			sampleFreq[SNPyr==year & SNPcat=='nMb',snp]
@@ -174,13 +164,10 @@ for(snp in names(indivlistgeno)[8:256]){
 	}
 }
 
+####change in allele frequencies####
 #calculate allele freq differences between each category and the year before
 for(year in c(1999:2013)){
 	#allele freq differences
-  #sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(4:252)]<-
-  #  sampleFreq[SNPyr==year & SNPcat=='xt',c(4:252)]-
-  #  sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(4:252)]
-  
 	sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:251)]<-
 		sampleFreq[SNPyr==year & SNPcat=='xt',c(3:251)]-
 		sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:251)]
@@ -227,7 +214,6 @@ varCat<-sampleVar$Category
 
 for(year in c(1999:2013)){
 	#var
-  
 	sampleVar[varYr==year & varCat=='xt1-xt','avg']<-
 		mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:251)])^2)
 		
@@ -288,7 +274,6 @@ for(year in c(1999:2013)){
 	  mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xMi-xt',c(3:251)])*
 	         as.numeric(sampleFreq[SNPyr==year & SNPcat=='xFb-xt',c(3:251)]))
 	
-	
 	sampleVar[varYr==year & varCat=='xFsxMi','avg']<-
 	  mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xFs-xt',c(3:251)])*
 	         as.numeric(sampleFreq[SNPyr==year & SNPcat=='xMi-xt',c(3:251)]))
@@ -301,7 +286,7 @@ for(year in c(1999:2013)){
 	
 }
 
-#now calculate Mendelian noise
+####Mendelian noise####
 #get unique individuals
 genoUnique<-indivlistgeno[!duplicated(indivlistgeno$USFWS),]
 

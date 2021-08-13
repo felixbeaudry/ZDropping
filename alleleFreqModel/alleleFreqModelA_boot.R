@@ -1,3 +1,7 @@
+#script to estimate variance in variance in allele frequency change over time by bootstrapping  for autosomal loci
+#Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
+#Last updated: Jul 7 2021
+
 library(plyr)
 library(tidyr)
 library(foreach)
@@ -5,16 +9,15 @@ library(dplyr)
 library(doParallel)
 library(data.table)
 `%notin%` <- Negate(`%in%`)
-setwd('~/Google Drive/Research/Data2/fsj')
 
-#get input files
+
+
+####get input files###
 #list of indiv in each category each year
-load("ZDropping/simindivFIXmin2obs.rdata")
+load("simindivFIXmin2obs.rdata")
 genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
 
-load("ZDropping/FSJpedgeno_A.rdata")
-
-
+load("FSJpedgeno_A.rdata")
 ped_AgenoT <- ped_Ageno[ped_Ageno$V2 %in% genotyped_official,] 
 
 indivlist <- merge(simindivFIXmin2obs,ped_AgenoT[c(1,4)],by.x="USFWS",by.y="V2")
@@ -22,7 +25,7 @@ names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
 
 indivlistgeno <- merge(indivlist,ped_AgenoT[,c(1,5:length(ped_AgenoT))],by.x="Indiv",by.y="V2")
 
-#estimate values that are constant across SNPs
+####estimate values that are constant across SNPs####
 samplePars<-data.frame(Year=c(1998:2013),stringsAsFactors=FALSE)
 
 samplePars[samplePars$Year==1998,'Nt']<- 2*(length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==1,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==2,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==1,1]) +
@@ -89,10 +92,10 @@ simindivgenoNestlings<-
 markersInPedOrder <- cbind.data.frame("SNPs"=names(ped_Ageno[,-c(1:4)]),"rank"=c(1:length(ped_Ageno[,-c(1:4)])))
 markersInPedOrder <- separate(markersInPedOrder, SNPs, c("SNP","one"),   sep = "_", remove = TRUE, convert = FALSE, extra = "merge", fill = "left")[,-2]
 
+#import SNPchip SNP position information
+chip <- fread('FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
 
-#chip <- fread('genome/marey_crow.txt')
-chip <- fread('genome/crimap/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
-
+#which scaffolds to keep
 keeps <- c( 
 "ScYP8k313HRSCAF58ch1"   , "ScYP8k312HRSCAF54ch1A"   , "ScYP8k3629HRSCAF770ch2" ,  "ScYP8k3866HRSCAF1020ch3" , "ScYP8k311HRSCAF50ch4","ScYP8k314HRSCAF84ch4A"  ,
 "ScYP8k39HRSCAF32ch6" , "ScYP8k35HRSCAF18ch5"     , "ScYP8k34HRSCAF13ch7"   , "ScYP8k31HRSCAF1ch8"   ,  "ScYP8k33HRSCAF8ch9" , "ScYP8k32HRSCAF3ch10"   , 
@@ -100,29 +103,29 @@ keeps <- c(
 "ScYP8k37HRSCAF29ch17"   , "ScYP8k38HRSCAF31ch18"  ,  "ScYP8k36HRSCAF25ch19" ,"ScYP8k3865HRSCAF1011ch20",   "ScYP8k369HRSCAF175ch21" ,   "ScYP8k369HRSCAF175ch22"  , 
 "ScYP8k369HRSCAF175ch23",  "ScYP8k369HRSCAF175ch24" , "ScYP8k369HRSCAF175ch25" ,"ScYP8k369HRSCAF175ch26", "ScYP8k369HRSCAF175ch27"  , "ScYP8k369HRSCAF175ch28")
        
-                           
 chip_A <- chip[chip$NewScaff %in% keeps,] # remove Z & unplaced micros
 chip_A_tally <- chip_A %>% group_by(NewScaff) %>% tally()
 
+#set window size in b.p.
 w_size = 3400000
 nloci<- round(100000*(w_size/1000000000)) #set sim loci number relative to window size; regular sim nloci / genome size in mb
 
-sizes <- fread('genome/FSJ.chrom.sizes')
+#import chromosome sizes
+sizes <- fread('FSJ.chrom.sizes')
 sizes <- sizes[sizes$V1 %in% keeps,]
-ggplot(sizes,aes(x=V2/1000000)) + geom_histogram()
-#sizes <- separate(sizes, V1, c("head","chr"),   sep = "ch", remove = TRUE, convert = FALSE, extra = "merge", fill = "right")
 
+#loop across scaffolds making windows of SNPs
 win_global = 0
-
 for(lg in unique(chip_A$NewScaff)){
   
   size_tmp <- sizes$V2[sizes$V1 == lg]
   
+  #loop across windows
   for(win in seq(from=0,to=max(chip_A$SNPpos[chip_A$NewScaff == lg],na.rm=T),by = w_size)){
    if(win+w_size<size_tmp){
     cat(lg," ", ((win/w_size) + win_global)," ",win," ",size_tmp,"\n")
     chip_A$bootstrap[chip_A$SNPpos > win & chip_A$SNPpos <= (win+w_size) & chip_A$NewScaff == lg] <- (win/w_size) + win_global
-   }else{
+   }else{ #skip windows at the end of scaffolds with too few SNPs
      cat(lg," ", ((win/w_size) + win_global)," ",win," ",size_tmp," skipped\n")
      
    }
@@ -130,9 +133,8 @@ for(lg in unique(chip_A$NewScaff)){
   win_global <- (win/w_size) + win_global #need to increase window number with each loop across chromosomes
   
 }
-chip_A_tally <- chip_A %>% group_by(bootstrap,NewScaff) %>% tally()
-mean(chip_A_tally$n)
 
+chip_A_tally <- chip_A %>% group_by(bootstrap,NewScaff) %>% tally()
 markersInPedOrder_chip_A <- left_join(markersInPedOrder,chip_A,by=c("SNP"="SNPname"))
 
 #remove ungenotyped SNPs
@@ -146,14 +148,9 @@ markersInPedOrder_chip_A_tally <- markersInPedOrder_chip_A %>% group_by(bootstra
 big_boots <- markersInPedOrder_chip_A_tally$bootstrap[markersInPedOrder_chip_A_tally$n > 10]
 markersInPedOrder_chip_A <- markersInPedOrder_chip_A[markersInPedOrder_chip_A$bootstrap %in% big_boots,]
 
-#markersInPedOrder_chip_A_tally <- markersInPedOrder_chip_A %>% group_by(bootstrap) %>% tally()
-ggplot(markersInPedOrder_chip_A_tally,aes(x=n)) + geom_density() + geom_histogram(aes(y=..density..)) +  theme_bw()
-
-#unique(markersInPedOrder_chip_A$NewScaff)
-
+#rename SNPs
 markersInPedOrder_chip_A$SNP <- paste(markersInPedOrder_chip_A$SNP,"_1",sep="")
 
-#markersInPedOrder_chip_A[markersInPedOrder_chip_A$bootstrap == 315,]
 
 
 allVar <- 
@@ -198,14 +195,14 @@ data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
 )
 
 
-#windows <- unique(na.omit(markersInPedOrder_chip_A$bootstrap)) #which(windows %in% 315)
-
-
 ####start the loop####
+
+
 loop=1
 
+boots <- sample(unique(na.omit(markersInPedOrder_chip_A$bootstrap)), 1000, replace=T)
 
-for(win in unique(na.omit(markersInPedOrder_chip_A$bootstrap))){
+for(win in boots){
   cat(win,"\n")
 
 #n = number of genotyped individuals, x = sample allele frequency
@@ -220,7 +217,7 @@ sampleFreq<-data.frame(Year=rep(c(1999:2013),each=31),Category=rep(c(
 # 'xMdad', 'xFdad', 'xMmom', and 'xFmom' are the frequencies with which males transmit an 
 # allele to their sons, males transmit an allele to their daughters, females transmit an 
 # allele to their sons, and females transmit an allele to their daughters respectively
-# Omit xFmom for the Z as females never transmit their Z to their daughters
+
 
 sampleFreq<-rbind(data.frame(Year=rep(1998,2),Category=c('nt','xt'),
                              stringsAsFactors=FALSE),sampleFreq)
@@ -250,8 +247,6 @@ for(snp in markers){
     
     sampleFreq[SNPyr==year & SNPcat=='xt',snp]<-sum(genoYr[,snp],na.rm=TRUE)/
       sampleFreq[SNPyr==year & SNPcat=='nt',snp]
-    
-    # sum(genoYr[,snp],na.rm=TRUE)/sampleFreq[SNPyr==year & SNPcat=='nt',snp]
     
     sampleFreq[SNPyr==year & SNPcat=='nMs',snp]<-
       2*(sum(!is.na(genoYr[genoYr$Category=='survivor'&genoYr$Sex==1,snp])))
@@ -355,7 +350,6 @@ for(year in c(1999:2013)){
   
   sampleVar[varYr==year & varCat=='xMs-xt','avg']<-
     mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xMs-xt',c(3:length(sampleFreq))])^2)
-  #mean(as.numeric(sampleFreq[SNPyr==1998 & SNPcat=='xMs-xt',c(3:100)])^2)
   
   sampleVar[varYr==year & varCat=='xFs-xt','avg']<-
     mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xFs-xt',c(3:length(sampleFreq))])^2)
@@ -424,7 +418,7 @@ for(year in c(1999:2013)){
   
 }
 
-#now calculate Mendelian noise
+#### calculate Mendelian noise####
 #get unique individuals
 genoUnique<-indivlistgeno[!duplicated(indivlistgeno$Indiv),]
 names(genoUnique)[1] <- "USFWS"
@@ -484,7 +478,7 @@ for(year in c(1999:2013)){
 }
 
 #calculate variances and covariances
-#year=1999
+
 for(year in c(1999:2013)){
   sampleVar[varYr==year & varCat=='xMfam',3]<-
     mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xMfam',c(3:length(sampleFreq))])^2)
@@ -503,8 +497,7 @@ for(year in c(1999:2013)){
   
   sampleVar[varYr==year & varCat=='xFfam-xt',3]<-
     mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xFfam-xt',c(3:length(sampleFreq))])^2)
-  #sampleFreq[SNPyr==year & SNPcat=='xFfam-xt',c(3:10)]
-  #mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xFfam-xt',c(3:length(sampleFreq))])^2)
+
 }
 
 
@@ -521,11 +514,8 @@ datafreq1990<-laply(markers,function(x)
     ((2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==1,x])))
      +(2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==2,x])))))
 
-#laply(markers,function(x) sum(indivlistgeno[indivlistgeno$Year==1990,x],na.rm=TRUE))
-
 #randomly sample from real allele frequencies
 simfreq<-sample(datafreq1990,nloci,replace=TRUE)
-#sum(is.nan(datafreq1990))
 
 #simulate genotypes for adults
 #moms - 0 1 2
@@ -649,8 +639,6 @@ for(year in nest.years){
 simdataTrue<-merge(indivlist_sim,simindivgenoAll[,c(1,8:(nloci+7))],
                    by.x='USFWS',by.y='Indiv',all.x=TRUE)	
 
-#save
-#save(simdataTrue,file='simdataTrueA_210303.rdata')
 
 #get number of all genotyped indivs by category and in total
 counts<-ddply(indivlist_sim,.(Year,category,Sex),summarize,genotyped=2*sum(genotyped=='Y'),
@@ -669,21 +657,10 @@ simdataSampleUnique<-simdataSample[!duplicated(simdataSample$USFWS),]
 
 #calculate population (p) and sample allele freq (x)
 #and the error in allele freq estimation due to sampling: err = x-p
-### don't need E [hypergeometric error]
-#parallelize
 
 #create data frame to hold simulated allele freqs
 simAlleleFreq<-data.frame(Year=integer(),category=character(),stringsAsFactors=FALSE)
 
-#parallelize snps
-#cores=detectCores() #uncomment these two lines if you want to use more than 4 cores
-#cl <- makeCluster(cores[1]-1) #not to overload your computer
-
-#cl <- makeCluster(4) #use 4 cores
-#registerDoParallel(cl)
-
-
-#1998
 year<-1998
 sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
   #create data frame to hold allele freqs & error
@@ -705,10 +682,7 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
   
   tmp[,3]
 }
-#stopCluster(cl)
 
-#save the data from this year
-#save(sim,file=paste("SimAlleleFreqAYr_210303_",year,".rdata",sep=''))
 
 #Names for the values we just calculated (year and category/parameter)
 simName<-data.frame(Year=rep(year,each=3),category=c('pt','sxt','errT'),
@@ -720,7 +694,6 @@ sim1<-cbind(simName,sim)
 #Add the simulation data to simAlleleFreq (we'll collect the data from all years here)
 simAlleleFreq<-rbind(simAlleleFreq,sim1)
 
-#year = 1999
 for(year in c(1999:2013)){
   #get moms of sons, dads of sons, and dads of daughters for this year
   
@@ -772,7 +745,6 @@ for(year in c(1999:2013)){
                                       by.y='USFWS',all.x=TRUE)
   #many of the rows in this table are NAs because of the sampling
   
-  #i = 9
   #for each snp
   sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
     #make a data frame to put all these parameters in for each year
@@ -802,28 +774,18 @@ for(year in c(1999:2013)){
     #pFdad = allele frequency of all fathers of daughters,
     #and likewise xMdad, xMmom, errMdad, errMmom, etc.
     
-    #Note: this seems like it's using t+1 and t instead of t and t-1.
-    #Shouldn't make a difference to the results (as long as we keep track of what t is)
-    #But it's not consistent with the way we're doing the equations in the SI...
-    
-    #Also I believe we don't need 'pFmom','xFmom','errFmom' 
-    #These terms aren't in my equations - moms don't contribute to daughters and all that
-    
+
     frqYr1<-tmp$Year
     frqCat1<-tmp$category
     
     #pt is just the mean of all of the simulated data (no sampling)
     tmp[frqYr1==year & frqCat1=='pt',3]<-
-      #  mean(simdataTrue[simdataTrue$Year==year & simdataTrue$Sex==1,i])/2
-      #   sum(simdataTrue[simdataTrue$Year==year& simdataTrue$Sex==1,i],na.rm=TRUE)/   ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,i]))))
-      
       sum(simdataTrue[simdataTrue$Year==year,i],na.rm=TRUE)/
       ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,i])))
        +(2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==2,i]))))
     
     #xt is the mean of the sampled simulated data
     tmp[frqYr1==year & frqCat1=='sxt',3]<-
-      #  mean(simdataSample[simdataSample$Year==year & simdataSample$Sex==1,i])/2
       sum(simdataSample[simdataSample$Year==year,i],na.rm=TRUE)/
       ((2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==1,i])))
        +(2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==2,i]))))
@@ -890,10 +852,7 @@ for(year in c(1999:2013)){
     
     tmp[,3]
   }
-  # stopCluster(cl)
-  #sim <- tmp[,3]
-  #save p and x results from this year (in case run gets interrupted)
-#  save(sim,file=paste("SimAlleleFreqA_",year,".rdata",sep=''))
+
   
   #categories (parameter names) and years to combine with the results of our calculations
   simName<-data.frame(Year=rep(year,each=70),category=c(
@@ -929,16 +888,11 @@ for(year in c(1999:2013)){
 frqYr<-simAlleleFreq$Year
 frqCat<-simAlleleFreq$category
 
-#err = true error
 simAlleleFreq[frqYr==1998 & frqCat=='errT',c(3:(nloci+2))]<-
   simAlleleFreq[frqYr==1998 & frqCat=='sxt',c(3:(nloci+2))]-
   simAlleleFreq[frqYr==1998 & frqCat=='pt',c(3:(nloci+2))]
 
-#save(simAlleleFreq,file=paste("simAlleleFreqA_210303_SR_intermediate_",today,".rdata",sep=''))
-#load("simAlleleFreqA_210303_SR_intermediate_14Mar2021.rdata")
-
 #calcuate error for each year based on difference b/w p and x
-#year=1999
 for(year in c(1999:2013)){
   #true error
   simAlleleFreq[frqYr==year & frqCat=='errT',c(3:(nloci+2))]<-
@@ -1019,7 +973,6 @@ for(year in c(1999:2013)){
   simAlleleFreq[frqYr==year & frqCat=='sxMs-xt',c(3:(nloci+2))]<-
     simAlleleFreq[frqYr==year & frqCat=='sxMs',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==(year-1) & frqCat=='sxt',c(3:(nloci+2))]
-  # simAlleleFreq[frqYr==(year-1) & frqCat=='xt',c(3:(10+2))]
   
   simAlleleFreq[frqYr==year & frqCat=='sxFs-xt',c(3:(nloci+2))]<-
     simAlleleFreq[frqYr==year & frqCat=='sxFs',c(3:(nloci+2))]-
@@ -1093,9 +1046,6 @@ for(year in c(1999:2013)){
     0.5*(simAlleleFreq[frqYr==year & frqCat=='sxFmom',c(3:(nloci+2))]+
            simAlleleFreq[frqYr==year & frqCat=='sxFdad',c(3:(nloci+2))])
   
-  #simAlleleFreq[frqYr==(year) & frqCat=='sxFfam',c(3:(10+2))]
-  
-  
   simAlleleFreq[frqYr==year & frqCat=='sxMmend',c(3:(nloci+2))]<-
     simAlleleFreq[frqYr==year & frqCat=='sxMb',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==year & frqCat=='sxMfam',c(3:(nloci+2))]
@@ -1110,9 +1060,7 @@ for(year in c(1999:2013)){
   simAlleleFreq[frqYr==year & frqCat=='sxFfam-xt',c(3:(nloci+2))]<-
     simAlleleFreq[frqYr==year & frqCat=='sxFfam',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==(year-1) & frqCat=='sxt',c(3:(nloci+2))]
-  
-  #simAlleleFreq[frqYr==year & frqCat=='sxFfam-xt',c(3:(10+2))]
-  #sum(simAlleleFreq[frqYr==year & frqCat=='sxFfam',c(3:(nloci+2))]) -  simAlleleFreq[frqYr==(year-1) & frqCat=='sxt',c(3:(10+2))]
+
   
   simAlleleFreq[frqYr==year & frqCat=='errMFAM',c(3:(nloci+2))]<-
     0.5*(simAlleleFreq[frqYr==year & frqCat=='errMmom',c(3:(nloci+2))]+
@@ -1121,8 +1069,6 @@ for(year in c(1999:2013)){
   simAlleleFreq[frqYr==year & frqCat=='errFFAM',c(3:(nloci+2))]<-
     0.5*(simAlleleFreq[frqYr==year & frqCat=='errFmom',c(3:(nloci+2))]+
            simAlleleFreq[frqYr==year & frqCat=='errFdad',c(3:(nloci+2))])
-  #    0.5*(simAlleleFreq[frqYr==year & frqCat=='errFmom',c(3:(10+2))]+
-  #simAlleleFreq[frqYr==year & frqCat=='errFdad',c(3:(10+2))])
   
   
   simAlleleFreq[frqYr==year & frqCat=='errMMEND',c(3:(nloci+2))]<-
@@ -1133,11 +1079,6 @@ for(year in c(1999:2013)){
     simAlleleFreq[frqYr==year & frqCat=='errFB',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==year & frqCat=='errFFAM',c(3:(nloci+2))]
   
-  #    simAlleleFreq[frqYr==year & frqCat=='errFB',c(3:(10+2))]-
-  # simAlleleFreq[frqYr==year & frqCat=='errFFAM',c(3:(10+2))]
-  
-  
-  
   simAlleleFreq[frqYr==year & frqCat=='errMFAM-errT',c(3:(nloci+2))]<-
     simAlleleFreq[frqYr==year & frqCat=='errMFAM',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==(year-1) & frqCat=='errT',c(3:(nloci+2))]
@@ -1147,8 +1088,6 @@ for(year in c(1999:2013)){
   
 }
 
-#save(simAlleleFreq,file=paste("simAlleleFreqA_",today,".rdata",sep=''))
-#load("simAlleleFreqA_11Mar2021.rdata")
 
 #calculate variances and covariances
 simVar<-data.frame(Year=rep(c(1999:2013),each=112),category=rep(c(
@@ -1180,7 +1119,7 @@ simVar<-data.frame(Year=rep(c(1999:2013),each=112),category=rep(c(
 
 bsYr<-simVar$Year
 bsCat<-simVar$category
-#year = 1999
+
 for(year in c(1999:2013)){
   #total variance, for males and females
   simVar[bsYr==year & bsCat=='pt1-pt',3]<-
@@ -1476,11 +1415,6 @@ for(year in c(1999:2013)){
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='sxFs-xt',c(3:(nloci+2))])*
            as.numeric(simAlleleFreq[frqYr==year & frqCat=='sxMb-xt',c(3:(nloci+2))]))
   
-  #simVar[bsYr==year & bsCat=='sxFsxMb',3]
-  #mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='sxFs-xt',c(3:(nloci+2))])* as.numeric(simAlleleFreq[frqYr==year & frqCat=='xMb-xt',c(3:(nloci+2))]))
-  #simAlleleFreq[frqYr==year & frqCat=='sxFs-xt',c(3:(10+2))]
-  #simAlleleFreq[frqYr==year & frqCat=='xMb-xt',c(3:(10+2))]
-  
   simVar[bsYr==year & bsCat=='sxFserrMB',3]<-
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='sxFs-xt',c(3:(nloci+2))])*
            as.numeric(simAlleleFreq[frqYr==year & frqCat=='errMB-errT',c(3:(nloci+2))]))
@@ -1515,9 +1449,6 @@ for(year in c(1999:2013)){
   
   simVar[bsYr==year & bsCat=='sxMmend',3]<-
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='sxMmend',c(3:(nloci+2))])^2)
-  #mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='sxMfam-xt',c(3:(nloci+2))])^2)
-  
-  
   
   simVar[bsYr==year & bsCat=='errMMEND',3]<-
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errMMEND',c(3:(nloci+2))])^2)
@@ -1536,21 +1467,17 @@ for(year in c(1999:2013)){
   
   simVar[bsYr==year & bsCat=='errFMEND',3]<-
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errFMEND',c(3:(nloci+2))])^2)
-  #as.numeric(simAlleleFreq[frqYr==year & frqCat=='errFMEND',c(3:(10+2))])^2
   
   simVar[bsYr==year & bsCat=='pFfam-pt',3]<-
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='pFfam-pt',c(3:(nloci+2))])^2)
   simVar[bsYr==year & bsCat=='sxFfam-xt',3]<-
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='sxFfam-xt',c(3:(nloci+2))])^2)
-  
-  #simAlleleFreq[frqYr==year & frqCat=='sxFfam-xt',c(3:(10+2))]
-  
+
   
   simVar[bsYr==year & bsCat=='errFFAM-errT',3]<-
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errFFAM-errT',c(3:(nloci+2))])^2)
 }
-#save output
-#save(simVar,file=paste("simVarA_210303_",today,".rdata",sep=''))
+
 names(simVar) <- names(sampleVar)
 
 allVar_tmp <- rbind.data.frame(sampleVar,simVar)
@@ -1558,17 +1485,17 @@ allVar[,(loop+2)] <- allVar_tmp[,3]
 names(allVar)[(loop+2)] <- paste("bs",win,sep="")
 loop = loop +1
 }
+
 today<-format(Sys.Date(),format="%d%b%Y")
 
-
-#save(allVar,file=paste("ZDropping/allVar_boot_A_tmp_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
-
-
+#calculate quantiles
 allVar_q <- allVar[,c(1:2)]
   
 allVar_q$q5 <- apply(allVar[,-c(1:2)], 1, function(x) quantile(x,.05,na.rm = T))
 allVar_q$q95 <- apply(allVar[,-c(1:2)], 1, function(x) quantile(x,.95,na.rm = T))
+allVar_q$se <- apply(X=allVar[,-c(1:2)],1,function(x) sd(x)/sqrt(length(x)))
 
+save(allVar,file=paste("allVar_int_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
 
-save(allVar_q,file=paste("ZDropping/allVar_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+save(allVar_q,file=paste("allVar_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
 

@@ -24,7 +24,7 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
                     legend.position="right", legend.text = element_text(size=7),
                     legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(0.25,"cm"))
 
-setwd('~/Google Drive/Research/Data2/fsj/ZDropping')
+setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all')
 
 #indivlist
 load("simindivFIXmin2obs.rdata")
@@ -589,7 +589,7 @@ AZ_AFVA$sexCat <- factor(AZ_AFVA$SexCat,levels=c("Female" ,"Male"    ,   "Cov(F,
 #fills_to_use <-c(pnw_palettes$Bay[1,3],  pnw_palettes$Winter[1,2], pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,1],pnw_palettes$Winter[1,4],pnw_palettes$Bay[1,4],pnw_palettes$Bay[1,5])
 fills_to_use <-c(pnw_palettes$Bay[1,3],pnw_palettes$Winter[1,2],"#DD4124", pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,1],pnw_palettes$Winter[1,4],"#E77A66",pnw_palettes$Bay[1,4],pnw_palettes$Bay[1,5])
 
-
+#Fig S7
 #unique(AZ_AFVA$Category3)
 ggplot(data=AZ_AFVA, aes(x=Year, y=prop)) + 
   geom_hline(yintercept = 0,alpha=0.5)+
@@ -614,3 +614,26 @@ ggplot(data=AZ_AFVA, aes(x=Year, y=prop)) +
   geom_dl(aes(label = Category4,color=Category3), method = list("last.qp",cex = 1,dl.trans(x = x + .2))) +
   theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) 
 
+##
+AZ_AFVA$year_adj <- AZ_AFVA$Year 
+AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] <- AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] + 0.25
+
+ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
+  geom_hline(yintercept = 0,alpha=0.5)+
+  
+  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
+  
+  geom_point(aes(color=Category2,shape=chrom)) + 
+  guides(color=FALSE) +
+  facet_grid(  supercategory ~sexCat,scales="free")+
+  
+  theme_bw(base_size = 16) + 
+  scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
+  scale_color_manual(values=fills_to_use)+  
+  scale_shape_manual(values=c(1,16)) +
+  # scale_linetype_manual(values=c("solid","dashed")) +
+  labs(y=varp_title,x="Year",color="Category",linetype="") + 
+  theme(strip.background =element_rect(fill="white")) +
+  geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 1,dl.trans(x = x + .2))) +
+  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) #+ 
+coord_cartesian(ylim = c(-0.25, 0.5))

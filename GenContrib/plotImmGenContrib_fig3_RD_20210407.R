@@ -1,0 +1,187 @@
+#4 April 2021
+#Rose Driscoll
+#script to plot the genetic contributions of male and female immigrants for autosomes and Z
+#fig 3
+#simplified version with just the plotting commands
+
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+library(tidyr)
+#library(forcats)
+#library(plyr)
+#library(fitdistrplus)
+#library(vcd)
+
+load('all_tables_v2.rdata')
+
+#import
+load("simindivFIXmin2obs.rdata")
+load("FSJpedgeno_A.rdata")
+
+# load Rdata files
+
+load("ZDropping_all/plotImmGenContrib_tidy_20190529.Rdata")
+pedigree_immdata_count <- ungroup(pedigree_immdata_count)
+# code to produce these tables from raw data is in plotImmGenContrib_tidy_20190418.R
+
+load("ZDropping_all/plotImmGenContrib_num_imms_vs_birth_cohort_contrib_20210407.rdata")
+# code to produce these tables from raw data is in plotImmGenContrib_num_imms_vs_birth_cohort_contrib_20210407.R
+
+# Nancy's plot theme
+plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3), 
+                    axis.ticks = element_line(colour = "black",size=0.2),
+                    axis.text = element_text(colour="black"), panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank(), panel.background = element_rect(fill="white"), 
+                    plot.background = element_rect(fill = "white"),  
+                    axis.text.x = element_text(size=6), axis.text.y = element_text(size=6), 
+                    axis.title = element_text(size=7), plot.title = element_text(size=8), 
+                    legend.position="right", legend.text = element_text(size=7),
+                    legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(1,"cm"))
+
+
+####Part A: Number of imms (sexed & unsexed, breeding & nonbreeding) each year####
+
+# Read in and tidy pedigree
+ped <- read.table("FSJpedgeno_Zsexlinked.ped", header = FALSE, sep = " ", stringsAsFactors = FALSE)
+pedigree <- ped[,1:6]
+colnames(pedigree) <- c("Fam", "Indiv", "Dad", "Mom", "Sex", "Pheno")
+# Read in immigrant cohort data
+indivdata <- read.table("IndivDataUSFWS.txt", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+# just need immigrant cohorts
+immdata <- dplyr::select(indivdata, Indiv, ImmCohort)
+# And join the immigrant cohorts to the pedigree
+pedigree_immdata <- left_join(pedigree, immdata, by = "Indiv")
+
+# Figure out which imms end up breeding
+pedigree_immdata_breeder_nonbreeder_imms <- filter(pedigree_immdata, !is.na(ImmCohort)) %>%
+  mutate(does_breed = ifelse(Indiv %in% pedigree_immdata$Dad, TRUE, 
+                             ifelse(Indiv %in% pedigree_immdata$Mom, TRUE, FALSE)))
+# Now count up how many imms that end up breeding or not come in each year
+pedigree_immdata_breeder_nonbreeder_imms_count <- group_by(pedigree_immdata_breeder_nonbreeder_imms, ImmCohort, Sex, does_breed) %>%
+  dplyr::summarize(num_imms = n()) %>%
+  complete(ImmCohort, Sex, does_breed, fill = list(num_imms = 0)) %>%
+  filter(!is.na(ImmCohort))
+pedigree_immdata_breeder_nonbreeder_imms_perc <- pedigree_immdata_breeder_nonbreeder_imms_count %>%
+  group_by( ImmCohort,does_breed) %>% transmute(Sex, percent = num_imms/sum(num_imms))
+# make males negative
+pedigree_immdata_breeder_nonbreeder_imms_count_males_negative <- mutate(pedigree_immdata_breeder_nonbreeder_imms_count, num_imms_males_negative = ifelse(Sex==1, -num_imms, num_imms))
+
+# combo plot
+# plot sexed birds
+(sexed_breed_nonbreed <- ggplot(filter(pedigree_immdata_breeder_nonbreeder_imms_count_males_negative, Sex != 0)) +
+    geom_bar(aes(x = ImmCohort, y= num_imms_males_negative, fill = interaction(does_breed, Sex)), position = "stack", stat = "identity", alpha = 0.75) +
+    scale_fill_manual(values = c("lightskyblue1", "cornflowerblue", "mistyrose", "indianred1")) +
+    labs(x = "", y = "Number of immigrants"
+         #, title = "Immigrants arriving each year that breed by 2013 (dark shades) or do not breed (light shades, gray)"
+         ) +
+    plottheme +
+    scale_y_continuous(breaks = c(-30, -20, -10, 0, 10, 20, 30, 40, 50), labels = c(30, 20, 10, 0, 10, 20, 30, 40, 50)) +
+    theme(legend.position = "none", plot.margin=unit(c(0.2,0.1,0,0.15),'cm'), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.line.x = element_blank()))
+# plot unsexed birds
+(unsexed_breed_nonbreed <- ggplot(filter(pedigree_immdata_breeder_nonbreeder_imms_count_males_negative, Sex == 0)) +
+    geom_bar(aes(x = ImmCohort, y= num_imms_males_negative, fill = interaction(does_breed, Sex)), position = "stack", stat = "identity", alpha = 0.75) +
+    scale_fill_manual(values = c("gray85")) +
+    labs(x = "Year", y = "") +
+    plottheme +
+    scale_y_continuous(breaks = c(0, 10, 20)) +
+    theme(legend.position = "none", plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
+# plot to make a legend
+for_legend <- mutate(pedigree_immdata_breeder_nonbreeder_imms_count_males_negative, fill_group = paste(does_breed, Sex, sep = "."))
+for_legend$fill_group <- factor(for_legend$fill_group, levels = c("FALSE.2", "FALSE.1", "FALSE.0", "TRUE.2", "TRUE.1"))
+(plot_for_legend <- ggplot(for_legend) +
+    geom_bar(aes(x = ImmCohort, y= num_imms_males_negative, fill = fill_group), position = "stack", stat = "identity", alpha = 0.75) +
+    scale_fill_manual(values = c("mistyrose", "lightskyblue1", "gray85", "indianred1", "cornflowerblue"), labels = c("Female\nnonbreeder", "Male\nnonbreeder", "Unsexed\nnonbreeder", "Female\nbreeder", "Male\nbreeder")) +
+    labs(fill = "") +
+    plottheme +
+    theme(legend.key.size = unit(0.7,"cm"), legend.position = "top"))
+sexed_unsexed_breed_nonbreed_legend <- get_legend(plot_for_legend)
+# combine
+sexed_unsexed_breed_nonbreed_plot <- plot_grid(sexed_breed_nonbreed, unsexed_breed_nonbreed, ncol = 1, nrow = 2, rel_heights = c(0.8, 0.25), align = "v")
+sexed_unsexed_breed_nonbreed_plot_w_legend <- plot_grid(sexed_unsexed_breed_nonbreed_plot, sexed_unsexed_breed_nonbreed_legend, ncol = 2, nrow = 1, rel_widths = c(0.8, 0.25))
+
+
+####Part B: Autosomal exp gen contribs of male & female imms####
+
+(A_imm_gen_contribs <- 
+  ggplot(simsumImmA_from1990) + 
+  geom_ribbon(aes(x = year, ymin = q1_A, ymax = q3_A, fill = as.factor(allele)), alpha=0.3) +
+  geom_line(aes(x = year, y = mean_A, col = as.factor(allele)), size=0.5) + 
+  labs(x = "Year", y = "Autosomal expected genetic contrib.") +
+  scale_y_continuous(limits = c(0, 0.55), breaks = seq(0,0.5,by=0.1)) +
+  scale_color_manual(values = c("cornflowerblue", "indianred1")) +
+  scale_fill_manual(values = c("cornflowerblue", "indianred1")) +
+  plottheme + 
+  theme(legend.position='none',plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
+
+
+####Part C: Z exp gen contribs of male & female imms####
+
+(Z_imm_gen_contribs <- 
+  ggplot(simsumImmZ_from1990) + 
+  geom_ribbon(aes(x = year, ymin = q1_Z, ymax = q3_Z, fill = as.factor(allele)), alpha=0.3) +
+  geom_line(aes(x = year, y = mean_Z, col = as.factor(allele)), size=0.5) + 
+  labs(x = "Year", y = "Z expected genetic contrib.") +
+  scale_y_continuous(limits = c(0, 0.55), breaks = seq(0,0.5,by=0.1)) +
+  scale_color_manual(values = c("cornflowerblue", "indianred1")) +
+  scale_fill_manual(values = c("cornflowerblue", "indianred1")) +
+  plottheme + 
+  theme(legend.position='none',plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
+
+
+####Part D: Autosomal exp gen contribs 15 years after immigration vs imm cohort size####
+
+(A_imm_contribs_vs_cohort_size <- ggplot(simsumImmYrAplus15, aes(x=num_imms, y=mean, color=Sex)) +
+  geom_point(show.legend = FALSE) +
+  geom_linerange(aes(ymin=q1, ymax=q3), show.legend = FALSE) +
+  geom_smooth(method = "lm", aes(fill = Sex), alpha = 0.25, size = 0.5) +
+  scale_color_manual(values = c("indianred1", "cornflowerblue")) +
+  scale_fill_manual(values = c("indianred1", "cornflowerblue")) +
+  labs(x="Size of immigrant cohort, sex-specific \n(number of birds of the specified sex)", y="Autosomal expected genetic \ncontrib. after 15 years") +
+  plottheme +
+  guides(color=guide_legend(override.aes=list(color=NA))) +
+  theme(legend.position = "none",plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
+
+
+####Part E: Z exp gen contribs 15 years after immigration vs imm cohort size####
+
+(Z_imm_contribs_vs_cohort_size <- ggplot(simsumImmYrZplus15, aes(x=num_imms, y=mean, color=Sex)) +
+  geom_point(show.legend = FALSE) +
+  geom_linerange(aes(ymin=q1, ymax=q3), show.legend = FALSE) +
+  geom_smooth(method = "lm", aes(fill = Sex), alpha = 0.25, size = 0.5) +
+  scale_color_manual(values = c("indianred1", "cornflowerblue")) +
+  scale_fill_manual(values = c("indianred1", "cornflowerblue")) +
+  labs(x="Size of immigrant cohort, sex-specific \n(number of birds of the specified sex)", y="Z expected genetic \ncontrib. after 15 years") +
+  plottheme +
+  guides(color=guide_legend(override.aes=list(color=NA))) +
+  theme(legend.position = "none",plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
+
+
+
+####Putting it all together####
+
+(left_side <- plot_grid(sexed_breed_nonbreed, unsexed_breed_nonbreed, A_imm_contribs_vs_cohort_size, ncol = 1, nrow = 3, rel_heights = c(0.75, 0.25, 0.5), align = "hv", axis = "lrtb", labels = c("A", "", "D")))
+dev.off()
+(right_side <- plot_grid(A_imm_gen_contribs, Z_imm_gen_contribs, Z_imm_contribs_vs_cohort_size, ncol = 1, nrow = 3, rel_heights = c(0.5, 0.5, 0.5), align = "hv", axis = "lrtb", labels = c("B", "C", "E")))
+dev.off()
+(fig3_no_legend <- plot_grid(left_side, right_side, ncol = 2, nrow = 1, rel_widths = c(0.5,0.5), align = "hv", axis = "lrtb"))
+plot_grid(sexed_unsexed_breed_nonbreed_legend, fig3_no_legend, ncol = 1, nrow = 2, rel_heights = c(0.05,1))
+
+
+####Supplemental figure 3: Z/A for male & female imms####
+
+ggplot(simsumImm_from1990,aes(y=mean_Z/mean_A,x=year)) +
+  annotate('segment', x=1993,xend=2013,y=1,yend=1,alpha=0.1)+
+  geom_hline(yintercept = 4/3, linetype="dashed",alpha=0.5)+
+  annotate('text',x=1991,y=1.4,label='4/3',size=3)+
+  geom_hline(yintercept = 2/3, linetype="dashed",alpha=0.5)+
+  annotate('text',x=1991,y=0.6,label='2/3',size=3)+
+  geom_line(aes(color=as.factor(allele)), show.legend = FALSE)+
+  geom_ribbon(aes(x = year, ymin = q1_Z/mean_A, ymax = q3_Z/mean_A, fill = as.factor(allele)), alpha=0.3) +
+  geom_ribbon(aes(x = year, ymin = q1_A/mean_A, ymax = q3_A/mean_A, fill = as.factor(allele)), alpha=0.3) +
+  labs(x = "Year", y = "Z/A Immigrant Contributions",color="Sex",fill="Sex") +
+  theme_bw(base_size = 18)+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),  plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) +
+  plottheme
+
+

@@ -1,15 +1,15 @@
 #script to model variance in allele frequency change over time
-#run sims for 100,000 SNPs to get empirical estimates of covariances and errors
-#Nancy Chen & Graham Coop & Rose Driscoll
-#Last updated: 15 May 2020
+#run sims for n loci to get empirical estimates of covariances and errors for autosomal loci
+#Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
+#Last updated: Jul 7 2021
 
 library(plyr)
 library(foreach)
 library(dplyr)
 library(doParallel)
 
-setwd('~/Google Drive/Research/Data2/fsj/ZDropping')
 
+####set variables and make/import tables####
 #number of SNPs to simulate
 nloci<-100000
 
@@ -30,6 +30,9 @@ indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
 indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
 indivlistgeno$Mom<-as.character(indivlistgeno$Mom)
 
+
+
+####simulate starting genotypes####
 #get real frequency of each allele in 1990 (accounting for different total # of alleles in males & females)
 datafreq1990<-laply(names(indivlistgeno)[8:length(indivlistgeno)],function(x) 
   sum(indivlistgeno[indivlistgeno$Year==1990,x],na.rm=TRUE)/
@@ -98,7 +101,7 @@ simindivgenoAll<-cbind(simindivgeno,simindivgenoParents[match(simindivgeno$Indiv
 #add rownames
 rownames(simindivgenoAll)<-simindivgenoAll$Indiv
 
-#simulate genotypes for nestlings via Mendelian transmission of alleles from parents
+####simulate genotypes for nestlings via Mendelian transmission of alleles from parents####
 
 #get years
 nest.years<-unique(simindivgenoNestlings$Year)
@@ -189,14 +192,15 @@ simdataTrue<-merge(indivlist,simindivgenoAll[,c(1,8:(nloci+7))],
                    by.x='USFWS',by.y='Indiv',all.x=TRUE)	
 
 #save
-save(simdataTrue,file='simdataTrueA_210303.rdata')
+save(simdataTrue,file='simdataTrueA_',today,'.rdata')
 
+
+####calculate error in freq estimation due to sampling####
 #get number of all genotyped indivs by category and in total
 counts<-ddply(indivlist,.(Year,category,Sex),summarize,genotyped=2*sum(genotyped=='Y'),
               total=length(category))
 countsAll<-ddply(indivlist,.(Year),summarize,genotyped=2*sum(genotyped=='Y'),
                  total=length(category))
-#category is just here to calculate the number of rows
 
 #calculate sample allele freq
 #mimic sampling of genotyped indiv by selecting only indivs who actually were genotyped
@@ -208,21 +212,17 @@ simdataSampleUnique<-simdataSample[!duplicated(simdataSample$USFWS),]
 
 #calculate population (p) and sample allele freq (x)
 #and the error in allele freq estimation due to sampling: err = x-p
-### don't need E [hypergeometric error]
-#parallelize
 
 #create data frame to hold simulated allele freqs
 simAlleleFreq<-data.frame(Year=integer(),category=character(),stringsAsFactors=FALSE)
 
-#parallelize snps
+#un-comment to parallelize snps
 #cores=detectCores() #uncomment these two lines if you want to use more than 4 cores
 #cl <- makeCluster(cores[1]-1) #not to overload your computer
-
 #cl <- makeCluster(4) #use 4 cores
 #registerDoParallel(cl)
 
 
-#1998
 year<-1998
 sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
   #create data frame to hold allele freqs & error
@@ -247,11 +247,10 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
 #stopCluster(cl)
 
 #save the data from this year
-save(sim,file=paste("SimAlleleFreqAYr_210303_",year,".rdata",sep=''))
+save(sim,file=paste("SimAlleleFreqAYr_",today,"_",year,".rdata",sep=''))
 
 #Names for the values we just calculated (year and category/parameter)
-simName<-data.frame(Year=rep(year,each=3),category=c('pt','xt','errT'),
-                                                    stringsAsFactors=FALSE)
+simName<-data.frame(Year=rep(year,each=3),category=c('pt','xt','errT'),stringsAsFactors=FALSE)
 
 #Add the simulation results to the data frame
 #err rows are NA b/c we have not calculated the error yet
@@ -259,8 +258,7 @@ sim1<-cbind(simName,sim)
 #Add the simulation data to simAlleleFreq (we'll collect the data from all years here)
 simAlleleFreq<-rbind(simAlleleFreq,sim1)
 
-#year = 1999
-  for(year in c(1999:2013)){
+for(year in c(1999:2013)){
     #get moms of sons, dads of sons, and dads of daughters for this year
     
     #get moms of male nestlings born this year
@@ -311,7 +309,6 @@ simAlleleFreq<-rbind(simAlleleFreq,sim1)
                                         by.y='USFWS',all.x=TRUE)
     #many of the rows in this table are NAs because of the sampling
     
-  #i = 9
   #for each snp
   sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
     #make a data frame to put all these parameters in for each year
@@ -341,28 +338,17 @@ simAlleleFreq<-rbind(simAlleleFreq,sim1)
     #pFdad = allele frequency of all fathers of daughters,
     #and likewise xMdad, xMmom, errMdad, errMmom, etc.
     
-    #Note: this seems like it's using t+1 and t instead of t and t-1.
-    #Shouldn't make a difference to the results (as long as we keep track of what t is)
-    #But it's not consistent with the way we're doing the equations in the SI...
-    
-    #Also I believe we don't need 'pFmom','xFmom','errFmom' 
-    #These terms aren't in my equations - moms don't contribute to daughters and all that
-    
     frqYr1<-tmp$Year
     frqCat1<-tmp$category
     
     #pt is just the mean of all of the simulated data (no sampling)
     tmp[frqYr1==year & frqCat1=='pt',3]<-
-    #  mean(simdataTrue[simdataTrue$Year==year & simdataTrue$Sex==1,i])/2
-   #   sum(simdataTrue[simdataTrue$Year==year& simdataTrue$Sex==1,i],na.rm=TRUE)/   ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,i]))))
-
     sum(simdataTrue[simdataTrue$Year==year,i],na.rm=TRUE)/
       ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,i])))
        +(2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==2,i]))))
     
     #xt is the mean of the sampled simulated data
     tmp[frqYr1==year & frqCat1=='xt',3]<-
-    #  mean(simdataSample[simdataSample$Year==year & simdataSample$Sex==1,i])/2
       sum(simdataSample[simdataSample$Year==year,i],na.rm=TRUE)/
       ((2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==1,i])))
        +(2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==2,i]))))
@@ -432,7 +418,7 @@ simAlleleFreq<-rbind(simAlleleFreq,sim1)
  # stopCluster(cl)
   #sim <- tmp[,3]
   #save p and x results from this year (in case run gets interrupted)
-  save(sim,file=paste("SimAlleleFreqA_",year,".rdata",sep=''))
+  save(sim,file=paste("SimAlleleFreqA_",year,"_",today,".rdata",sep=''))
   
   #categories (parameter names) and years to combine with the results of our calculations
   simName<-data.frame(Year=rep(year,each=70),category=c(
@@ -462,8 +448,7 @@ simAlleleFreq<-rbind(simAlleleFreq,sim1)
 }
 
 
-
-#calculate error and allele freq differences between each category and the year before
+####calculate error and allele freq differences between each category and the year before####
 #err = true error (no hypergeometric error)
 frqYr<-simAlleleFreq$Year
 frqCat<-simAlleleFreq$category
@@ -473,8 +458,7 @@ simAlleleFreq[frqYr==1998 & frqCat=='errT',c(3:(nloci+2))]<-
   simAlleleFreq[frqYr==1998 & frqCat=='xt',c(3:(nloci+2))]-
   simAlleleFreq[frqYr==1998 & frqCat=='pt',c(3:(nloci+2))]
 
-save(simAlleleFreq,file=paste("simAlleleFreqA_210303_SR_intermediate_",today,".rdata",sep=''))
-load("simAlleleFreqA_210303_SR_intermediate_14Mar2021.rdata")
+save(simAlleleFreq,file=paste("simAlleleFreqA_SR_intermediate_",today,".rdata",sep=''))
 
 #calcuate error for each year based on difference b/w p and x
 for(year in c(1999:2013)){
@@ -670,7 +654,7 @@ for(year in c(1999:2013)){
 save(simAlleleFreq,file=paste("simAlleleFreqA_",today,".rdata",sep=''))
 #load("simAlleleFreqA_11Mar2021.rdata")
 
-#calculate variances and covariances
+####calculate variances and covariances####
 simVar<-data.frame(Year=rep(c(1999:2013),each=112),category=rep(c(
     'pt1-pt',
     'pMs-pt','xMs-xt','errMS-errT','pMspterrMSerrT',
@@ -1053,4 +1037,4 @@ for(year in c(1999:2013)){
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errFFAM-errT',c(3:(nloci+2))])^2)
 }
 #save output
-save(simVar,file=paste("simVarA_210303_",today,".rdata",sep=''))
+save(simVar,file=paste("simVarA_",today,".rdata",sep=''))
