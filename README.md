@@ -7,16 +7,15 @@ Scripts are seperated into directories roughly corresponding to the sections of 
 The first step for the majority of subsequent analyses is the gene dropping simulation. The scripts for the basic gene dropping step is in the directory base_Dropping. The step is performed by running the python script geneDrop_runner_RD.py which is a wrapper for geneDrop_RD.c (compiled as a.out using gcc geneDrop_RD.c -lgsl). To run geneDrop_runner_RD.py [ped file] [cohort file] [prefix for output files] [number of drops] [filter ungenotyped individuals? Y/N] [output type] [A, Z, or X] [proportion of unsexed individuals to assign as male]
 
 ## Expected Genetic Contributions
-The next step in our procedure was to analyze expected genetic contributions for individuals and for immmigrants as a group. The scripts to support these analyses are in the directory 'GenContrib'. The scripts calculate and plot expected genetics contributions given the pedigree. This includes scripts to calculate expected contributions for autosomal or Z_linked loci, as well as scripts to calculate expected contributions for individuals or for immigrant individuals as a whole. This proceeds in 3 steps:
-
+The next step in our procedure was to analyze expected genetic contributions for individuals and for immmigrants as a group. The scripts to support these analyses are in the directory 'GenContrib'. The scripts calculate and plot expected genetics contributions given the pedigree. This includes scripts to calculate expected contributions for autosomal or Z_linked loci, as well as scripts to calculate expected contributions for individuals or for all immigrant individuals. 
 
 ### Individual expected genetic contributions
 We first calculate expected genetic contributions for each individual in ABS using scripts in the subdirectory 'individual'. To do this, we run GenContrib_Indiv.sh which will first call GenContrib_Indiv_input.r to make the input pedigrees for each individual and then pass these pedigree to geneDrop_runner_RD.py first using an autosomal model of inheritance, then using a Z model of inheritance. 
-With expected genetic contributions for each individual, we first illustrate principals of expected genetic contributions using one chosen couple from the pedigree. GenContrib_plot_fig1_couple.R plots figure 1. Next, we plot all individual expected genetic contributions using GenContrib_Indiv_plot_fig2.R 
+With expected genetic contributions for each individual, we first illustrate principals of expected genetic contributions using one chosen couple from the pedigree. GenContrib_plot_fig1_couple.R plots figure 1. Next, we plot all individual expected genetic contributions using GenContrib_Indiv_plot_fig2.R.
 
 ### Immigrant expected genetic contributions
 We next calculate expected genetic contributions for all immigrants to ABS using scripts in the subdirectory 'immigrant'. The pipeline in GenContrib_Imm.sh will first make the appropriate input files using GenContrib_Imm_input.R, then calling geneDrop_runner_RD.py first using an autosomal model of inheritance, then using a Z model of inheritance. Finally, GenContrib_Imm.sh runs through geneDrop_runner_RD.py while varing the sex ratio assigned to unsexed individuals.
-With expected genetic contributions for all immigrants, we can plot figure 3 using 
+With expected genetic contributions for all immigrants, we can plot figure 3. We first run plotImmGenContrib_tidy_20190418.R to calculate the expected genetic contributions of immigrant male and females then GenContrib_Imm_plot_fig3_runDE.R to compare the expected genetic contributions of immigrants to their cohort size. FInally we merge all datasets into one plot using GenContrib_Imm_plot_fig3_merge.R
 
 
 ## Signals Of Selection

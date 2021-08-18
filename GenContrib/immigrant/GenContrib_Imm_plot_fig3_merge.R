@@ -26,7 +26,7 @@ pedigree_immdata_count <- ungroup(pedigree_immdata_count)
 # code to produce these tables from raw data is in plotImmGenContrib_tidy_20190418.R
 
 load("ZDropping_all/plotImmGenContrib_num_imms_vs_birth_cohort_contrib_20210407.rdata")
-# code to produce these tables from raw data is in plotImmGenContrib_num_imms_vs_birth_cohort_contrib_20210407.R
+# code to produce these tables from raw data is in GenContrib_Imm_plot_fig3_runDE.R
 
 # Nancy's plot theme
 plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3), 
