@@ -24,19 +24,19 @@ Next, we look for signals of selection by comparing expected contributions to ob
 ## Allele Frequency Change Model
 The final directory `\alleleFreqModel` holds scripts to partition change in allele frequencies between years between demographic groups by sex for autosomal and Z-linked loci. This analysis is broken down into  four steps: 1 - sampling, 2 - simulating error, 3 - bootstrap and 4 - plot. This is repeated for the Z and autosomes seperately, given different inheritance patterns, but both are plotted together. These scripts assume a flexible sex ratio; we also ran a model assuming a fixed sex ratio but instead partitioned allele frequency change between years to each sex. 
 
-### Sample
-Step 1 - run `alleleFreqModelA_sample.R` and `alleleFreqModelZ_sample.R` to calculate variance in allele frequencies between years. These scripts will also setup the files necessary for the next step.
+### Step 1 - Sample
+run `alleleFreqModelA_sample.R` and `alleleFreqModelZ_sample.R` to calculate variance in allele frequencies between years. These scripts will also setup the files necessary for the next step.
 
-### Simulate error
-Step 2 - run `alleleFreqModelA_sim.R` and `alleleFreqModelZ_sim.R` for autosomal and Z loci respectively to calculate error.
+### Step 2 - Simulate error
+ run `alleleFreqModelA_sim.R` and `alleleFreqModelZ_sim.R` for autosomal and Z loci respectively to calculate error.
 
-### Bootstrap
+### Step 3 - Bootstrap
 
-Step 3 - run `alleleFreqModelA_boot.R` and `alleleFreqModelZ_boot.R` to calculate confidence intervals 
+run `alleleFreqModelA_boot.R` and `alleleFreqModelZ_boot.R` to calculate confidence intervals 
 
-### Plot
+### Step 4 - Plot
 
-Step 4 - `alleleFreqModelAZ_plot.R` will combine Z and autosomal analyses into one set of plots for easy comparison.
+`alleleFreqModelAZ_plot.R` will combine Z and autosomal analyses into one set of plots for easy comparison.
 
-### Fixed Sex Ratio
+### Fixed Sex Ratio model
 If you are interested in the fixed sex ratio model, these scripts are in the directory `\fixedSexRatio_model`, and follow the same format as steps 1, 2 and 4 above; we do not run bootstraps on the fixed sex ratio model.
