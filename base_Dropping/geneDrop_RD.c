@@ -1,6 +1,6 @@
 // geneDrop_RD.c
 // C script to perform gene dropping
-// compile: gcc geneDrop_final.c -lgsl
+// compile: gcc geneDrop_RD.c -lgsl
 // run: a.out [dropfile] [filter ungenotyped individuals? 0 or 1] [data or simulation? D or R] [output type L or S] [XY, ZW, or autosome data? A, Z, or X]
 
 // include packages

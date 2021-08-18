@@ -1,5 +1,5 @@
 ## geneDrop_runner_RD.py
-## python script to trim pedigree, make input files for geneDrop_final_NC.c, and run geneDrop_final_NC.c
+## python script to trim pedigree, make input files for geneDrop_RD.c, and run geneDrop_RD.c (compiled as a.out)
 ## run: python geneDrop_runner_final.py [ped file] [cohort file] [prefix for output files] [number of drops] [filter ungenotyped individuals?] [output type] [XY, ZW, or autosome data?] [proportion of unsexed individuals to assign as male]
 
 # import packages
