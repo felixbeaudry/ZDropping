@@ -15,7 +15,7 @@ nprocs=10 #number of processors to use
 
 for j in IndivContrib_*.ped
 do
-    python geneDrop_runner_RD.py "$j" allABSnestlings.txt "$j".A 1000000 0 s A 1 &
+    python geneDrop_runner_RD.py "$j" working_files/intermediate_files/allABSnestlings.txt "$j".A 1000000 0 s A 1 &
     ((i++))
     [[ $((i%nprocs)) -eq 0 ]] && wait
 done
@@ -23,7 +23,7 @@ wait
 
 for j in IndivContrib_*.ped
 do
-    python geneDrop_runner_RD.py "$j" allABSnestlings.txt "$j".Z 1000000 0 s Z 1 &
+    python geneDrop_runner_RD.py "$j" working_files/intermediate_files/allABSnestlings.txt "$j".Z 1000000 0 s Z 1 &
     ((i++))
     [[ $((i%nprocs)) -eq 0 ]] && wait
 done

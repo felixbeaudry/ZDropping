@@ -5,10 +5,8 @@
 library(plyr)
 
 #read in input files
-#pedigree + genotype data
-ped<-read.table('FSJpedgeno_Zsexlinked.ped',header=TRUE,sep=' ',stringsAsFactors=FALSE)
-pedigree<-ped[,1:6]
-names(pedigree)<-c('Fam','Indiv','Dad','Mom','Sex','Pheno')
+pedigree<-read.table('working_files/pedigree.txt',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+
 
 #get founders
 founders<-data.frame(USFWS=pedigree[pedigree$Dad=='0','Indiv'],stringsAsFactors=FALSE)
@@ -28,13 +26,13 @@ for (ind in founders[founders$kids,'USFWS']) {
 	thisped[thisped$Indiv == ind,'allele1']<-2
 	thisped[thisped$Indiv == ind,'allele2']<-2
 	
-	write.table(thisped,file=paste("IndivContrib_",ind,".ped",sep=''),quote=FALSE,sep=' ',row.names=FALSE,col.names=FALSE)
+	write.table(thisped,file=paste("working_files/intermediate_files/IndivContrib_",ind,".ped",sep=''),quote=FALSE,sep=' ',row.names=FALSE,col.names=FALSE)
 }
 
 #get nestling data
-indiv<-read.table('IndivDataUSFWS.txt',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+indiv<-read.table('working_files/IndivDataUSFWS.txt',header=TRUE,sep='\t',stringsAsFactors=FALSE)
 cohortAll<-indiv[!is.na(indiv$NatalYear),1:2]
 
 #print out file with nestling cohorts
-write.table(cohortAll,file="allABSnestlings.txt",quote=FALSE,sep=" ",row.names=FALSE,col.names=FALSE)
+write.table(cohortAll,file="working_files/intermediate_files/allABSnestlings.txt",quote=FALSE,sep=" ",row.names=FALSE,col.names=FALSE)
 
