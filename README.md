@@ -3,11 +3,9 @@ Sex-biased demography, including sex-biased survival or migration, can impact al
 
 Scripts are seperated into directories roughly corresponding to the sections of the paper and, replicating the order of the methods in the above paper. 
 
-## Base Dropping
-The first step for the majority of subsequent analyses is the gene dropping simulation. The scripts for the basic gene dropping step is in the directory `\base_Dropping`. The step is performed by running the python script `geneDrop_runner_RD.py` which is a wrapper for geneDrop_RD.c (compiled as a.out using `gcc geneDrop_RD.c -lgsl`). To run `geneDrop_runner_RD.py [ped file] [cohort file] [prefix for output files] [number of drops] [filter ungenotyped individuals? Y/N] [output type] [A, Z, or X] [proportion of unsexed individuals to assign as male]`.
-Requires [GSL](https://www.gnu.org/software/gsl/doc/html/) 'brew install gsl'
-
 ## Expected Genetic Contributions
+The first step for the majority of subsequent analyses is the gene dropping simulation. The scripts for the basic gene dropping step is in the directory `\base_Dropping`. The step is performed by running the python script `geneDrop_runner_RD.py` which is a wrapper for geneDrop_RD.c (compiled as a.out using `gcc geneDrop_RD.c -lgsl`; Requires [GSL](https://www.gnu.org/software/gsl/doc/html/) which you can install with `brew install gsl`). To run `python geneDrop_runner_RD.py [ped file] [cohort file] [prefix for output files] [number of drops] [filter ungenotyped individuals? Y/N] [output type] [A, Z, or X] [proportion of unsexed individuals to assign as male]`; for example `python geneDrop_runner_RD.py "$j" allABSnestlings.txt "$j".A 1000000 0 s A 1`
+
 The next step in our procedure was to analyze expected genetic contributions for individuals and for immmigrants as a group. The scripts to support these analyses are in the directory `\GenContrib`. The scripts calculate and plot expected genetics contributions given the pedigree. This includes scripts to calculate expected contributions for autosomal or Z_linked loci, as well as scripts to calculate expected contributions for individuals or for all immigrant individuals. 
 
 ### Individual expected genetic contributions
@@ -18,8 +16,7 @@ With expected genetic contributions for each individual, we first illustrate pri
 We next calculate expected genetic contributions for all immigrants to ABS using scripts in the subdirectory `\immigrant`. The pipeline in `GenContrib_Imm.sh` will first make the appropriate input files using `GenContrib_Imm_input.R`, then calling `geneDrop_runner_RD.py` first using an autosomal model of inheritance, then using a Z model of inheritance. Finally, GenContrib_Imm.sh runs through `geneDrop_runner_RD.py` while varing the sex ratio assigned to unsexed individuals.
 With expected genetic contributions for all immigrants, we can plot figure 3. We first run `plotImmGenContrib_tidy_20190418.R` to calculate the expected genetic contributions of immigrant male and females then `GenContrib_Imm_plot_fig3_runDE.R` to compare the expected genetic contributions of immigrants to their cohort size. FInally we merge all datasets into one plot using `GenContrib_Imm_plot_fig3_merge.R`
 
-
-## Signals Of Selection
+### Signals Of Selection
 Next, we look for signals of selection by comparing expected contributions to observed change in frequency. The directory `\SignalsOfSelection` holds scripts to track actual genotypes down the pedigree for Z-linked loci. The script `analyzeSelOutput_Z.R` will perform the analysis of the results from 
 
 ## Allele Frequency Change Model
