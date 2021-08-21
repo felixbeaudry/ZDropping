@@ -10,8 +10,6 @@ library(doParallel)
 library(data.table)
 `%notin%` <- Negate(`%in%`)
 
-
-
 ####get input files###
 #list of indiv in each category each year
 load("simindivFIXmin2obs.rdata")
@@ -70,13 +68,15 @@ simindivgeno<-indivlist_sim[!duplicated(indivlist_sim$USFWS),]
 colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "Sex")
 
 #check for unsexed indivs & assign them a sex
-unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
-simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
-simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
+#unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
+#simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
+#simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
 
 #add assigned sexes of unsexed birds back to indivlist_sim 
+simindivgeno <- fread('working_files/FSJ_sex_data_real_and_simulated_20201015.csv')
 #(this way, a given unsexed bird will always have the same assigned sex even if it appears multiple times in indivlist)
 indivlist_sim$Sex <- simindivgeno$Sex[match(indivlist_sim$USFWS, simindivgeno$Indiv)]
+
 
 #separate into moms vs dads vs nestlings
 simindivgenoMoms<-
