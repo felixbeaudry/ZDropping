@@ -35,7 +35,7 @@ indivlistgeno<-merge(simindivFIXmin2obs[,1:4],pedgeno[,c(1:4,5:253)],by.x='USFWS
 indivlistgeno[indivlistgeno[,7]==2,8:256] <- indivlistgeno[indivlistgeno[,7]==2,8:256]/2
 
 #save genotype file for simulations
-save(indivlistgeno,file='working_files/indivlistgenoZ.rdata')
+save(indivlistgeno,file='working_files/intermediate_files/indivlistgenoZ.rdata')
 
 #add sex to indivlist
 indivlist <- merge(simindivFIXmin2obs,pedgeno[c(1,4)],by.x="USFWS",by.y="Indiv")

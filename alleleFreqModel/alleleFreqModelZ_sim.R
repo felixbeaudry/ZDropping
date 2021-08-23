@@ -23,7 +23,7 @@ pedinfo <- ped[,1:5]
 colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
 
 #get sample allele freq for simulations, from _sample script
-load(file="working_files/intermediate_files/sampleVar_Z.rdata")
+load(file="working_files/intermediate_files/indivlistgenoZ.rdata")
 
 indivlistgeno$Indiv<-as.character(indivlistgeno$USFWS)
 indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
