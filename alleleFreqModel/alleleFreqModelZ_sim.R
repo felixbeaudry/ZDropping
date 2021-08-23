@@ -188,7 +188,7 @@ simdataTrue<-merge(indivlist,simindivgenoAll[,c(1,8:(nloci+7))],
                    by.x='USFWS',by.y='Indiv',all.x=TRUE)	
 
 #save
-save(simdataTrue,file='simdataTrueZ',today,'.rdata')
+save(simdataTrue,file='working_files/intermediate_files/simdataTrueZ.rdata')
 
 ####calculate error in freq estimation due to sampling####
 #get number of all genotyped indivs by category and in total
@@ -247,7 +247,7 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
 #stopCluster(cl)
 
 #save the data from this year
-save(sim,file=paste("SimAlleleFreqZYr_",year,"_",today,".rdata",sep=''))
+save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqZYr_",year,".rdata",sep=''))
 
 #Names for the values we just calculated (year and category/parameter)
 simName<-data.frame(Year=rep(year,each=3),category=c('pt','xt','errT'),
@@ -410,7 +410,7 @@ for(year in c(1999:2013)){
  # stopCluster(cl)
   
   #save p and x results from this year (in case run gets interrupted)
-  save(sim,file=paste("SimAlleleFreqZYr_",year,"_",today,".rdata",sep=''))
+  save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqZYr_",year,".rdata",sep=''))
   
   #categories (parameter names) and years to combine with the results of our calculations
   simName<-data.frame(Year=rep(year,each=67),category=c(
@@ -451,7 +451,7 @@ simAlleleFreq[frqYr==1998 & frqCat=='errT',c(3:(nloci+2))]<-
   simAlleleFreq[frqYr==1998 & frqCat=='xt',c(3:(nloci+2))]-
   simAlleleFreq[frqYr==1998 & frqCat=='pt',c(3:(nloci+2))]
 
-save(simAlleleFreq,file=paste("simAlleleFreqZ_SR_intermediate_",today,".rdata",sep=''))
+save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqZ_SR_intermediate.rdata")
 
 
 #calcuate error for each year based on difference b/w p and x
@@ -644,7 +644,7 @@ for(year in c(1999:2013)){
   
 }
 
-save(simAlleleFreq,file=paste("simAlleleFreqZ_",today,".rdata",sep=''))
+save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqZ.rdata")
 
 ####calculate variances and covariances####
 simVar<-data.frame(Year=rep(c(1999:2013),each=112),category=rep(c(
@@ -1027,4 +1027,4 @@ for(year in c(1999:2013)){
 }
 
 #save output
-save(simVar,file=paste("working_files/intermediate_files/simVarZ_",today,".rdata",sep=''))
+save(simVar,file="working_files/intermediate_files/simVarZ.rdata")
