@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=rosalind  --time=10-00:00:00  --output=Zdrop.r230821.log
-#SBATCH 
+#SBATCH -c 32 --mem=200G 
 
 module load r/4.0.5/b1
 
