@@ -6,6 +6,8 @@
 library(plyr)
 library(foreach)
 library(doParallel)
+library(data.table)
+library(dplyr)
 
 ####set variables and make/import tables####
 #number of SNPs to simulate

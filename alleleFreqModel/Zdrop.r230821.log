@@ -2,7 +2,27 @@ Z sample
 Z sim
 Loading required package: iterators
 Loading required package: parallel
-Error: object 'indivlistgeno' not found
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise,
+    summarize
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Error: all(is.na(simindivgenoAll[these.female.nestlings, 8:(nloci +  .... is not TRUE
 Execution halted
 Z boot
 
@@ -56,4 +76,5 @@ The following objects are masked from ‘package:dplyr’:
 4 
 Error: all(is.na(simindivgenoAll[these.female.nestlings, 8:(nloci +  .... is not TRUE
 Execution halted
-Aug 23 10:25:43 bhd0056 sendEmail[80908]: Email was sent successfully!
+Aug 23 10:47:01 bhd0056 sendEmail[83181]: Email was sent successfully!
+slurmstepd: error: Exceeded step memory limit at some point.
