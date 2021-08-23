@@ -5,8 +5,8 @@
 module load r/4.0.5/b1
 
 Rscript --vanilla alleleFreqModelA_sample.R
-Rscript --vanilla alleleFreqModelA_sim.R
-Rscript --vanilla alleleFreqModelA_boot.R
+#Rscript --vanilla alleleFreqModelA_sim.R
+#Rscript --vanilla alleleFreqModelA_boot.R
 
 module load sendemail/1.56
 sendEmail -f fbeaudry@ur.rochester.edu -t fbeaudry@ur.rochester.edu -u Adrop -m Adrop
