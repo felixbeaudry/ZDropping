@@ -8,10 +8,10 @@ library(plyr)
 
 ####get & make starting data.frames####
 #list of indiv in each category each year
-load("simindivFIXmin2obs.rdata")
+load("working_files/simindivFIXmin2obs.rdata")
 
 #genotype data
-ped<-read.table('FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
 
 #subset pedigree for genotyped individuals
 Genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
@@ -35,7 +35,7 @@ indivlistgeno<-merge(simindivFIXmin2obs[,1:4],pedgeno[,c(1:4,5:253)],by.x='USFWS
 indivlistgeno[indivlistgeno[,7]==2,8:256] <- indivlistgeno[indivlistgeno[,7]==2,8:256]/2
 
 #save genotype file for simulations
-save(indivlistgeno,file='indivlistgenoZ.rdata')
+save(indivlistgeno,file='working_files/indivlistgenoZ.rdata')
 
 #add sex to indivlist
 indivlist <- merge(simindivFIXmin2obs,pedgeno[c(1,4)],by.x="USFWS",by.y="Indiv")
@@ -372,5 +372,8 @@ for(year in c(1999:2013)){
 today<-format(Sys.Date(),format="%d%b%Y")
 
 #save output
-save(samplePars,sampleFreq,file=paste("modelZIntermediateFiles_",today,".rdata",sep=''))
-save(sampleVar,file=paste("sampleVar_Z_SR",today,".rdata",sep=''))
+save(samplePars,sampleFreq,file=paste("working_files/intermediate_files/modelZIntermediateFiles_",today,".rdata",sep=''))
+save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_Z_SR",today,".rdata",sep=''))
+save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_Z.rdata",sep=''))
+
+

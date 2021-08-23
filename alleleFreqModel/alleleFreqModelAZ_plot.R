@@ -42,7 +42,14 @@ names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
 load("sampleVar_A_SR14Mar2021.rdata") #samplevar
 load("simVarA_210303_14Mar2021.rdata") #simvar
 load("allVar_boot_A_w3.4mb_24Jul2021.rdata") #bootstrap
+col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
 
+allVar_s <-  allVar[,col_sample]
+allVar_q <- allVar[,c(1:2)]
+
+allVar_q$q5 <- apply(allVar_s, 1, function(x) quantile(x,.05,na.rm = T))
+allVar_q$q95 <- apply(allVar_s, 1, function(x) quantile(x,.95,na.rm = T))
+allVar_q$se <- apply(X=allVar_s,1,function(x) sd(x)/sqrt(length(x)))
 
 
 ## Number of all & genotyped indivs; proportion of indivs in each category
@@ -737,12 +744,9 @@ load("simVarZ_11Jan2021.rdata") #simvar
 #load("allVar_boot_Z_w3.4mb_08Jun2021.rdata") #bootstrap
 
 load("allVar_int_boot_Z_w3.4mb_30Jul2021.rdata") #bootstrap
-
-
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
 
 allVar_s <-  allVar[,col_sample]
-
 allVar_q <- allVar[,c(1:2)]
 
 allVar_q$q5 <- apply(allVar_s, 1, function(x) quantile(x,.05,na.rm = T))

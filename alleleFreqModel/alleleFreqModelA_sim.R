@@ -17,15 +17,16 @@ nloci<-100000
 today<-format(Sys.Date(),format="%d%b%Y")
 
 #get input files: fixed list of indiv in each Category each year
-load("simindivFIXmin2obs.rdata")
+load("working_files/simindivFIXmin2obs.rdata")
 
 #get sex from pedigree
-load("FSJpedgeno_A.rdata")
+load("working_files/FSJpedgeno_A.rdata")
 pedinfo <- ped_Ageno[,1:4]
 colnames(pedinfo) <- c( "USFWS", "Dad", "Mom", "Sex")
 
 #get sample allele freq for simulations, from _sample script
-load("indivlistgenoA_SR_210119.rdata")
+load(sampleVar,file=paste("working_files/intermediate_files/sampleVar_Z.rdata",sep=''))
+
 indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
 indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
 indivlistgeno$Mom<-as.character(indivlistgeno$Mom)
@@ -50,16 +51,20 @@ indivlist <- indivlist[order(indivlist$Year),]
 
 #get unique indivs 
 simindivgeno<-indivlist[!duplicated(indivlist$USFWS),]
-colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "Sex")
+#colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "Sex")
+colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "og_Sex")
 
 #check for unsexed indivs & assign them a sex
-unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
-simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
-simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
+#unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
+#simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
+#simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
 
 #add assigned sexes of unsexed birds back to indivlist 
 #(this way, a given unsexed bird will always have the same assigned sex even if it appears multiple times in indivlist)
 indivlist$Sex <- simindivgeno$Sex[match(indivlist$USFWS, simindivgeno$Indiv)]
+simulated_sexes <- fread('working_files/FSJ_sex_data_real_and_simulated_20201015.csv')
+colnames(simulated_sexes) <- c("Indiv", "Sex")
+simindivgeno <- left_join(simindivgeno,simulated_sexes,by=c("Indiv"="Indiv"))
 
 #separate into moms vs dads vs nestlings
 simindivgenoMoms<-
@@ -1037,4 +1042,4 @@ for(year in c(1999:2013)){
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errFFAM-errT',c(3:(nloci+2))])^2)
 }
 #save output
-save(simVar,file=paste("simVarA_",today,".rdata",sep=''))
+save(simVar,file=paste("working_files/intermediate_files/simVarA_",today,".rdata",sep=''))

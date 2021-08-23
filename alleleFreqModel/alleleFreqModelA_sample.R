@@ -9,8 +9,8 @@ library(plyr)
 ####get & make starting data.frames####
 
 #get input files
-load("simindivFIXmin2obs.rdata") #list of indiv in each category each year
-load("FSJpedgeno_A.rdata") #pedigree
+load("working_files/simindivFIXmin2obs.rdata") #list of indiv in each category each year
+load("working_files/FSJpedgeno_A.rdata") #pedigree
 
 #only keep genotyped individuals
 genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
@@ -353,8 +353,9 @@ for(year in c(1999:2013)){
 today<-format(Sys.Date(),format="%d%b%Y")
 
 #save output
-save(samplePars,sampleFreq,file=paste("modelAIntermediateFiles_",today,".rdata",sep=''))
-save(sampleVar,file=paste("sampleVar_A_SR",today,".rdata",sep=''))
+save(samplePars,sampleFreq,file=paste("working_files/intermediate_files/modelAIntermediateFiles_",today,".rdata",sep=''))
+save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_A_SR",today,".rdata",sep=''))
+save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_A.rdata",sep=''))
 
 
 
