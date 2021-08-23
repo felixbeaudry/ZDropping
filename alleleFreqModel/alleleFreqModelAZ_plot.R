@@ -1555,7 +1555,7 @@ AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] <- AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"]
 
 
 ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
-  geom_hline(yintercept = 0,alpha=0.5)+
+  geom_hline(yintercept = 0,alpha=0.75)+
   
   geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category2,linetype=chrom), width=.1,alpha=0.5) +
   geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
@@ -1567,7 +1567,7 @@ ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) +
   theme_bw(base_size = 16) + 
   scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
   scale_color_manual(values=fills_to_use)+  
-  scale_shape_manual(values=c(1,16)) +
+  scale_shape_manual(values=c(16,1)) +
  # scale_linetype_manual(values=c("solid","dashed")) +
   labs(y=varp_title,x="Year",color="Category",linetype="") + 
   theme(strip.background =element_rect(fill="white")) +
