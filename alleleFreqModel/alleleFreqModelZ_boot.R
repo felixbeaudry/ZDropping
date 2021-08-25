@@ -15,16 +15,19 @@ library(data.table)
 
 ####get input files####
 #list of indiv in each Category each year
-load("simindivFIXmin2obs.rdata")
+load("working_files/simindivFIXmin2obs.rdata")
 names(simindivFIXmin2obs) <- c('Year','Indiv','Category','Genotyped','Mom','Dad')
 
-load("indivlistgenoZ.rdata")
+load("working_files/indivlistgenoZ.rdata")
 
 names(indivlistgeno)[c(1,3,4)]<-c('Indiv','Category','Genotyped')
 
 #Z SNP info
-ZSNPS <- fread('FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05.map')
+ZSNPS <- fread('working_files/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05.map')
 ZSNPS <- ZSNPS[ZSNPS$V1 == 39 ,]
+
+#chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
+#Z_chip <- left_join(ZSNPS,chip,by=c("V2"=   "SNPname"))
 
 names(indivlistgeno)[c(8:length(indivlistgeno))]<-ZSNPS$V2
 
@@ -63,7 +66,7 @@ for(yr in c(1999:2013)){
 
 ####sim unchanging parameters####
 
-ped<-read.table('FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
 pedinfo <- ped[,1:5]
 colnames(pedinfo) <- c("Family", "Indiv", "Dad", "Mom", "Sex")
 
@@ -74,12 +77,15 @@ indivlist_sim <- indivlist_sim[order(indivlist_sim$Year),]
 
 #get unique indivs 
 simindivgeno<-indivlist_sim[!duplicated(indivlist_sim$Indiv),]
-colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "Sex")
+colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "og_Sex")
 
 #check for unsexed indivs & assign them a sex
-unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
-simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
-simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
+#unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
+#simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
+#simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
+simulated_sexes <- fread('working_files/FSJ_sex_data_real_and_simulated_20201015.csv')
+colnames(simulated_sexes) <- c("Indiv", "Sex")
+simindivgeno <- left_join(simindivgeno,simulated_sexes,by=c("Indiv"="Indiv"))
 
 #add assigned sexes of unsexed birds back to indivlist_sim 
 #(this way, a given unsexed bird will always have the same assigned sex even if it appears multiple times in indivlist)
@@ -97,7 +103,7 @@ simindivgenoNestlings<-
 ####start bootstrap####
 markersInPedOrder <- cbind.data.frame("SNPs"=names(indivlistgeno[,-c(1:7)]),"rank"=c(1:length(indivlistgeno[,-c(1:7)])))
 
-chip <- fread('FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
+chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
 
 chip_Z <- chip[chip$NewScaff == "ScYP8k310HRSCAF43chZ" ,] # only Z & 
 
@@ -170,9 +176,9 @@ allVar <-
 ####start the loop####
 loop=1
 
-boots <- sample(unique(na.omit(markersInPedOrder_chip_Z$bootstrap)), 1000, replace=T)
+#boots <- sample(unique(na.omit(markersInPedOrder_chip_Z$bootstrap)), 1000, replace=T)
 
-for(win in boots){
+for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   cat(win,"\n")
   
   #n = number of Genotyped individuals, x = sample allele frequency
@@ -1412,22 +1418,13 @@ allVar_tmp <- rbind.data.frame(sampleVar,simVar)
 allVar[,(loop+2)] <- allVar_tmp[,3]
 names(allVar)[(loop+2)] <- paste("bs",win,sep="")
 loop = loop +1
+today<-format(Sys.Date(),format="%d%b%Y")
+save(allVar,file=paste("working_files/intermediate_files/allVar_int_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+
 }
 
 today<-format(Sys.Date(),format="%d%b%Y")
-
-#calculate quantiles
-allVar_q <- allVar[,c(1:2)]
-
-allVar_q$q5 <- apply(allVar[,-c(1:2)], 1, function(x) quantile(x,.05,na.rm = T))
-allVar_q$q95 <- apply(allVar[,-c(1:2)], 1, function(x) quantile(x,.95,na.rm = T))
-std <- function(x) sd(x)/sqrt(length(x))
-
-allVar_q$se <- std(allVar[,-c(1:2)])
-
-save(allVar,file=paste("allVar_int_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
-
-save(allVar_q,file=paste("allVar_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+save(allVar,file=paste("working_files/intermediate_files/allVar_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
 
 
 

@@ -10,14 +10,12 @@ library(doParallel)
 library(data.table)
 `%notin%` <- Negate(`%in%`)
 
-
-
 ####get input files###
 #list of indiv in each category each year
-load("simindivFIXmin2obs.rdata")
+load("working_files/simindivFIXmin2obs.rdata")
 genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
 
-load("FSJpedgeno_A.rdata")
+load("working_files/FSJpedgeno_A.rdata")
 ped_AgenoT <- ped_Ageno[ped_Ageno$V2 %in% genotyped_official,] 
 
 indivlist <- merge(simindivFIXmin2obs,ped_AgenoT[c(1,4)],by.x="USFWS",by.y="V2")
@@ -67,16 +65,20 @@ indivlist_sim <- indivlist_sim[order(indivlist_sim$Year),]
 
 #get unique indivs 
 simindivgeno<-indivlist_sim[!duplicated(indivlist_sim$USFWS),]
-colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "Sex")
+colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "og_Sex")
 
 #check for unsexed indivs & assign them a sex
-unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
-simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
-simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
+#unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
+#simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
+#simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
 
 #add assigned sexes of unsexed birds back to indivlist_sim 
+simulated_sexes <- fread('working_files/FSJ_sex_data_real_and_simulated_20201015.csv')
+colnames(simulated_sexes) <- c("Indiv", "Sex")
+simindivgeno <- left_join(simindivgeno,simulated_sexes,by=c("Indiv"="Indiv"))
 #(this way, a given unsexed bird will always have the same assigned sex even if it appears multiple times in indivlist)
 indivlist_sim$Sex <- simindivgeno$Sex[match(indivlist_sim$USFWS, simindivgeno$Indiv)]
+
 
 #separate into moms vs dads vs nestlings
 simindivgenoMoms<-
@@ -93,7 +95,7 @@ markersInPedOrder <- cbind.data.frame("SNPs"=names(ped_Ageno[,-c(1:4)]),"rank"=c
 markersInPedOrder <- separate(markersInPedOrder, SNPs, c("SNP","one"),   sep = "_", remove = TRUE, convert = FALSE, extra = "merge", fill = "left")[,-2]
 
 #import SNPchip SNP position information
-chip <- fread('FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
+chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
 
 #which scaffolds to keep
 keeps <- c( 
@@ -111,7 +113,7 @@ w_size = 3400000
 nloci<- round(100000*(w_size/1000000000)) #set sim loci number relative to window size; regular sim nloci / genome size in mb
 
 #import chromosome sizes
-sizes <- fread('FSJ.chrom.sizes')
+sizes <- fread('working_files/FSJ.chrom.sizes')
 sizes <- sizes[sizes$V1 %in% keeps,]
 
 #loop across scaffolds making windows of SNPs
@@ -200,9 +202,9 @@ data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
 
 loop=1
 
-boots <- sample(unique(na.omit(markersInPedOrder_chip_A$bootstrap)), 1000, replace=T)
+#boots <- sample(unique(na.omit(markersInPedOrder_chip_A$bootstrap)), 1000, replace=T)
 
-for(win in boots){
+for(win in unique(na.omit(markersInPedOrder_chip_A$bootstrap))){
   cat(win,"\n")
 
 #n = number of genotyped individuals, x = sample allele frequency
@@ -1484,18 +1486,11 @@ allVar_tmp <- rbind.data.frame(sampleVar,simVar)
 allVar[,(loop+2)] <- allVar_tmp[,3]
 names(allVar)[(loop+2)] <- paste("bs",win,sep="")
 loop = loop +1
+today<-format(Sys.Date(),format="%d%b%Y")
+save(allVar,file=paste("working_files/intermediate_files/allVar_int_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+
 }
 
 today<-format(Sys.Date(),format="%d%b%Y")
-
-#calculate quantiles
-allVar_q <- allVar[,c(1:2)]
-  
-allVar_q$q5 <- apply(allVar[,-c(1:2)], 1, function(x) quantile(x,.05,na.rm = T))
-allVar_q$q95 <- apply(allVar[,-c(1:2)], 1, function(x) quantile(x,.95,na.rm = T))
-allVar_q$se <- apply(X=allVar[,-c(1:2)],1,function(x) sd(x)/sqrt(length(x)))
-
-save(allVar,file=paste("allVar_int_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
-
-save(allVar_q,file=paste("allVar_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+save(allVar,file=paste("working_files/intermediate_files/allVar_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
 

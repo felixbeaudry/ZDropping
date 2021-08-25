@@ -1,0 +1,80 @@
+Z sample
+Z sim
+Loading required package: iterators
+Loading required package: parallel
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise,
+    summarize
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Error in save(simdataTrue, file = "simdataTrueZ", today, ".rdata") : 
+  object ‘.rdata’ not found
+Execution halted
+Z boot
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise,
+    summarize
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: iterators
+Loading required package: parallel
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+0   0   75605511 
+1   3400000   75605511 
+2   6800000   75605511 
+3   10200000   75605511 
+4   13600000   75605511 
+5   1.7e+07   75605511 
+6   20400000   75605511 
+7   23800000   75605511 
+8   27200000   75605511 
+9   30600000   75605511 
+10   3.4e+07   75605511 
+11   37400000   75605511 
+12   40800000   75605511 
+13   44200000   75605511 
+14   47600000   75605511 
+15   5.1e+07   75605511 
+16   54400000   75605511 
+17   57800000   75605511 
+18   61200000   75605511 
+19   64600000   75605511 
+20   6.8e+07   75605511 
+21   71400000   75605511 
+22   74800000   75605511  skipped
+4 
+Error: all(is.na(simindivgenoAll[these.female.nestlings, 8:(nloci +  .... is not TRUE
+Execution halted
+Aug 23 11:15:11 bhd0057 sendEmail[61608]: Email was sent successfully!
