@@ -19,6 +19,7 @@ ped_AgenoT <- ped_Ageno[ped_Ageno$V2 %in% genotyped_official,]
 indivlist <- merge(simindivFIXmin2obs,ped_AgenoT[c(1,4)],by.x="USFWS",by.y="V2")
 names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
 
+
 ####values constant across SNPs####
 #estimate values that are constant across SNPs
 samplePars<-data.frame(Year=c(1998:2013),stringsAsFactors=FALSE)
@@ -78,6 +79,7 @@ SNPyr<-sampleFreq$Year
 SNPcat<-sampleFreq$Category
 
 indivlistgeno <- merge(indivlist,ped_AgenoT[,c(1,5:length(ped_AgenoT))],by.x="Indiv",by.y="V2")
+save(indivlistgeno,file='working_files/intermediate_files/indivlistgenoA.rdata')
 
 igYear<-indivlistgeno$Year
 

@@ -85,7 +85,7 @@ colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Da
 #simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
 simulated_sexes <- fread('working_files/FSJ_sex_data_real_and_simulated_20201015.csv')
 colnames(simulated_sexes) <- c("Indiv", "Sex")
-simindivgeno <- left_join(simindivgeno,simulated_sexes,by=c("Indiv"="Indiv"))
+simindivgeno <- left_join(simindivgeno[,-7],simulated_sexes,by=c("Indiv"="Indiv"))
 
 #add assigned sexes of unsexed birds back to indivlist_sim 
 #(this way, a given unsexed bird will always have the same assigned sex even if it appears multiple times in indivlist)
