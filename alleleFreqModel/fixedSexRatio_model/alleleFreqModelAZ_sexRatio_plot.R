@@ -1,6 +1,6 @@
-## Plotting results of A allele frequency model + simulations to estimate error
-## 20201001
-## Rose Driscoll
+## Plotting results of A and Z allele frequency change partitioning model with fixed (50:50) sex ratio; prints figures equivalent to Fig 4-5 and S6-10 
+## last update: Aug 26th 2021
+## Rose Driscoll and Felix Beaudry
 
 
 ## Setup
