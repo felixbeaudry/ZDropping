@@ -1,4 +1,4 @@
-#script to model variance in allele frequency change over time - Z version
+#script to model variance in allele frequency change over time - fixed sex ratio, Z version
 #estimate sample values using real data
 #Nancy Chen & Rose Driscoll
 #Last updated: 15 May 2020

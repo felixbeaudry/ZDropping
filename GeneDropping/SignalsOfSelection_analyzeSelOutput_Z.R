@@ -1,8 +1,6 @@
 #13 May 2019
 #Rose Driscoll and Nancy Chen
-#script to analyze gene dropping results
-#core demo nestlings
-#multiple tests of selection
+#script to analyze gene dropping results for tests of selection
 
 today<-format(Sys.Date(),format="%d%b%Y")
 

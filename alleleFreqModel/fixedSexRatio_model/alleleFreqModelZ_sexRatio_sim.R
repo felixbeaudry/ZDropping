@@ -1,4 +1,4 @@
-#script to model variance in allele frequency change over time - Z version
+#script to model variance in allele frequency change over time - fixed sex ratio, Z version
 #run sims for 100,000 SNPs to get empirical estimates of covariances and errors
 #Nancy Chen & Graham Coop & Rose Driscoll
 #Last updated: 15 October 2020

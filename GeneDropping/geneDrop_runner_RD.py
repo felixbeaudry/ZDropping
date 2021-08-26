@@ -119,7 +119,7 @@ for locus in loci:
     p_all = pd.concat([founders, in_pedigree])
 
 ## Now we have a trimmed pedigree! 
-## Next, make the input files for geneDrop_final_NC.c
+## Next, make the input files for geneDrop_RD.c
 
     # this sums up the number of individuals that have each allele (0, 1, or 2) but it doesn't save anything so I don't know what it's doing
     p_all[a1].value_counts().add(p_all[a2].value_counts(),fill_value=0)

@@ -9,7 +9,7 @@
 R -f GenContrib_Imm_input.R --vanilla
 
 #run gene dropping
-#if you haven't already compiled geneDrop_final.c, compile now: gcc geneDrop_final.c -lgsl
+#if you haven't already compiled geneDrop_RD.c, compile now: gcc geneDrop_RD.c -lgsl
 python geneDrop_runner_RD.py working_files/intermediate_files/ImmContribAll_malevsfemale.ped working_files/intermediate_files/allABSnestlings.txt working_files/intermediate_files/ImmContribAll_malevsfemale_A 1000000 0 s A
 python geneDrop_runner_RD.py working_files/intermediate_files/ImmContribYearly_malevsfemale.ped working_files/intermediate_files/allABSnestlings.txt working_files/intermediate_files/ImmContribYearly_malevsfemale_A 1000000 0 s A
 
@@ -25,4 +25,4 @@ do
     do
         python geneDrop_runner_RD.py ImmContribAll_malevsfemale.ped allABSnestlings.txt test_ImmContribAll_prop_male_${sexRatio}_${chrom} 1000000 0 s ${chrom} ${sexRatio}
     done
-don
+done

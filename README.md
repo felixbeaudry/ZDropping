@@ -1,5 +1,5 @@
 # ZDropping
-Sex-biased demography, including sex-biased survival or migration, can impact allele frequency changes across the genome. In particular, we expect different patterns of genetic variation on autosomes and sex chromosomes due to sex-specific differences in life histories, as well as differences in effective population size, transmission modes, and the strength and mode of selection. Here, we present a set of scripts to directly characterize the relative roles of sex-biased demography and inheritance in shaping genome-wide allele frequency trajectories. These scripts are associated with Driscoll et al. (biorXiv). This work also build on [Chen et al 2019](https://www.pnas.org/content/116/6/2158) with associated scripts and data at [here](http://dx.doi.org/10.6084/m9.figshare.7044368)
+Sex-biased demography, including sex-biased survival or migration, can impact allele frequency changes across the genome. In particular, we expect different patterns of genetic variation on autosomes and sex chromosomes due to sex-specific differences in life histories, as well as differences in effective population size, transmission modes, and the strength and mode of selection. Here, we present a set of scripts to directly characterize the relative roles of sex-biased demography and inheritance in shaping genome-wide allele frequency trajectories. These scripts are associated with Driscoll et al. (biorXiv). This work also build on [Chen et al 2019](https://www.pnas.org/content/116/6/2158) with associated scripts and data [here](http://dx.doi.org/10.6084/m9.figshare.7044368).
 
 Scripts are seperated into one directory for those sections of the methods which employ gene dropping (expected genetic contributions of individuals and immigrants, signals of selection) and one section for the allele frequency variance model.
 
@@ -38,7 +38,7 @@ We use gene dropping to simulate the combined expected genetic contributions of 
 Use `GenContrib_Imm.sh` to run the gene dropping simulations for immigrants. This script also runs `GenContrib_Imm_input.R` in order to generate the pedigrees that are the input for the gene dropping simulations.
 
 #### Step 2 - Plotting
-`GenContrib_Imm_plot_fig3_merge.R` plots the expected genetic contributions of immigrants.
+`GenContrib_Imm_plot_fig3.R` plots the expected genetic contributions of immigrants.
 
 ### Signals of selection
 Next, we look for signals of selection by comparing expected contributions to observed change in frequency. This analysis is broken down into three steps: 1 - gene dropping, 2 - performing tests of selection, and 3 - plotting. 
@@ -47,7 +47,7 @@ Next, we look for signals of selection by comparing expected contributions to ob
 
 
 #### Step 2 - Perform tests of selection
-Run `analyzeSelOutput_Z.R` to test for selection based on the gene dropping simulations.
+Run `SignalsOfSelection_analyzeSelOutput_Z.R` to test for selection based on the gene dropping simulations.
 
 #### Step 3 - Plot
 Run x to correct selection results for multiple comparisons genome-wide and create manhattanplots to display selection results.

@@ -1,4 +1,4 @@
-## Script to randomly assign sexes to unsexed individuals
+## Script to randomly assign sexes to unsexed individuals for the allele frequency variance models
 ## Rose Driscoll
 ## 20201015
 

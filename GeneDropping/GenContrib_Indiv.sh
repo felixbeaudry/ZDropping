@@ -1,11 +1,11 @@
 #!/bin/bash
 
-#pipeline for estimating expected genetic contributions of recent individuals
+#pipeline for estimating expected genetic contributions of 926 individual breeders
 #input files: FSJpedgeno_Zsexlinked.ped & IndivDataUSFWS.txt
 #Nancy Chen, Rose Driscoll and Felix Beaudry
 #Last updated: 18 Aug 2021
 
-#generate ped files for contribution of all immigrants or cohorts of immigrants (yearly)
+#generate ped files for the individuals
 R -f GenContrib_Indiv_input.r --vanilla
 
 #run gene dropping sims - specify number of processors to parallelize over in nprocs

@@ -1,4 +1,4 @@
-#script to model variance in allele frequency change over time - autosomal version
+#script to model variance in allele frequency change over time - fixed sex ratio, autosomal version
 #estimate sample values using real data
 #Nancy Chen & Rose Driscoll
 #Last updated: 5 May 2021
