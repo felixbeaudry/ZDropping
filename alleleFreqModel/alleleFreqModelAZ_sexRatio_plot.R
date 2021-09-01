@@ -2,6 +2,7 @@
 ## last update: Aug 26th 2021
 ## Rose Driscoll and Felix Beaudry
 
+setwd('~/Documents/GitHub/ZDropping/alleleFreqModel')
 
 ## Setup
 
@@ -24,21 +25,21 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
                     legend.position="right", legend.text = element_text(size=7),
                     legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(0.25,"cm"))
 
-setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all')
+
 
 #indivlist
-load("simindivFIXmin2obs.rdata")
-ped<-read.table('FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+load("working_files/simindivFIXmin2obs.rdata")
+ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
 pedinfo <- ped[,1:5]
 colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
 indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
 indivlist <- indivlist[order(indivlist$Year),]
 
 #samplevar
-load("sampleVarA_06May2021_rose.rdata")
+load("working_files/intermediate_files/sampleVarA_06May2021_rose.rdata")
 
 #simvar
-load("simVarA_07Apr2021_rose.rdata")
+load("working_files/intermediate_files/simVarA_07Apr2021_rose.rdata")
 
 
 ## Number of all & genotyped indivs; proportion of indivs in each category
@@ -281,17 +282,17 @@ alleleFreqVarAvg_A <-alleleFreqVarAvg[alleleFreqVarAvg$Category != 'MSMI'
 
 ####Z####
 
-ped<-read.table('FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
 pedinfo <- ped[,1:5]
 colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
 indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
 indivlist <- indivlist[order(indivlist$Year),]
 
 #samplevar
-load("sampleVarZ_21Jan2021_rose.rdata")
+load("working_files/intermediate_files/sampleVarZ_21Jan2021_rose.rdata")
 
 #simvar
-load("simVarZ_23Jan2021_rose.rdata")
+load("working_files/intermediate_files/simVarZ_23Jan2021_rose.rdata")
 
 
 ## Number of all & genotyped indivs; proportion of indivs in each category
@@ -583,36 +584,46 @@ library(PNWColors)
 varp_title <- expression(paste("Variance ",Delta, "p"))
 
 
-AZ_AFVA$supercategory <- factor(AZ_AFVA$Supercategory,levels=c("Survivor","Birth","Cov(S,B)","Immigrant","Cov(I,B)"))
+AZ_AFVA$supercategory <- factor(AZ_AFVA$Supercategory,levels=c("Survivor","Cov(S,B)","Birth","Cov(I,B)","Immigrant"))
+
 AZ_AFVA$sexCat <- factor(AZ_AFVA$SexCat,levels=c("Female" ,"Male"    ,   "Cov(F,M)"))
 
 #fills_to_use <-c(pnw_palettes$Bay[1,3],  pnw_palettes$Winter[1,2], pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,1],pnw_palettes$Winter[1,4],pnw_palettes$Bay[1,4],pnw_palettes$Bay[1,5])
 fills_to_use <-c(pnw_palettes$Bay[1,3],pnw_palettes$Winter[1,2],"#DD4124", pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,1],pnw_palettes$Winter[1,4],"#E77A66",pnw_palettes$Bay[1,4],pnw_palettes$Bay[1,5])
 
 #Fig S7
-#unique(AZ_AFVA$Category3)
-ggplot(data=AZ_AFVA, aes(x=Year, y=prop)) + 
+AZ_AFVA$year_adj <- AZ_AFVA$Year 
+AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] <- AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] + 0.25
+varp_title2 <- expression(paste("Proportional Contribution to ",Delta, "p variance"))
+
+pdf(paste("fig_S7_sep1.pdf",sep=''),width=5.5,height=4)
+
+ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
   geom_hline(yintercept = 0,alpha=0.5)+
   
   # geom_ribbon(aes(x = Year, ymin = q5_prop, ymax = q95_prop, alpha = chrom)) +
   #geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category3), width=.1,alpha=0.5) +
   
-  geom_point(aes(color=Category3),alpha=0.5 ) + 
-  geom_line(aes(linetype=chrom,color=Category3)) + 
+  geom_point(aes(color=Category3,shape=chrom),size=0.75) + 
+ # geom_line(aes(linetype=chrom,color=Category3)) + 
   guides(color=FALSE,linetype=FALSE) +
   #facet_grid(SexCat ~ Supercategory,scales="free")+
   facet_grid(  supercategory ~sexCat,scales="free")+
   
-  theme_bw(base_size = 16) + 
+  theme_bw(base_size = 8) + 
   scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
   scale_color_manual(
     #breaks=c("FM","MF"),
     values=fills_to_use)+  
+  scale_shape_manual(values=c(16,1)) +
   
-  labs(y=varp_title,x="Year",color="Category",linetype="") + 
+  labs(y=varp_title2,x="Year",color="Category",linetype="") + 
   theme(strip.background =element_rect(fill="white")) +
-  geom_dl(aes(label = Category4,color=Category3), method = list("last.qp",cex = 1,dl.trans(x = x + .2))) +
-  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) 
+  geom_dl(aes(label = Category4,color=Category3), method = list("last.qp",cex = 0.5,dl.trans(x = x + .2))) +
+  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) +
+  coord_cartesian(ylim = c(-0.25, 0.5))
+
+dev.off()
 
 ##
 AZ_AFVA$year_adj <- AZ_AFVA$Year 
