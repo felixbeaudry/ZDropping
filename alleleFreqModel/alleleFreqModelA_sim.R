@@ -52,8 +52,8 @@ indivlist <- indivlist[order(indivlist$Year),]
 
 #get unique indivs 
 simindivgeno<-indivlist[!duplicated(indivlist$USFWS),]
-#colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "Sex")
-colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "og_Sex")
+colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "Sex")
+#colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "og_Sex")
 
 #check for unsexed indivs & assign them a sex
 #unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
@@ -199,6 +199,7 @@ simdataTrue<-merge(indivlist,simindivgenoAll[,c(1,8:(nloci+7))],
 
 #save
 save(simdataTrue,file='working_files/intermediate_files/simdataTrueA.rdata')
+#load('working_files/intermediate_files/simdataTrueA.rdata')
 
 
 ####calculate error in freq estimation due to sampling####
