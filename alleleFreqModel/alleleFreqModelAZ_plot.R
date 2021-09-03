@@ -2,7 +2,7 @@
 ## Rose Driscoll and Felix Beaudry
 ##July 7 2021
 
-setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all')
+setwd('~/Documents/GitHub/ZDropping/alleleFreqModel')
 
 library(plyr)
 library(ggplot2)
@@ -30,18 +30,18 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
 ####start calculations for autosomal loci####
 
 #load tables
-load("simindivFIXmin2obs.rdata")
+load("working_files/simindivFIXmin2obs.rdata")
 genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
 
-load("FSJpedgeno_A.rdata")
+load("working_files/FSJpedgeno_A.rdata")
 ped_AgenoT <- ped_Ageno[ped_Ageno$V2 %in% genotyped_official,] 
 indivlist <- merge(simindivFIXmin2obs,ped_AgenoT[c(1,4)],by.x="USFWS",by.y="V2")
 names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
 
 
-load("sampleVar_A_SR14Mar2021.rdata") #samplevar
-load("simVarA_210303_14Mar2021.rdata") #simvar
-load("allVar_boot_A_w3.4mb_24Jul2021.rdata") #bootstrap
+load("working_files/intermediate_files/sampleVar_A_SR24Aug2021.rdata") #samplevar
+load("working_files/intermediate_files/simVarA_30Aug2021.rdata") #simvar
+load("working_files/intermediate_files/allVar_boot_A_w3.4mb_01Sep2021.rdata") #bootstrap
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
 
 allVar_s <-  allVar[,col_sample]
@@ -732,18 +732,17 @@ alleleFreqVarAvg1_A <- alleleFreqVarAvg2
 
 
 #indivlist
-load("simindivFIXmin2obs.rdata")
-ped<-read.table('FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+load("working_files/simindivFIXmin2obs.rdata")
+ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
 pedinfo <- ped[,1:5]
 colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
 indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
 indivlist <- indivlist[order(indivlist$Year),]
 
-load("sampleVar_Z_SR11Jan2021.rdata") #samplevar
-load("simVarZ_11Jan2021.rdata") #simvar
-#load("allVar_boot_Z_w3.4mb_08Jun2021.rdata") #bootstrap
 
-load("allVar_int_boot_Z_w3.4mb_30Jul2021.rdata") #bootstrap
+load("working_files/intermediate_files/sampleVar_Z_SR23Aug2021.rdata") #samplevar
+load("working_files/intermediate_files/simVarZ.rdata") #simvar
+load("working_files/intermediate_files/allVar_boot_Z_w3.4mb_24Aug2021.rdata") #bootstrap
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
 
 allVar_s <-  allVar[,col_sample]
@@ -1454,21 +1453,7 @@ AZ_AFVA_sex <-
 AZ_AFVA_sex_only <- unique(AZ_AFVA_sex[,c(1,10,12:14)])
 AZ_AFVA_sex_only$SexCat = factor(AZ_AFVA_sex_only$sexCat, levels=c('Cov(F,M)','Female','Male'))
 
-sex_stack_plot <- 
-  ggplot() + 
-  geom_hline(yintercept = 0,alpha=0.5)+
-  geom_hline(yintercept = 1,alpha=0.5)+
-  
-  geom_bar(data=AZ_AFVA_sex_only, aes(x=Year, y=sexCat_sum,fill=SexCat,group=SexCat), stat='identity',alpha=0.75) +
-  
-  facet_grid(chrom~.,scales="free",space="free") + 
-  labs(y="Proportion",x="Year") +
-  theme_bw(base_size = 16) + 
-  theme(strip.background =element_rect(fill="white")) +
-  scale_fill_manual("Category",values=c("mediumpurple","indianred1","cornflowerblue")) + 
-  guides(color=FALSE)  + 
-  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) +
-  scale_y_continuous(breaks=c(0,0.5,1))
+
 
 #set factor order 
 AZ_AFVA$faccat <- factor(AZ_AFVA$Category,
@@ -1489,7 +1474,7 @@ AZ_AFVA$Supercategory<-factor(ifelse(AZ_AFVA$Category=='MIFI' | AZ_AFVA$Category
                                                            ifelse(AZ_AFVA$Category=='MSsq' |AZ_AFVA$Category=='FSsq' | AZ_AFVA$Category=='MSFS', 'Survivor', NA))))),
                               levels = c('Immigrant', 'Cov(I,B)', 'Birth','Cov(S,B)','Survivor'))
 
-AZ_AFVA$supercategory <- factor(AZ_AFVA$Supercategory,levels=c("Survivor","Birth","Cov(S,B)","Immigrant","Cov(I,B)"))
+AZ_AFVA$supercategory <- factor(AZ_AFVA$Supercategory,levels=c("Survivor","Cov(S,B)","Birth","Cov(I,B)","Immigrant"))
 
 AZ_AFVA$Category2 <- AZ_AFVA$Category
 AZ_AFVA$Category2[AZ_AFVA$Category %in% c("FSsq","MSsq","MSFS")] <- "S"
@@ -1516,6 +1501,26 @@ AZ_AFVA_cat_only$supercategory = factor(AZ_AFVA_cat_only$supercategory, levels=c
 
 fills_to_use_cat <-c(pnw_palettes$Bay[1,1],pnw_palettes$Bay[1,2],pnw_palettes$Bay[1,5], pnw_palettes$Bay[1,3],pnw_palettes$Bay[1,4])
 
+####plot fig. 4B####
+varp_title <- expression(atop("Proportional Contribution",paste("to ",Delta, "p variance")))
+
+
+sex_stack_plot <- 
+  ggplot() + 
+  geom_hline(yintercept = 0,alpha=0.5)+
+  geom_hline(yintercept = 1,alpha=0.5)+
+  
+  geom_bar(data=AZ_AFVA_sex_only, aes(x=Year, y=sexCat_sum,fill=SexCat,group=SexCat), stat='identity',alpha=0.75) +
+  
+  facet_grid(chrom~.,scales="free",space="free") + 
+  labs(y=varp_title,x="Year") +
+  theme_bw(base_size = 8) + 
+  theme(strip.background =element_rect(fill="white")) +
+  scale_fill_manual("Category",values=c("mediumpurple","indianred1","cornflowerblue")) + 
+  guides(color=FALSE)  + 
+  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) +
+  scale_y_continuous(breaks=c(0,0.5,1))
+
 cat_stack_plot <- 
   ggplot() + 
   geom_hline(yintercept = 0,alpha=0.5)+
@@ -1525,8 +1530,8 @@ cat_stack_plot <-
   geom_bar(data=AZ_AFVA_cat_only, aes(x=Year, y=catCat_sum,fill=supercategory,group=supercategory), stat='identity',alpha=0.75) +
   
   facet_grid(chrom~.,scales="free",space="free") + 
-  labs(y="Proportion",x="Year") +
-  theme_bw(base_size = 16) + 
+  labs(y=varp_title,x="Year") +
+  theme_bw(base_size = 8) + 
   theme(strip.background =element_rect(fill="white")) +
   scale_fill_manual("Category",values=fills_to_use_cat) + 
   guides(color=FALSE)  + 
@@ -1534,15 +1539,17 @@ cat_stack_plot <-
   scale_y_continuous(breaks=c(0,0.5,1))
 
 
-####plot fig. 4B####
+#quartz(width=6, height=4,dpi=300)
+pdf(paste("fig_4BC.pdf",sep=''),width=4.5,height=3)
+
 plot_grid(sex_stack_plot,  cat_stack_plot,  labels = c('B', 'C'), ncol = 1, align = 'v',axis='rl')
+dev.off()
 
 ####label supercategories for stack####
 
 
 
 #plotting parameters
-varp_title <- expression(paste("Proportion of ",Delta, "p variance"))
 Avarp_title <- expression(paste("Autosomal Variance ",Delta, "p"))
 Zvarp_title <- expression(paste("Z Variance ",Delta, "p"))
 
@@ -1553,30 +1560,34 @@ fills_to_use <-c(pnw_palettes$Bay[1,3],pnw_palettes$Winter[1,2],"#DD4124", pnw_p
 AZ_AFVA$year_adj <- AZ_AFVA$Year 
 AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] <- AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] + 0.25
 
+varp_title2 <- expression(paste("Proportional Contribution to ",Delta, "p variance"))
+
+pdf(paste("fig_5_sep1.pdf",sep=''),width=5.5,height=4)
 
 ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
-  geom_hline(yintercept = 0,alpha=0.75)+
+  geom_hline(yintercept = 0,alpha=0.5,size=0.25)+
   
-  geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category2,linetype=chrom), width=.1,alpha=0.5) +
-  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
+  geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category2,linetype=chrom), width=.1,alpha=0.5,size=0.15) +
+#  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
   
-  geom_point(aes(color=Category2,shape=chrom)) + 
+  geom_point(aes(color=Category2,shape=chrom),size=0.75) + 
  guides(color=FALSE) +
   facet_grid(  supercategory ~sexCat,scales="free")+
   
-  theme_bw(base_size = 16) + 
+  theme_bw(base_size = 8) + 
   scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
   scale_color_manual(values=fills_to_use)+  
   scale_shape_manual(values=c(16,1)) +
  # scale_linetype_manual(values=c("solid","dashed")) +
-  labs(y=varp_title,x="Year",color="Category",linetype="") + 
+  labs(y=varp_title2,x="Year",color="Category",linetype="") + 
   theme(strip.background =element_rect(fill="white")) +
-  geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 1,dl.trans(x = x + .2))) +
-  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) #+ 
-#  coord_cartesian(ylim = c(-0.25, 0.5))
+  geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 0.5,dl.trans(x = x + .2))) +
+  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) + 
+  coord_cartesian(ylim = c(-0.25, 0.5))
   #ylim(-0.2,0.5)
+dev.off()
 
-min(AZ_AFVA$prop[AZ_AFVA$supercategory == "Birth"])
+ min(AZ_AFVA$prop[AZ_AFVA$supercategory == "Birth"])
 max(AZ_AFVA$prop[AZ_AFVA$supercategory == "Birth"])
 
 min(AZ_AFVA$prop[AZ_AFVA$supercategory == "Survivor"])
@@ -1617,23 +1628,26 @@ alleleFreqVarAvg1_AZ$fullCat[alleleFreqVarAvg1_AZ$Category == "FBsq" ] <- "Femal
         "Cov(Fi,Mb)"  ,"Cov(Fs,Fb)","Cov(Fi,Fb)"))
 
  #Fig S6
+ pdf(paste("fig_S6_sep1.pdf",sep=''),width=6,height=4)
+ 
  ggplot(alleleFreqVarAvg1_AZ[alleleFreqVarAvg1_AZ$FullCat %ni% c("Cov(Fs,Fb)","Cov(Fi,Fb)"),],aes(x=prop.A,y=prop.Z)) +   
-  geom_abline(intercept = 0,slope=(4/3),alpha=0.5,linetype="dotted") +
-  geom_abline(intercept = 0,slope=1,alpha=0.5) +
-  geom_abline(intercept = 0,slope=(2/3),alpha=0.5,linetype="dashed") +
+  geom_abline(intercept = 0,slope=(4/3),alpha=0.5,linetype="dotted",size=0.25) +
+  geom_abline(intercept = 0,slope=1,alpha=0.5,size=0.25) +
+  geom_abline(intercept = 0,slope=(2/3),alpha=0.5,linetype="dashed",size=0.25) +
   
   facet_wrap(~ FullCat,scales="free",ncol=5) + 
-  geom_smooth(method="lm",color="black") +  
-  geom_point() + 
+  geom_smooth(method="lm",color="black",size=0.25) +  
+  geom_point(size=0.25) + 
   #geom_text(aes(color=as.factor(Year),label=as.factor(Year))) + 
   labs(x=Avarp_title,y=Zvarp_title,color="Year") + 
   guides(color=FALSE) +
-  theme_bw(base_size = 16) + 
+  theme_bw(base_size = 8) + 
   scale_x_continuous(guide = guide_axis(check.overlap = TRUE))+
   theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
 theme(strip.background =element_rect(fill="white")) 
 
-
+ dev.off()
+ 
 
 
 
@@ -1697,6 +1711,8 @@ newBsq$bCat[newBsq$Category %in% c("MBsq","FBsq")] <- "Birth Total"
 
 #fig S8
 #mendFam_year_plot <- 
+pdf(paste("fig_S8_sep1.pdf",sep=''),width=6,height=4)
+
 ggplot() + 
   geom_hline(yintercept = 0,alpha=0.2)+
  # geom_line(data=newBsq[newBsq$bCat == "Birth Total",], aes(x=Year, y=prop,linetype=bCat),alpha=0.2,linetype="longdash") +
@@ -1704,20 +1720,16 @@ ggplot() +
   geom_point(data=newBsq[newBsq$bCat %in% c("Family Size","Mendelian Noise"),], aes(x=Year, y=prop,color=sexCat,shape=bCat),position="stack") +
   facet_grid(chrom~sexCat) + 
   labs(y=varp_title,x="Year",linetype="Birth Term",color="Sex",shape="Birth Term") +
-  theme_bw(base_size = 16) + 
+  theme_bw(base_size = 8) + 
   theme(strip.background =element_rect(fill="white")) +
    guides(color=FALSE)  + 
   scale_color_manual(values=c("indianred1","cornflowerblue" )) + 
   theme( panel.grid.minor = element_blank()) +
   scale_shape_manual(values=c(3,4)) +
-  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) #+
-  
-  theme(
-    legend.position = c(.95, .95),
-    legend.justification = c("right", "top"),
-    legend.box.just = "right",
-    legend.margin = margin(6, 6, 6, 6),legend.box.background = element_rect(colour = "black")
-  ) 
+  theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) 
+
+dev.off()
+
 
 newBsq_ZA <- left_join(
   newBsq[newBsq$chrom == "Z",c(1:5)],
@@ -1740,6 +1752,8 @@ newBsq_ZA$Birth[newBsq_ZA$Category == "MBsq_mend"] <- "Mendelian Noise"
 #mendFam_ZA_plot <- 
 newBsq_ZA <- newBsq_ZA[!is.na(newBsq_ZA$Birth),]
 #fig s9  
+pdf(paste("fig_S9_sep1.pdf",sep=''),width=6,height=4)
+
 ggplot(newBsq_ZA,aes(x=prop.A,y=prop.Z)) + 
   geom_abline(intercept = 0,slope=(4/3),alpha=0.5,linetype="dotted") +
   
@@ -1753,12 +1767,13 @@ ggplot(newBsq_ZA,aes(x=prop.A,y=prop.Z)) +
   labs(x=Avarp_title,y=Zvarp_title,color="Year") + 
   guides() +
   scale_shape_manual(values=c(3,4)) + 
-  theme_bw(base_size = 16) + 
+  theme_bw(base_size = 8) + 
   scale_x_continuous(guide = guide_axis(check.overlap = TRUE))+
   theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
   theme(strip.background =element_rect(fill="white")) +
   scale_color_manual(values=c("indianred1","cornflowerblue" )) 
  
+dev.off()
 
 
 

@@ -7,7 +7,7 @@ library(plyr)
 library(foreach)
 library(dplyr)
 library(doParallel)
-
+library(data.table)
 
 ####set variables and make/import tables####
 #number of SNPs to simulate
@@ -25,7 +25,8 @@ pedinfo <- ped_Ageno[,1:4]
 colnames(pedinfo) <- c( "USFWS", "Dad", "Mom", "Sex")
 
 #get sample allele freq for simulations, from _sample script
-load(sampleVar,file=paste("working_files/intermediate_files/sampleVar_Z.rdata",sep=''))
+load(file="working_files/intermediate_files/sampleVar_A.rdata")
+load(file="working_files/intermediate_files/indivlistgenoA.rdata")
 
 indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
 indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
@@ -51,8 +52,8 @@ indivlist <- indivlist[order(indivlist$Year),]
 
 #get unique indivs 
 simindivgeno<-indivlist[!duplicated(indivlist$USFWS),]
-#colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "Sex")
-colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "og_Sex")
+colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "Sex")
+#colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "og_Sex")
 
 #check for unsexed indivs & assign them a sex
 #unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
@@ -64,7 +65,7 @@ colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Da
 indivlist$Sex <- simindivgeno$Sex[match(indivlist$USFWS, simindivgeno$Indiv)]
 simulated_sexes <- fread('working_files/FSJ_sex_data_real_and_simulated_20201015.csv')
 colnames(simulated_sexes) <- c("Indiv", "Sex")
-simindivgeno <- left_join(simindivgeno,simulated_sexes,by=c("Indiv"="Indiv"))
+simindivgeno <- left_join(simindivgeno[,-7],simulated_sexes,by=c("Indiv"="Indiv"))
 
 #separate into moms vs dads vs nestlings
 simindivgenoMoms<-
@@ -197,7 +198,8 @@ simdataTrue<-merge(indivlist,simindivgenoAll[,c(1,8:(nloci+7))],
                    by.x='USFWS',by.y='Indiv',all.x=TRUE)	
 
 #save
-save(simdataTrue,file='simdataTrueA_',today,'.rdata')
+save(simdataTrue,file='working_files/intermediate_files/simdataTrueA.rdata')
+#load('working_files/intermediate_files/simdataTrueA.rdata')
 
 
 ####calculate error in freq estimation due to sampling####
@@ -252,7 +254,7 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
 #stopCluster(cl)
 
 #save the data from this year
-save(sim,file=paste("SimAlleleFreqAYr_",today,"_",year,".rdata",sep=''))
+save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqAYr_",year,".rdata",sep=''))
 
 #Names for the values we just calculated (year and category/parameter)
 simName<-data.frame(Year=rep(year,each=3),category=c('pt','xt','errT'),stringsAsFactors=FALSE)
@@ -423,7 +425,7 @@ for(year in c(1999:2013)){
  # stopCluster(cl)
   #sim <- tmp[,3]
   #save p and x results from this year (in case run gets interrupted)
-  save(sim,file=paste("SimAlleleFreqA_",year,"_",today,".rdata",sep=''))
+  save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqA_",year,".rdata",sep=''))
   
   #categories (parameter names) and years to combine with the results of our calculations
   simName<-data.frame(Year=rep(year,each=70),category=c(
@@ -463,7 +465,7 @@ simAlleleFreq[frqYr==1998 & frqCat=='errT',c(3:(nloci+2))]<-
   simAlleleFreq[frqYr==1998 & frqCat=='xt',c(3:(nloci+2))]-
   simAlleleFreq[frqYr==1998 & frqCat=='pt',c(3:(nloci+2))]
 
-save(simAlleleFreq,file=paste("simAlleleFreqA_SR_intermediate_",today,".rdata",sep=''))
+save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqA_SR_intermediate.rdata")
 
 #calcuate error for each year based on difference b/w p and x
 for(year in c(1999:2013)){
@@ -656,7 +658,7 @@ for(year in c(1999:2013)){
   
 }
 
-save(simAlleleFreq,file=paste("simAlleleFreqA_",today,".rdata",sep=''))
+save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqA.rdata")
 #load("simAlleleFreqA_11Mar2021.rdata")
 
 ####calculate variances and covariances####
