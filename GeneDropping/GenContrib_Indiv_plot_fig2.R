@@ -11,9 +11,9 @@ library(kinship2)
 library(cowplot)
 
 # load Rdata file 
-setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all/')
+setwd('~/Document/GitHub/ZDropping/')
 
-load("plotIndivGenContrib_tidy_20190529.Rdata") # code to produce all of these tables from raw data is in plotIndivGenContrib_tidy_20190425.R
+load("working_files/intermediate_files/plotIndivGenContrib_tidy_20190529.Rdata") # code to produce all of these tables from raw data is in plotIndivGenContrib_tidy_20190425.R
 
 #plot theme
 plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3),
@@ -95,7 +95,7 @@ summary(AZ_mods_sex)
 A_contribs_vs_descendants <- 
   ggplot(indiv_contribs_prop_nestlings_2013, aes(x = prop_2013_nestlings, y = auto_mean, color = Sex, fill = Sex)) +
   geom_point(alpha = 0.75, size = 0.3)+
-  geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
+  geom_smooth(method = "lm", alpha = 0.3, size = 0.5,formula=y~0+x)+
   geom_abline(slope = 1, linetype = "dashed", color = "gray") +
   scale_color_manual(values = c("cornflowerblue", "indianred1"))+
   scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
@@ -107,7 +107,7 @@ A_contribs_vs_descendants <-
 Z_contribs_vs_descendants <- 
   ggplot(indiv_contribs_prop_nestlings_2013, aes(x = prop_2013_nestlings, y = Z_mean, color = Sex, fill = Sex)) +
   geom_point(alpha = 0.75, size = 0.3)+
-  geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
+  geom_smooth(method = "lm", alpha = 0.3, size = 0.5,formula=y~0+x)+
   geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
   scale_color_manual(values = c("cornflowerblue", "indianred1"))+
   scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
@@ -123,8 +123,8 @@ A_vs_Z_contribs <-
     
     geom_point(aes(color = Sex), alpha = 0.75, size = 0.3)+
   
-    geom_smooth(method = "lm", alpha = 0.3, size = 0.5,color="black")+
-    geom_smooth(method = "lm", alpha = 0.3, size = 0.5, aes(color = Sex))+
+    geom_smooth(method = "lm", alpha = 0.3, size = 0.5,color="black",formula=y~0+x)+
+    geom_smooth(method = "lm", alpha = 0.3, size = 0.5, aes(color = Sex),formula=y~0+x)+
     guides(color=FALSE)+
     scale_color_manual(values = c("cornflowerblue", "indianred1"))+
     scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
