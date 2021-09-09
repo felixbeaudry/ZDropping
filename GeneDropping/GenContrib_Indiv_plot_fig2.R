@@ -11,9 +11,9 @@ library(kinship2)
 library(cowplot)
 
 # load Rdata file 
-setwd('~/Google Drive/Research/Data2/fsj/ZDropping_all/')
+setwd('~/Documents/GitHub/ZDropping/GeneDropping/')
 
-load("plotIndivGenContrib_tidy_20190529.Rdata") # code to produce all of these tables from raw data is in plotIndivGenContrib_tidy_20190425.R
+load("working_files/intermediate_files/plotIndivGenContrib_tidy_20190529.Rdata") # code to produce all of these tables from raw data is in plotIndivGenContrib_tidy_20190425.R
 
 #plot theme
 plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3),
@@ -23,8 +23,8 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
                     plot.background = element_rect(fill = "white"),
                     axis.text.x = element_text(size=6), axis.text.y = element_text(size=6),
                     axis.title = element_text(size=7), plot.title = element_text(size=8),
-                    legend.position="right", legend.text = element_text(size=7),
-                    legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(1,"cm"))
+                    legend.position="right", legend.text = element_text(size=6),
+                    legend.title = element_text(size=7), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(1,"cm"))
 
 
 ####Pop Level distributions####
@@ -95,7 +95,7 @@ summary(AZ_mods_sex)
 A_contribs_vs_descendants <- 
   ggplot(indiv_contribs_prop_nestlings_2013, aes(x = prop_2013_nestlings, y = auto_mean, color = Sex, fill = Sex)) +
   geom_point(alpha = 0.75, size = 0.3)+
-  geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
+  geom_smooth(method = "lm", alpha = 0.3, size = 0.5,formula=y~0+x)+
   geom_abline(slope = 1, linetype = "dashed", color = "gray") +
   scale_color_manual(values = c("cornflowerblue", "indianred1"))+
   scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
@@ -107,7 +107,7 @@ A_contribs_vs_descendants <-
 Z_contribs_vs_descendants <- 
   ggplot(indiv_contribs_prop_nestlings_2013, aes(x = prop_2013_nestlings, y = Z_mean, color = Sex, fill = Sex)) +
   geom_point(alpha = 0.75, size = 0.3)+
-  geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
+  geom_smooth(method = "lm", alpha = 0.3, size = 0.5,formula=y~0+x)+
   geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
   scale_color_manual(values = c("cornflowerblue", "indianred1"))+
   scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
@@ -123,8 +123,8 @@ A_vs_Z_contribs <-
     
     geom_point(aes(color = Sex), alpha = 0.75, size = 0.3)+
   
-    geom_smooth(method = "lm", alpha = 0.3, size = 0.5,color="black")+
-    geom_smooth(method = "lm", alpha = 0.3, size = 0.5, aes(color = Sex))+
+    geom_smooth(method = "lm", alpha = 0.3, size = 0.5,color="black",formula=y~0+x)+
+    geom_smooth(method = "lm", alpha = 0.3, size = 0.5, aes(color = Sex),formula=y~0+x)+
     guides(color=FALSE)+
     scale_color_manual(values = c("cornflowerblue", "indianred1"))+
     scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
@@ -314,24 +314,6 @@ filter(monogamous_pairs_offspring_sex_ratio, (Dad_Z_mean - Mom_Z_mean)>0.001)
 
 # male vs female contribs, now colored by difference in number of partners
 
-# plot Z
-ggplot(indiv_contribs_dad_vs_mom_count_partners, aes(x = Dad_Z_mean, y = Mom_Z_mean, color = partners_difference)) +
-  geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
-  geom_point(alpha = 0.75, size = 1)+
-  geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
-  labs(x = "Male's Z expected genetic contrib. in 2013", y = "Female's Z expected genetic contrib. in 2013")+
-  plottheme+
-  theme(plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) +
-  scale_color_gradient2(low = "darkred", mid = "mediumpurple", high = "darkblue")
-# plot auto
-ggplot(indiv_contribs_dad_vs_mom_count_partners, aes(x = Dad_auto_mean, y = Mom_auto_mean, color = partners_difference)) +
-  geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
-  geom_point(alpha = 0.75, size = 1)+
-  geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
-  labs(x = "Male's autosomal expected genetic contrib. in 2013", y = "Female's autosomal expected genetic contrib. in 2013")+
-  plottheme+
-  theme(plot.margin = unit(c(15,5.5,5.5,5.5), "pt"))+
-  scale_color_gradient2(low = "darkred", mid = "mediumpurple", high = "darkblue")
 
 # male-female contribs vs difference in number of partners
 indiv_contribs_dad_vs_mom_count_partners_exp_gen_contrib_diff <- mutate(indiv_contribs_dad_vs_mom_count_partners, Z_mean_diff = Dad_Z_mean - Mom_Z_mean, auto_mean_diff = Dad_auto_mean - Mom_auto_mean)
@@ -348,5 +330,62 @@ ggplot(indiv_contribs_dad_vs_mom_count_partners_exp_gen_contrib_diff, aes(x = pa
 
 # fixing some colors
 indiv_contribs_dad_vs_mom_count_partners$partners_difference_fct <- as.factor(indiv_contribs_dad_vs_mom_count_partners$partners_difference)
+legend_size=0.5
+library(stringr)
 
-## Felix, have fun!
+pdf(paste("fig_Sx_zeroContribs_sep7.pdf",sep=''),width=5.5,height=4)
+
+plot_grid(
+  # plot auto
+  ggplot(monogamous_pairs_offspring_sex_ratio, aes(x = Dad_auto_mean, y = Mom_auto_mean)) +
+    #geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
+    geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
+    
+    geom_point(aes(color = prop_males),  size = 1.2)+
+    labs(x = "Male's autosomal expected genetic contrib. in 2013", y =str_wrap( "Female's autosomal expected genetic contrib. in 2013", width = 25),color="Progeny\nSex Ratio\n(Male Prop.)")+
+    plottheme+
+    theme(plot.margin = unit(c(15,5.5,5.5,5.5), "pt"),legend.key.size = unit(legend_size, 'cm'))+ scale_color_gradient(high = "cornflowerblue",  low = "indianred1"),
+  
+  # plot Z
+
+  ggplot(monogamous_pairs_offspring_sex_ratio, aes(x = Dad_Z_mean, y = Mom_Z_mean)) +
+    #geom_smooth(method = "lm", alpha = 0.3, size = 0.5)+
+    geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
+    
+     geom_point(aes(color = prop_males),  size = 1.2)+
+    labs(x = "Male's Z expected genetic contrib. in 2013", y = str_wrap("Female's Z expected genetic contrib. in 2013", width = 25),color="Progeny\nSex Ratio\n(Male Prop.)")+
+    plottheme+
+    theme(plot.margin = unit(c(15,5.5,5.5,5.5), "pt"),legend.key.size = unit(legend_size, 'cm')) + scale_color_gradient(high = "cornflowerblue",  low = "indianred1"),
+
+ 
+  
+  
+
+    # plot auto
+  ggplot(indiv_contribs_dad_vs_mom_count_partners, aes(x = Dad_auto_mean, y = Mom_auto_mean, color = partners_difference)) +
+ #   geom_smooth(method = "lm", alpha = 0.3, size = 0.5,formula=y~0+x)+
+   geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
+   
+   geom_point(size = 1.2)+
+    labs(x = "Male's autosomal expected genetic contrib. in 2013", y = str_wrap("Female's autosomal expected genetic contrib. in 2013", width = 25),color="Partner Diff.\n(Male Bias)")+
+    plottheme+
+    theme(plot.margin = unit(c(15,5.5,5.5,5.5), "pt"),legend.key.size = unit(legend_size, 'cm'))+
+   scale_color_gradient2(high = "cornflowerblue",  mid = "gray", low = "indianred1"),
+  
+          
+  # plot Z
+  ggplot(indiv_contribs_dad_vs_mom_count_partners, aes(x = Dad_Z_mean, y = Mom_Z_mean, color = partners_difference)) +
+    geom_abline(slope = 1,  linetype = "dashed", color = "gray") +
+    
+ #   geom_smooth(method = "lm", alpha = 0.3, size = 0.5,formula=y~0+x)+
+    geom_point(size = 1.2)+
+    labs(x = "Male's Z expected genetic contrib. in 2013", y = str_wrap("Female's Z expected genetic contrib. in 2013", width = 25),color="Partner Diff.\n(Male Bias)")+
+    plottheme+
+    theme(plot.margin = unit(c(15,5.5,5.5,5.5), "pt"),legend.key.size = unit(legend_size, 'cm')) +
+    scale_color_gradient2(high = "cornflowerblue",  mid = "gray", low = "indianred1") ,
+          
+          
+          
+          ncol = 2, labels = "AUTO", align = 'hv',axis='tblr')
+
+dev.off()
