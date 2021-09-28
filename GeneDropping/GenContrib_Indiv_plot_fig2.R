@@ -10,11 +10,6 @@ library(tidyr)
 library(kinship2)
 library(cowplot)
 
-# load Rdata file 
-setwd('~/Documents/GitHub/ZDropping/GeneDropping/')
-
-load("working_files/intermediate_files/plotIndivGenContrib_tidy_20190529.Rdata") # code to produce all of these tables from raw data is in plotIndivGenContrib_tidy_20190425.R
-
 #plot theme
 plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3),
                     axis.ticks = element_line(colour = "black",size=0.2),
@@ -25,6 +20,150 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
                     axis.title = element_text(size=7), plot.title = element_text(size=8),
                     legend.position="right", legend.text = element_text(size=6),
                     legend.title = element_text(size=7), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(1,"cm"))
+
+
+## Read in data
+
+# Read in 1990-2013 breeders data
+breeders_926 <- read.table("working_files/926_breeders.txt", header = TRUE, stringsAsFactors = FALSE)
+
+# Read in pedigree
+pedigree <- read.table("working_files/pedigree.txt", header = TRUE, sep = " ", stringsAsFactors = FALSE)
+
+# Read in all of the data tables including breeders data
+load("all_tables_v2.rdata")
+
+## Genealogical contributions for all breeders
+
+# Make a list of the descendants of every bird
+descendants <- NULL
+for (i in breeders_926$Indiv) {
+  generation = 2
+  thisGen <- filter(pedigree, Mom==i | Dad==i) 
+  repeat {
+    if (nrow(thisGen)==0){
+      break
+    }
+    thisGenRow <- select(thisGen, Indiv) %>%
+      transmute(indiv_id = i, descendant_id = Indiv, relationship = generation)
+    descendants <- rbind(descendants, thisGenRow)
+    generation = generation + 1
+    nextGen <- filter(pedigree, Mom %in% thisGen$Indiv | Dad %in% thisGen$Indiv)
+    thisGen <- nextGen
+  }
+}
+
+# get indiv data including natal years
+indiv_data<-read.table('working_files/IndivDataUSFWS.txt',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+nestling_data<-select(indiv_data, Indiv, NatalYear)
+
+# add natal year info to descendants dataset
+descendants_years <- left_join(descendants, nestling_data, by = c("descendant_id" = "Indiv"))
+
+# how many nestlings are there each year?
+num_nestlings_yearly <- group_by(nestling_data, NatalYear) %>%
+  dplyr::summarize(num_nestlings = n())
+
+
+# Get 2013 genetic contributions (autosomes and Z) for each individual
+
+# Make a table to save individuals' 2013 contributions in
+indiv_contribs_A_Z_2013<-NULL
+
+# Only running this for breeders that actually have kids
+breeders_926$Kids <- breeders_926$Indiv %in% c(pedigree$Dad, pedigree$Mom)
+
+# Go through all of the individuals
+for (i in breeders_926[breeders_926$Kids,'Indiv']) {
+  
+  #get autosomal data for individual i
+  obsIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.A.1.drop.data.txt',sep=''),header=TRUE)
+  simIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.A.1.drop.sim.txt',sep=''),header=TRUE)
+  
+  #make sure number of sims adds up to 1000000
+  ddply(simIndiv[simIndiv$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
+  for (y in c(0:23)){
+    if (sum(simIndiv[simIndiv$allele==2 & simIndiv$cohort==y,'all_alleles_count'])<1000000) {
+      simIndiv<-rbind(simIndiv,cbind(cohort=y,allele=2,allele_count=0,all_alleles_count=1000000-sum(simIndiv[simIndiv$allele==2 & simIndiv$cohort==y,'all_alleles_count'])))
+    }
+  }
+  ddply(simIndiv[simIndiv$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
+  
+  #add year info
+  simIndiv$Year<-simIndiv$cohort + 1990
+  
+  #subset data to only include 2013 and allele 2
+  simIndiv<-simIndiv[simIndiv$allele==2 & simIndiv$Year == 2013,]
+  
+  #get total number of alleles sampled in 2013
+  simIndiv$totAlleles<-laply(c(1:nrow(simIndiv)), function(x) unique(obsIndiv[obsIndiv$cohort_year==simIndiv[x,'Year'],'allele_count']))
+  
+  #summarize data
+  simIndivSum<-ddply(simIndiv,.(Year),summarize, mean=mean(unlist(rep(allele_count/totAlleles,all_alleles_count))), 
+                     q1=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.025), 
+                     q3=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.975))
+  
+  #save mean autosomal contribution for 2013
+  indivauto <- mutate(simIndivSum, Indiv = i) %>%
+    select(Indiv, auto_mean = mean)
+  
+  
+  #get Z data for individual i
+  obsIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.Z.1.drop.data.txt',sep=''),header=TRUE)
+  simIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.Z.1.drop.sim.txt',sep=''),header=TRUE)
+  
+  #make sure number of sims adds up to 1000000
+  ddply(simIndiv[simIndiv$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
+  for (y in c(0:23)){
+    if (sum(simIndiv[simIndiv$allele==2 & simIndiv$cohort==y,'all_alleles_count'])<1000000) {
+      simIndiv<-rbind(simIndiv,cbind(cohort=y,allele=2,allele_count=0,all_alleles_count=1000000-sum(simIndiv[simIndiv$allele==2 & simIndiv$cohort==y,'all_alleles_count'])))
+    }
+  }
+  ddply(simIndiv[simIndiv$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
+  
+  #add year info
+  simIndiv$Year<-simIndiv$cohort + 1990
+  
+  #subset data to only include 2013 and allele 2
+  simIndiv<-simIndiv[simIndiv$allele==2 & simIndiv$Year == 2013,]
+  
+  #get total number of alleles sampled in 2013
+  simIndiv$totAlleles<-laply(c(1:nrow(simIndiv)), function(x) unique(obsIndiv[obsIndiv$cohort_year==simIndiv[x,'Year'],'allele_count']))
+  
+  #summarize data
+  simIndivSum<-ddply(simIndiv,.(Year),summarize, mean=mean(unlist(rep(allele_count/totAlleles,all_alleles_count))), 
+                     q1=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.025), 
+                     q3=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.975))
+  
+  #save mean Z contribution for 2013
+  indivrow <- mutate(simIndivSum, Indiv = i) %>%
+    select(Indiv, Z_mean = mean) %>%
+    right_join(indivauto)
+  
+  # add individual to table
+  indiv_contribs_A_Z_2013<-rbind(indiv_contribs_A_Z_2013, indivrow)
+  
+}
+
+# add sex info from pedigree
+indiv_contribs_A_Z_2013_sex <- left_join(indiv_contribs_A_Z_2013, select(pedigree, Indiv, Sex))
+indiv_contribs_A_Z_2013_sex$Sex <- as.factor(indiv_contribs_A_Z_2013_sex$Sex)
+
+# get total number of nestlings in 2013
+num_2013_nestlings = filter(num_nestlings_yearly, NatalYear == 2013)$num_nestlings
+# filter for descendants born in 2013 and summarize number of 2013 descendants for each founder
+# then calculate what proportion of 2013 nestlings that is
+descendants_2013_prop_nestlings <- filter(descendants_years, NatalYear == 2013) %>%
+  group_by(indiv_id) %>%
+  dplyr::summarize(num_descendants_2013 = n()) %>%
+  left_join(dplyr::select(breeders_926, Indiv), ., by = c("Indiv" = "indiv_id")) %>%
+  select(indiv_id = Indiv, num_descendants_2013) %>%
+  mutate(num_descendants_2013 = ifelse(is.na(num_descendants_2013), 0, num_descendants_2013), total_2013_nestlings = num_2013_nestlings, prop_2013_nestlings = num_descendants_2013/total_2013_nestlings)
+
+# join this data to the individual contributions data
+indiv_contribs_prop_nestlings_2013 <- left_join(indiv_contribs_A_Z_2013_sex, descendants_2013_prop_nestlings, by = c("Indiv" = "indiv_id"))
+
+
 
 
 ####Pop Level distributions####
@@ -101,7 +240,8 @@ A_contribs_vs_descendants <-
   scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
   labs(x = "Genealogical contribution in 2013", y = "Autosomal expected \ngenetic contrib. in 2013")+
   plottheme+
-  theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) + ylim(0,0.04)
+  theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) + 
+  ylim(0,0.04)
 
 
 Z_contribs_vs_descendants <- 
@@ -113,7 +253,8 @@ Z_contribs_vs_descendants <-
   scale_fill_manual(values = c("cornflowerblue", "indianred1"))+
   labs(x = "Genealogical contribution in 2013", y = "Z expected genetic contrib. in 2013")+
   plottheme+
-  theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) + ylim(0,0.04)
+  theme(legend.position = "none", plot.margin = unit(c(15,5.5,5.5,5.5), "pt")) + 
+  ylim(0,0.04)
 
 A_vs_Z_contribs <- 
   ggplot(indiv_contribs_A_Z_2013_sex, aes(x = auto_mean, y = Z_mean)) +
@@ -134,7 +275,7 @@ A_vs_Z_contribs <-
 
 
 plot_grid(A_contribs_vs_descendants, Z_contribs_vs_descendants, A_vs_Z_contribs,  ncol = 3, labels = "AUTO", align = 'hv',axis='tblr')
-#ggsave('fig2_EGC_AZ_6x2.pdf', width = 12, height = 4, units ='in')
+ggsave('fig2_EGC_AZ_6-5x2-26_fixed_20210917.pdf', width = 6.5, height = 2.26, units ='in')
 
 
 ## Plot of offspring sex ratio vs. Z contribution for each mom
