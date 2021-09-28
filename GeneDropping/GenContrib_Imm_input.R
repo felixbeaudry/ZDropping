@@ -1,16 +1,13 @@
 #script to create ped files for estimating expected genetic contributions of immigrants
 #Nancy Chen and Rose Driscoll
-#Last updated: 3 April 2019
-
-setwd('~/Documents/GitHub/ZDropping/ExpGenContrib')
-
+#Last updated: 9 September 2021
 
 library(plyr)
 
 #consider contribution of cohorts (Yearly) or all immigrants (All)
 
 #read in input files
-pedigree<-read.table('working_files/pedigree.txt',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+pedigree<-read.table('working_files/pedigree.txt',header=TRUE,sep=' ',stringsAsFactors=FALSE)
 
 #nestling data
 indiv<-read.table('working_files/IndivDataUSFWS.txt',header=TRUE,sep='\t',stringsAsFactors=FALSE)
