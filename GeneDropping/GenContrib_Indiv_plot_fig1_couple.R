@@ -1,4 +1,4 @@
-#10 March 2021
+#29 September 2021
 #Rose Driscoll
 #script to plot the pedigree, genetic & genealogical contributions of a male and female breeder 
 #for autosomes and Z
@@ -28,21 +28,22 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
 ## Read in data
 
 # Read in 1990-2013 breeders data
-load("indivGenContrib.rdata")
+breeders_926 <- read.table("working_files/926_breeders.txt", header = TRUE, stringsAsFactors = FALSE)
 
-# Read in and tidy pedigree
-ped <- read.table("FSJpedgeno_Zsexlinked.ped", header = FALSE, sep = " ", stringsAsFactors = FALSE)
-pedigree <- ped[,1:6]
-colnames(pedigree) <- c("Fam", "Indiv", "Dad", "Mom", "Sex", "Pheno")
+# Read in pedigree
+pedigree <- read.table("working_files/pedigree.txt", header = TRUE, sep = " ", stringsAsFactors = FALSE)
 
-# Read in all of the data tables including breeders data
-load("all_tables_v2.rdata")
+# Read in data on individuals including natal years
+indiv_data <- read.table('working_files/IndivDataUSFWS.txt', header = TRUE, sep = '\t', stringsAsFactors = FALSE)
+
+# Read in 2013 status data
+alive_2013 <- read.table("working_files/alive_2013.txt", header = TRUE, stringsAsFactors = FALSE)
 
 ## Genealogical contributions for all breeders
 
 # Based on the pedigree, make a list of the descendants of every breeder we'll be looking at
 descendants <- NULL
-for (i in dead2013age1$USFWS) {
+for (i in breeders_926$Indiv) {
   generation = 2
   thisGen <- filter(pedigree, Mom==i | Dad==i) 
   repeat {
@@ -58,8 +59,7 @@ for (i in dead2013age1$USFWS) {
   }
 }
 
-# Read in data on individuals including natal years
-indiv_data<-read.table('IndivDataUSFWS.txt',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+# Get natal years from indivdata
 nestling_data<-select(indiv_data, Indiv, NatalYear)
 
 # add natal year info to descendants dataset
@@ -77,8 +77,9 @@ m<-"1513-50363"
 f<-"1043-90505"
 
 # make a table for this pair's genealogical contributions by year
+# these two were each others' exclusive mates so can just use the descendants of one of them
 # fill out the years where they don't have nestlings with 0s
-filter(descendants_years, indiv_id == "1513-50363") %>%
+filter(descendants_years, indiv_id == m) %>%
   group_by(NatalYear) %>%
   dplyr::summarize(num_descendants = n()) %>%
   right_join(num_nestlings_yearly) %>%
@@ -106,17 +107,11 @@ focal_family_outsiders <- filter(pedigree, Indiv %in% focal_family_insiders$Mom 
 focal_family_ped <- bind_rows(focal_family_insiders, focal_family_outsiders) %>%
   mutate(Sex = ifelse(Sex==0, 3, Sex)) %>%
   select(Indiv, Dad, Mom, Sex)
-# We will also need a status variable that says whether the indiv is alive in 2013
-# Get last observation for each indiv
-focal_family_ped_status <- filter(all.obs, USFWS %in% focal_family_ped$Indiv) %>%
-  group_by(USFWS) %>%
-  dplyr::summarize(last_year = max(Year)) %>%
-  mutate(Status = ifelse(last_year > 2013, 1, 0)) %>%
-  select(Indiv = USFWS, Status) %>%
-  right_join(focal_family_ped)
+# Add status variable that says whether the indiv is alive in 2013
+focal_family_ped_status <- left_join(focal_family_ped, alive_2013)
 
 # Draw the pedigree w/ kinship2 package
-focal_family_ped_to_plot <- with(focal_family_ped_status[,c(1,3:5,2)], pedigree(Indiv, Dad, Mom, Sex, Status))
+focal_family_ped_to_plot <- with(focal_family_ped_status, pedigree(Indiv, Dad, Mom, Sex, Status))
 plot(focal_family_ped_to_plot, id=rep("", times = nrow(focal_family_ped)), symbolsize = 1)
 # use recordPlot() to capture the base R plot in a variable
 mated_pair_ped <- recordPlot()
@@ -125,8 +120,8 @@ mated_pair_ped <- recordPlot()
 # Part B: autosomal expected genetic contributions vs. genealogical contributions
 
 #get autosomal expected genetic contribution data for the male
-obsIndivMA<-read.table(file=paste('IndivContrib_',m,'.ped.A.1.drop.data.txt',sep=''),header=TRUE)
-simIndivMA<-read.table(file=paste('IndivContrib_',m,'.ped.A.1.drop.sim.txt',sep=''),header=TRUE)
+obsIndivMA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.A.1.drop.data.txt',sep=''),header=TRUE)
+simIndivMA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.A.1.drop.sim.txt',sep=''),header=TRUE)
 
 #make sure number of simulations adds up to 1000000
 ddply(simIndivMA[simIndivMA$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
@@ -153,8 +148,8 @@ simIndivMASum<-ddply(simIndivMA,.(Year),summarize, mean=mean(unlist(rep(allele_c
 
 
 #get autosomal expected genetic contribution data for the female
-obsIndivFA<-read.table(file=paste('IndivContrib_',f,'.ped.A.1.drop.data.txt',sep=''),header=TRUE)
-simIndivFA<-read.table(file=paste('IndivContrib_',f,'.ped.A.1.drop.sim.txt',sep=''),header=TRUE)
+obsIndivFA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.A.1.drop.data.txt',sep=''),header=TRUE)
+simIndivFA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.A.1.drop.sim.txt',sep=''),header=TRUE)
 
 #make sure number of simulations adds up to 1000000
 ddply(simIndivFA[simIndivFA$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
@@ -188,20 +183,24 @@ simIndivMASum[simIndivMASum$Year==1999,"q3"]<-0
 
 
 # plot autosomal expected genetic contributions + genealogical contributions
-auto_plot <- ggplot() + plottheme + xlab('Year') + ylab('Genealogical & \nautosomal expected genetic contribution') +
+(auto_genealogical_plot <- ggplot() + 
+  plottheme + 
+  xlab('Year') + 
+  ylab('Genealogical & autosomal \nexpected genetic contribution') +
   geom_ribbon(data=simIndivFASum,aes(x=Year,ymin=q1,ymax=q3),fill='mediumpurple', alpha = 0.15) +
   geom_line(data=simIndivFASum,aes(x=Year, y=mean),size=0.5,col='mediumpurple') +
   geom_ribbon(data = simIndivMASum,aes(x=Year,ymin=q1,ymax=q3),fill='mediumpurple',alpha=0.15) +
   geom_line(data=simIndivMASum,aes(x=Year, y=mean),size=0.5,col='mediumpurple') +
-  geom_line(data = genealogical_contribs_by_year, aes(x=NatalYear, y=prop_nestlings),size=0.5,col='gray50', linetype = "dashed")
+  geom_line(data = genealogical_contribs_by_year, aes(x=NatalYear, y=prop_nestlings),size=0.5,col='gray50', linetype = "dashed")) + 
+  theme(plot.margin = unit(c(10,5.5,5.5,5.5), "pt"))
 
 
-# Part C: Z expected genetic contributions vs. genealogical contributions
+# Part C: Autosomal expected genetic contributions vs. Z expected genetic contributions
 
 #get Z expected genetic contribution data for the male
 
-obsIndivMZ<-read.table(file=paste('IndivContrib_',m,'.ped.Z.1.drop.data.txt',sep=''),header=TRUE)
-simIndivMZ<-read.table(file=paste('IndivContrib_',m,'.ped.Z.1.drop.sim.txt',sep=''),header=TRUE)
+obsIndivMZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.Z.1.drop.data.txt',sep=''),header=TRUE)
+simIndivMZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.Z.1.drop.sim.txt',sep=''),header=TRUE)
 
 #make sure number of simulations adds up to 1000000
 ddply(simIndivMZ[simIndivMZ$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
@@ -227,8 +226,8 @@ simIndivMZSum<-ddply(simIndivMZ,.(Year),summarize, mean=mean(unlist(rep(allele_c
                    q3=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.975))
 
 #get Z expected genetic contribution data for the female
-obsIndivFZ<-read.table(file=paste('IndivContrib_',f,'.ped.Z.1.drop.data.txt',sep=''),header=TRUE)
-simIndivFZ<-read.table(file=paste('IndivContrib_',f,'.ped.Z.1.drop.sim.txt',sep=''),header=TRUE)
+obsIndivFZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.Z.1.drop.data.txt',sep=''),header=TRUE)
+simIndivFZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.Z.1.drop.sim.txt',sep=''),header=TRUE)
 
 #make sure number of simulations adds up to 1000000
 ddply(simIndivFZ[simIndivFZ$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
@@ -260,21 +259,24 @@ simIndivMZSum[simIndivMASum$Year==1999,"q1"]<-0
 simIndivMZSum[simIndivMASum$Year==1999,"q3"]<-0
 
 
-# plot Z expected genetic contributions + genealogical contributions
-Z_plot <- ggplot() + plottheme + xlab('Year') + ylab('Genealogical & \nZ genetic contribution') +
+# plot autosomal expected genetic contributions & Z expected genetic contributions
+(auto_Z_plot <- ggplot() + 
+  plottheme + 
+  xlab('Year') + 
+  ylab('Autosomal & Z \nexpected genetic contribution') +
+  geom_ribbon(data=simIndivFASum,aes(x=Year,ymin=q1,ymax=q3),fill='mediumpurple', alpha = 0.15) +
+  geom_line(data=simIndivFASum,aes(x=Year, y=mean),size=0.5,col='mediumpurple') +
+  geom_ribbon(data = simIndivMASum,aes(x=Year,ymin=q1,ymax=q3),fill='mediumpurple',alpha=0.15) +
+  geom_line(data=simIndivMASum,aes(x=Year, y=mean),size=0.5,col='mediumpurple') +
   geom_ribbon(data=simIndivFZSum,aes(x=Year,ymin=q1,ymax=q3),fill='indianred1', alpha = 0.3) +
   geom_line(data=simIndivFZSum,aes(x=Year, y=mean),size=0.5,col='indianred1') +
   geom_ribbon(data=simIndivMZSum,aes(x=Year,ymin=q1,ymax=q3),fill='cornflowerblue', alpha = 0.3) +
-  geom_line(data=simIndivMZSum,aes(x=Year, y=mean),size=0.5,col='cornflowerblue') +
-  geom_line(data = genealogical_contribs_by_year, aes(x=NatalYear, y=prop_nestlings),size=0.5,col='gray50', linetype = "dashed")
+  geom_line(data=simIndivMZSum,aes(x=Year, y=mean),size=0.5,col='cornflowerblue')) + 
+  theme(plot.margin = unit(c(10,5.5,5.5,5.5), "pt"))
 
 
 ## Combine plots
 
-# add some space at the top of these 2 plots to make room for the letters
-auto_margin <- auto_plot + theme(plot.margin = unit(c(10,5.5,5.5,5.5), "pt"))
-Z_margin <- Z_plot + theme(plot.margin = unit(c(10,5.5,5.5,5.5), "pt"))
-
-plot_grid(mated_pair_ped, auto_margin, Z_margin, nrow = 1, ncol = 3, labels = "AUTO")
-#ggsave("plotIndivGenContrib_tidy_20210310/fig1_ped_A_Z.pdf", width = 6.5, height = 2, units = "in")
+plot_grid(mated_pair_ped, auto_genealogical_plot, auto_Z_plot, nrow = 1, ncol = 3, labels = "AUTO")
+ggsave("fig1_ped_A_Z.pdf", width = 6.5, height = 2, units = "in")
 
