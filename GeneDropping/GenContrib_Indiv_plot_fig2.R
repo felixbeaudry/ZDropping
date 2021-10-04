@@ -194,22 +194,11 @@ filter(indiv_contribs_prop_nestlings_2013, prop_2013_nestlings != 0) %>%
 A_FM_mod_lm <- lm(auto_mean ~  prop_2013_nestlings*Sex  , data=indiv_contribs_prop_nestlings_2013)  
 summary(A_FM_mod_lm)
 
+
+
 #genealogical vs Z expected model
 Z_FM_mod_lm <- lm(Z_mean ~  prop_2013_nestlings*Sex  , data=indiv_contribs_prop_nestlings_2013)  
 summary(Z_FM_mod_lm)
-
--0.0327305/0.0539405 #sex effect
-
-#AZ
-
-AZ_mod <- lm(Z_mean ~  auto_mean  , data=indiv_contribs_A_Z_2013_sex)  
-summary(AZ_mod)  
-
-AZ_mods_sex <- lm(Z_mean ~  auto_mean*Sex  , data=indiv_contribs_A_Z_2013_sex)  
-summary(AZ_mods_sex)  
-
--5.690e-01/1.239e+00
-1.239e+00 - 5.690e-01
 
 
 #plot
@@ -257,7 +246,13 @@ summary(AZ_mods_sex)
 plot_grid(A_contribs_vs_descendants, Z_contribs_vs_descendants, A_vs_Z_contribs,  ncol = 3, labels = "AUTO", align = 'hv',axis='tblr')
 #ggsave('fig2_EGC_AZ_6-5x2-26.pdf', width = 6.5, height = 2.26, units ='in')
 
+#AZ
 
+AZ_mod <- lm(Z_mean ~  auto_mean + 0  , data=indiv_contribs_A_Z_2013_sex)  
+summary(AZ_mod)  
+
+AZ_mods_sex <- lm(Z_mean ~  auto_mean*Sex + 0 , data=indiv_contribs_A_Z_2013_sex)  
+summary(AZ_mods_sex)  
 
 ## Plot of male contrib vs. female contrib for breeding pairs amongst the 926 breeders
 
