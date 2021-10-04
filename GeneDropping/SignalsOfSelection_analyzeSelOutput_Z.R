@@ -2,7 +2,6 @@
 #Rose Driscoll and Nancy Chen
 #script to analyze gene dropping results for tests of selection
 
-today<-format(Sys.Date(),format="%d%b%Y")
 
 library(dplyr)
 library(plyr)
@@ -186,5 +185,5 @@ pval_change <- bind_rows(pval_change_sexlinked, pval_change_pseudoautosomal)
 pval_1999to2013 <- bind_rows(pval_1999to2013_sexlinked, pval_1999to2013_pseudoautosomal)
 
 # save to file
-save(pval_change,pval_1999to2013,file=paste("working_files/intermediate_files/SignalsOfSelection_Results_",today,".rdata",sep=''))
+save(pval_change,pval_1999to2013,file=paste("working_files/intermediate_files/SignalsOfSelection_Results.rdata",sep=''))
 
