@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #pipeline for estimating expected genetic contributions of 926 individual breeders
-#input files: FSJpedgeno_Zsexlinked.ped & IndivDataUSFWS.txt
+#input files: pedigree.txt, 926_breeders.txt, & IndivDataUSFWS.txt
 #Nancy Chen, Rose Driscoll and Felix Beaudry
 #Last updated: 18 Aug 2021
 
