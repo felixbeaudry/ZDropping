@@ -44,7 +44,7 @@ Use `GenContrib_Imm.sh` to run the gene dropping simulations for immigrants. Thi
 Next, we look for signals of selection by comparing expected contributions to observed change in frequency. This analysis is broken down into three steps: 1 - gene dropping, 2 - performing tests of selection, and 3 - plotting. 
 
 #### Step 1 - Gene dropping
-
+Use `SignalsOfSelection_Sel.sh` to run the gene dropping simulations with real genotypes to simulate the neutral behavior of alleles. This script also runs `SignalsOfSelection_coreCohort.R` to generate cohort data for the gene dropping simulations.
 
 #### Step 2 - Perform tests of selection
 Run `SignalsOfSelection_analyzeSelOutput_Z.R` to test for selection based on the gene dropping simulations.

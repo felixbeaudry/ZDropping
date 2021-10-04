@@ -1,4 +1,4 @@
-#13 May 2019
+#03 October 2021
 #Rose Driscoll and Nancy Chen
 #script to analyze gene dropping results for tests of selection
 
@@ -20,8 +20,8 @@ pval_change_sexlinked<-data.frame(snp=rep(snplist$SNP,each=14),year=rep(c(1999:2
 for (i in snplist$SNP)
 {
   # read in data
-	obs<-read.table(file=paste('seltest_Zsexlinked.',i,'.drop.data.txt',sep=''),header=TRUE)
-	sim<-read.table(file=paste('seltest_Zsexlinked.',i,'.drop.sim.txt',sep=''),header=TRUE)
+	obs<-read.table(file=paste('working_files/intermediate_files/seltest_Zsexlinked.',i,'.drop.data.txt',sep=''),header=TRUE)
+	sim<-read.table(file=paste('working_files/intermediate_files/seltest_Zsexlinked.',i,'.drop.sim.txt',sep=''),header=TRUE)
 	# get the simulation results for just 1999-2013 and divide by the total number of alleles each year
 	simfreq<-mapply('/',sim[,11:25],obs[obs$allele==2 & obs$cohort_year>1998,'all_alleles_count'])
 
@@ -104,8 +104,8 @@ pval_change_pseudoautosomal<-data.frame(snp=rep(snplist$SNP,each=14),year=rep(c(
 for (i in snplist$SNP)
 {
   # read in data
-  obs<-read.table(file=paste('seltest_Zsexlinked.',i,'.drop.data.txt',sep=''),header=TRUE)
-  sim<-read.table(file=paste('seltest_Zsexlinked.',i,'.drop.sim.txt',sep=''),header=TRUE)
+  obs<-read.table(file=paste('working_files/intermediate_files/seltest_Zpseudoautosomal.',i,'.drop.data.txt',sep=''),header=TRUE)
+  sim<-read.table(file=paste('working_files/intermediate_files/seltest_Zpseudoautosomal.',i,'.drop.sim.txt',sep=''),header=TRUE)
   # get the simulation results for just 1999-2013 and divide by the total number of alleles each year
   simfreq<-mapply('/',sim[,11:25],obs[obs$allele==2 & obs$cohort_year>1998,'all_alleles_count'])
   
@@ -186,5 +186,5 @@ pval_change <- bind_rows(pval_change_sexlinked, pval_change_pseudoautosomal)
 pval_1999to2013 <- bind_rows(pval_1999to2013_sexlinked, pval_1999to2013_pseudoautosomal)
 
 # save to file
-save(pval_change,pval_1999to2013,file=paste("genedropSelResults_Z_",today,".rdata",sep=''))
+save(pval_change,pval_1999to2013,file=paste("working_files/intermediate_files/SignalsOfSelection_Results_",today,".rdata",sep=''))
 
