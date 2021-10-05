@@ -32,6 +32,9 @@ immdata <- dplyr::select(indivdata, Indiv, ImmCohort)
 # And join the immigrant cohorts to the pedigree
 pedigree_immdata <- left_join(pedigree, immdata, by = "Indiv")
 
+
+
+
 # Figure out which imms end up breeding
 pedigree_immdata_breeder_nonbreeder_imms <- filter(pedigree_immdata, !is.na(ImmCohort)) %>%
   mutate(does_breed = ifelse(Indiv %in% pedigree_immdata$Dad, TRUE, 
@@ -77,6 +80,10 @@ sexed_unsexed_breed_nonbreed_legend <- get_legend(plot_for_legend)
 sexed_unsexed_breed_nonbreed_plot <- plot_grid(sexed_breed_nonbreed, unsexed_breed_nonbreed, ncol = 1, nrow = 2, rel_heights = c(0.8, 0.25), align = "v")
 sexed_unsexed_breed_nonbreed_plot_w_legend <- plot_grid(sexed_unsexed_breed_nonbreed_plot, sexed_unsexed_breed_nonbreed_legend, ncol = 2, nrow = 1, rel_widths = c(0.8, 0.25))
 
+#linear model
+immigrating_lm <- lm(data=pedigree_immdata_breeder_nonbreeder_imms_count, num_imms ~ Sex + ImmCohort)
+summary(immigrating_lm)
+
 
 #####Parts B & C: Autosomal & Z exp gen contribs of male & female imms#####
 
@@ -121,6 +128,14 @@ simsumImmA_from1990 <- left_join(all_years_alleles, simsumImmA) %>%
   plottheme + 
   theme(legend.position='none',plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
 
+#cumulative immigration proportion
+simsumImmA_from1990$mean[simsumImmA_from1990$year == "2013" & simsumImmA_from1990$allele == 2] + 
+  simsumImmA_from1990$mean[simsumImmA_from1990$year == "2013" & simsumImmA_from1990$allele == 3]  
+  
+  simsumImmA_from1990$mean[simsumImmA_from1990$year == "2013" & simsumImmA_from1990$allele == 3]/  
+  (  simsumImmA_from1990$mean[simsumImmA_from1990$year == "2013" & simsumImmA_from1990$allele == 2] + 
+    simsumImmA_from1990$mean[simsumImmA_from1990$year == "2013" & simsumImmA_from1990$allele == 3]  )
+  
 
 ####Part C: Z exp gen contribs of male & female imms####
 
@@ -160,6 +175,15 @@ simsumImmZ_from1990 <- left_join(all_years_alleles, simsumImmZ) %>%
   scale_fill_manual(values = c("cornflowerblue", "indianred1")) +
   plottheme + 
   theme(legend.position='none',plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
+
+
+#cumulative immigration proportion
+simsumImmZ_from1990$mean[simsumImmZ_from1990$year == "2013" & simsumImmZ_from1990$allele == 2] + 
+  simsumImmZ_from1990$mean[simsumImmZ_from1990$year == "2013" & simsumImmZ_from1990$allele == 3]  
+
+simsumImmZ_from1990$mean[simsumImmZ_from1990$year == "2013" & simsumImmZ_from1990$allele == 3]/  
+  (  simsumImmZ_from1990$mean[simsumImmZ_from1990$year == "2013" & simsumImmZ_from1990$allele == 2] + 
+       simsumImmZ_from1990$mean[simsumImmZ_from1990$year == "2013" & simsumImmZ_from1990$allele == 3]  )
 
 
 #####Parts D & E: Autosomal & Z exp gen contribs 15 years after immigration vs imm cohort size#####
@@ -265,6 +289,8 @@ simsumImmYrAplus15 <- bind_rows(simsumImmYrAFplus15, simsumImmYrAMplus15) %>%
   guides(color=guide_legend(override.aes=list(color=NA))) +
   theme(legend.position = "none",plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
 
+simsumImmYrAplus15_lm <- lm(data=simsumImmYrAplus15, mean ~ num_imms + Sex)
+summary(simsumImmYrAplus15_lm)
 
 ####Part E: Z exp gen contribs 15 years after immigration vs imm cohort size####
 
@@ -292,7 +318,7 @@ for (yr in c(1990:2013)){
 }
 
 #get total number of alleles sampled each year
-simImmYrZM$totAlleles<-laply(c(1:length(simImmYrZM$cohort)), function(x) unique(obsImmYrZ[obsImmYrZ$cohort_year==simImmYrZM[x,'Year'],'allele_count']))
+simImmYrZM$totAlleles<-lapply(c(1:length(simImmYrZM$cohort)), function(x) unique(obsImmYrZ[obsImmYrZ$cohort_year==simImmYrZM[x,'Year'],'allele_count']))
 
 #get mean 
 simImmYrZAvgM<-ddply(simImmYrZM,.(Year,allele),summarize, mean=mean(unlist(rep(allele_count,all_alleles_count))))
@@ -317,7 +343,7 @@ for (yr in c(1990:2013)){
 }
 
 #get total number of alleles sampled each year
-simImmYrZF$totAlleles<-laply(c(1:length(simImmYrZF$cohort)), function(x) unique(obsImmYrZ[obsImmYrZ$cohort_year==simImmYrZF[x,'Year'],'allele_count']))
+simImmYrZF$totAlleles<-lapply(c(1:length(simImmYrZF$cohort)), function(x) unique(obsImmYrZ[obsImmYrZ$cohort_year==simImmYrZF[x,'Year'],'allele_count']))
 
 #get mean 
 simImmYrZAvgF<-ddply(simImmYrZF,.(Year,allele),summarize, mean=mean(unlist(rep(allele_count,all_alleles_count))))
@@ -351,6 +377,8 @@ simsumImmYrZplus15 <- bind_rows(simsumImmYrZFplus15, simsumImmYrZMplus15) %>%
   guides(color=guide_legend(override.aes=list(color=NA))) +
   theme(legend.position = "none",plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
 
+simsumImmYrAplus15_lm <- lm(data=simsumImmYrAplus15, mean ~ num_imms + Sex)
+summary(simsumImmYrAplus15_lm)
 
 
 ####Putting it all together####
