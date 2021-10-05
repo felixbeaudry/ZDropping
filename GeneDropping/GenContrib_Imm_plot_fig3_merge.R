@@ -377,7 +377,7 @@ simsumImmYrZplus15 <- bind_rows(simsumImmYrZFplus15, simsumImmYrZMplus15) %>%
   guides(color=guide_legend(override.aes=list(color=NA))) +
   theme(legend.position = "none",plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
 
-simsumImmYrAplus15_lm <- lm(data=simsumImmYrAplus15, mean ~ num_imms + Sex)
+simsumImmYrAplus15_lm <- lm(data=simsumImmYrZplus15, mean ~ num_imms + Sex)
 summary(simsumImmYrAplus15_lm)
 
 
