@@ -10,123 +10,44 @@ library(doParallel)
 library(data.table)
 `%notin%` <- Negate(`%in%`)
 
-####get input files###
-#list of indiv in each category each year
-load("working_files/simindivFIXmin2obs.rdata")
-genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
+##
 
-load("working_files/FSJpedgeno_A.rdata")
-ped_AgenoT <- ped_Ageno[ped_Ageno$V2 %in% genotyped_official,] 
+load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
+indivlistgeno <- indivlistgeno_A
 
-indivlist <- merge(simindivFIXmin2obs,ped_AgenoT[c(1,4)],by.x="USFWS",by.y="V2")
-names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
+#Z SNP info
+map<-read.table('working_files/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05geno.map')
+ASNPS <- map[map$V1 %in% c(1:38),]
+ASNPS$map_pos <- seq(1,length(ASNPS$V1))
 
-indivlistgeno <- merge(indivlist,ped_AgenoT[,c(1,5:length(ped_AgenoT))],by.x="Indiv",by.y="V2")
-
-####estimate values that are constant across SNPs####
-samplePars<-data.frame(Year=c(1998:2013),stringsAsFactors=FALSE)
-
-samplePars[samplePars$Year==1998,'Nt']<- 2*(length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==1,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==2,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==1,1]) +
-                                              length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==2,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==2,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==1,1]))
-
-for(yr in c(1999:2013)){
-  samYr<-samplePars$Year
-  
-  indivYr<-indivlist[which(indivlist$Year==yr),]
-  #number of inds each yr in each category (total, survivors, immigrants, nestlings of each sex)
-  
-  samplePars[samYr==yr,'NMs']<-2*length(indivYr[indivYr$Category=='survivor'&indivYr$Sex==1,1])
-  samplePars[samYr==yr,'NFs']<-2*length(indivYr[indivYr$Category=='survivor'&indivYr$Sex==2,1])
-  samplePars[samYr==yr,'NMi']<-2*length(indivYr[indivYr$Category=='immigrant'&indivYr$Sex==1,1])
-  samplePars[samYr==yr,'NFi']<-2*length(indivYr[indivYr$Category=='immigrant'&indivYr$Sex==2,1])
-  samplePars[samYr==yr,'NMb']<-2*length(indivYr[indivYr$Category=='nestling'&indivYr$Sex==1,1])
-  samplePars[samYr==yr,'NFb']<-2*length(indivYr[indivYr$Category=='nestling'&indivYr$Sex==2,1])
-  
-  samplePars[samYr==yr,'Nt']<- samplePars[samYr==yr,'NFb'] + samplePars[samYr==yr,'NMb'] + samplePars[samYr==yr,'NFi'] + 	samplePars[samYr==yr,'NMi'] + samplePars[samYr==yr,'NMs'] +  samplePars[samYr==yr,'NFs'] 
-  
-  #proportion of chromosomes each yr in each category
-  samplePars[samYr==yr,'propMS']<-samplePars[samYr==yr,'NMs']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propFS']<-samplePars[samYr==yr,'NFs']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propMI']<-samplePars[samYr==yr,'NMi']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propFI']<-samplePars[samYr==yr,'NFi']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propMB']<-samplePars[samYr==yr,'NMb']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propFB']<-samplePars[samYr==yr,'NFb']/samplePars[samYr==yr,'Nt']
-}
-
-####sim unchanging parameters####
-
-pedinfo <- ped_Ageno[,1:4]
-colnames(pedinfo) <- c( "USFWS", "Dad", "Mom", "Sex")
-#add sex data to indivlist_sim - can't use indivlistgeno for this as we need to include ungenotyped birds
-indivlist_sim <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(1,4)],by='USFWS')
-
-#sort indivlist_sim
-indivlist_sim <- indivlist_sim[order(indivlist_sim$Year),]
-
-#get unique indivs 
-simindivgeno<-indivlist_sim[!duplicated(indivlist_sim$USFWS),]
-colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "og_Sex")
-
-#check for unsexed indivs & assign them a sex
-#unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
-#simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
-#simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
-
-#add assigned sexes of unsexed birds back to indivlist_sim 
-simulated_sexes <- fread('working_files/FSJ_sex_data_real_and_simulated_20201015.csv')
-colnames(simulated_sexes) <- c("Indiv", "Sex")
-simindivgeno <- left_join(simindivgeno[,-7],simulated_sexes,by=c("Indiv"="Indiv"))
-#(this way, a given unsexed bird will always have the same assigned sex even if it appears multiple times in indivlist)
-indivlist_sim$Sex <- simindivgeno$Sex[match(indivlist_sim$USFWS, simindivgeno$Indiv)]
-
-
-#separate into moms vs dads vs nestlings
-simindivgenoMoms<-
-  simindivgeno[(simindivgeno$Category!='nestling' | is.na(simindivgeno$Mom)) & simindivgeno$Sex==2,]
-simindivgenoDads<-
-  simindivgeno[(simindivgeno$Category!='nestling' | is.na(simindivgeno$Mom)) & simindivgeno$Sex==1,]
-simindivgenoNestlings<-
-  simindivgeno[simindivgeno$Category=='nestling' & !is.na(simindivgeno$Mom),]
-
-
-#estimate values that vary with SNP
-####start bootstrap####
-markersInPedOrder <- cbind.data.frame("SNPs"=names(ped_Ageno[,-c(1:4)]),"rank"=c(1:length(ped_Ageno[,-c(1:4)])))
-markersInPedOrder <- separate(markersInPedOrder, SNPs, c("SNP","one"),   sep = "_", remove = TRUE, convert = FALSE, extra = "merge", fill = "left")[,-2]
-
-#import SNPchip SNP position information
 chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
+ASNPS_chip <- left_join(ASNPS,chip,by=c("V2"="SNPname"))
 
-#which scaffolds to keep
-keeps <- c( 
-"ScYP8k313HRSCAF58ch1"   , "ScYP8k312HRSCAF54ch1A"   , "ScYP8k3629HRSCAF770ch2" ,  "ScYP8k3866HRSCAF1020ch3" , "ScYP8k311HRSCAF50ch4","ScYP8k314HRSCAF84ch4A"  ,
-"ScYP8k39HRSCAF32ch6" , "ScYP8k35HRSCAF18ch5"     , "ScYP8k34HRSCAF13ch7"   , "ScYP8k31HRSCAF1ch8"   ,  "ScYP8k33HRSCAF8ch9" , "ScYP8k32HRSCAF3ch10"   , 
-"ScYP8k3869HRSCAF1023ch11",  "ScYP8k3870HRSCAF1029ch12",  "ScYP8k3302HRSCAF431ch13"  , "ScYP8k3651HRSCAF793ch14" ,  "ScYP8k3864HRSCAF1010ch15",
-"ScYP8k37HRSCAF29ch17"   , "ScYP8k38HRSCAF31ch18"  ,  "ScYP8k36HRSCAF25ch19" ,"ScYP8k3865HRSCAF1011ch20",   "ScYP8k369HRSCAF175ch21" ,   "ScYP8k369HRSCAF175ch22"  , 
-"ScYP8k369HRSCAF175ch23",  "ScYP8k369HRSCAF175ch24" , "ScYP8k369HRSCAF175ch25" ,"ScYP8k369HRSCAF175ch26", "ScYP8k369HRSCAF175ch27"  , "ScYP8k369HRSCAF175ch28")
-       
-chip_A <- chip[chip$NewScaff %in% keeps,] # remove Z & unplaced micros
-chip_A_tally <- chip_A %>% group_by(NewScaff) %>% tally()
-
-#set window size in b.p.
-w_size = 3400000
-nloci<- round(100000*(w_size/1000000000)) #set sim loci number relative to window size; regular sim nloci / genome size in mb
-
-#import chromosome sizes
 sizes <- fread('working_files/FSJ.chrom.sizes')
-sizes <- sizes[sizes$V1 %in% keeps,]
+#which scaffolds to keep
+
+sizes <- sizes[sizes$V1 %in% c( 
+  "ScYP8k313HRSCAF58ch1"   , "ScYP8k312HRSCAF54ch1A"   , "ScYP8k3629HRSCAF770ch2" ,  "ScYP8k3866HRSCAF1020ch3" , "ScYP8k311HRSCAF50ch4","ScYP8k314HRSCAF84ch4A"  ,
+  "ScYP8k39HRSCAF32ch6" , "ScYP8k35HRSCAF18ch5"     , "ScYP8k34HRSCAF13ch7"   , "ScYP8k31HRSCAF1ch8"   ,  "ScYP8k33HRSCAF8ch9" , "ScYP8k32HRSCAF3ch10"   , 
+  "ScYP8k3869HRSCAF1023ch11",  "ScYP8k3870HRSCAF1029ch12",  "ScYP8k3302HRSCAF431ch13"  , "ScYP8k3651HRSCAF793ch14" ,  "ScYP8k3864HRSCAF1010ch15",
+  "ScYP8k37HRSCAF29ch17"   , "ScYP8k38HRSCAF31ch18"  ,  "ScYP8k36HRSCAF25ch19" ,"ScYP8k3865HRSCAF1011ch20",   "ScYP8k369HRSCAF175ch21" ,   "ScYP8k369HRSCAF175ch22"  , 
+  "ScYP8k369HRSCAF175ch23",  "ScYP8k369HRSCAF175ch24" , "ScYP8k369HRSCAF175ch25" ,"ScYP8k369HRSCAF175ch26", "ScYP8k369HRSCAF175ch27"  , "ScYP8k369HRSCAF175ch28")] 
+
+w_size = 3400000
+nloci<- 5000 #set sim loci number relative to window size; regular sim nloci / genome size in mb
 
 #loop across scaffolds making windows of SNPs
 win_global = 0
-for(lg in unique(chip_A$NewScaff)){
+#lg = "ScYP8k313HRSCAF58ch1"
+for(lg in unique(sizes$V1)){
   
   size_tmp <- sizes$V2[sizes$V1 == lg]
   
   #loop across windows
-  for(win in seq(from=0,to=max(chip_A$SNPpos[chip_A$NewScaff == lg],na.rm=T),by = w_size)){
+  for(win in seq(from=0,to=max(ASNPS_chip$SNPpos[ASNPS_chip$NewScaff == lg],na.rm=T),by = w_size)){
    if(win+w_size<size_tmp){
     cat(lg," ", ((win/w_size) + win_global)," ",win," ",size_tmp,"\n")
-    chip_A$bootstrap[chip_A$SNPpos > win & chip_A$SNPpos <= (win+w_size) & chip_A$NewScaff == lg] <- (win/w_size) + win_global
+     ASNPS_chip$bootstrap[ASNPS_chip$SNPpos > win & ASNPS_chip$SNPpos <= (win+w_size) & ASNPS_chip$NewScaff == lg] <- (win/w_size) + win_global
    }else{ #skip windows at the end of scaffolds with too few SNPs
      cat(lg," ", ((win/w_size) + win_global)," ",win," ",size_tmp," skipped\n")
      
@@ -136,22 +57,17 @@ for(lg in unique(chip_A$NewScaff)){
   
 }
 
-chip_A_tally <- chip_A %>% group_by(bootstrap,NewScaff) %>% tally()
-markersInPedOrder_chip_A <- left_join(markersInPedOrder,chip_A,by=c("SNP"="SNPname"))
+markersInPedOrder_chip_A <- ASNPS_chip[,c(5,11,6)]
+names(markersInPedOrder_chip_A)[1]<- "SNP"
 
-#remove ungenotyped SNPs
-genotyped <- as.data.frame(laply(markersInPedOrder_chip_A$SNP,function(x) sum(indivlistgeno[indivlistgeno$Year==1990,x],na.rm=TRUE)))
-genotyped$SNP <- markersInPedOrder_chip_A$SNP
-genotyped$SNP[genotyped$genotyped == 0]
-markersInPedOrder_chip_A <- markersInPedOrder_chip_A[markersInPedOrder_chip_A$SNP != "s5154p19703",]
 
 #remove low SNP bootstraps
 markersInPedOrder_chip_A_tally <- markersInPedOrder_chip_A %>% group_by(bootstrap) %>% tally()
-big_boots <- markersInPedOrder_chip_A_tally$bootstrap[markersInPedOrder_chip_A_tally$n > 10]
+big_boots <- markersInPedOrder_chip_A_tally$bootstrap[markersInPedOrder_chip_A_tally$n >= 5]
 markersInPedOrder_chip_A <- markersInPedOrder_chip_A[markersInPedOrder_chip_A$bootstrap %in% big_boots,]
 
 #rename SNPs
-markersInPedOrder_chip_A$SNP <- paste(markersInPedOrder_chip_A$SNP,"_1",sep="")
+#markersInPedOrder_chip_A$SNP <- paste(markersInPedOrder_chip_A$SNP,"_1",sep="")
 
 
 
@@ -206,7 +122,7 @@ loop=1
 
 for(win in unique(na.omit(markersInPedOrder_chip_A$bootstrap))){
   cat(win,"\n")
-
+  
 #n = number of genotyped individuals, x = sample allele frequency
 #calculate allele freq
 sampleFreq<-data.frame(Year=rep(c(1999:2013),each=31),Category=rep(c(

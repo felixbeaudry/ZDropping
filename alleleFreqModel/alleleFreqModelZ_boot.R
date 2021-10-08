@@ -14,82 +14,48 @@ library(data.table)
 
 
 ####get input files####
-#list of indiv in each Category each year
-load("working_files/simindivFIXmin2obs.rdata")
-names(simindivFIXmin2obs) <- c('Year','Indiv','Category','Genotyped','Mom','Dad')
-
-load("working_files/indivlistgenoZ.rdata")
-
-names(indivlistgeno)[c(1,3,4)]<-c('Indiv','Category','Genotyped')
+load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
+indivlistgeno <- indivlistgeno_Z
 
 #Z SNP info
-ZSNPS <- fread('working_files/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05.map')
-ZSNPS <- ZSNPS[ZSNPS$V1 == 39 ,]
+map<-read.table('working_files/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05geno.map')
+ZSNPS <- map[map$V1 == 39 ,]
+ZSNPS$map_pos <- seq(1,length(ZSNPS$V1))
 
-#chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
-#Z_chip <- left_join(ZSNPS,chip,by=c("V2"=   "SNPname"))
+chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
+ZSNPS_chip <- left_join(ZSNPS,chip,by=c("V2"="SNPname"))
 
-names(indivlistgeno)[c(8:length(indivlistgeno))]<-ZSNPS$V2
+sizes <- fread('working_files/FSJ.chrom.sizes')
+Z_size <- sizes$V2[sizes$V1 %in% unique(ZSNPS_chip$NewScaff)] 
 
-indivlist <- indivlistgeno[c(1:7)]
-names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
+w_size = 3400000
+nloci<- 5000 #set sim loci number relative to window size; regular sim nloci / genome size in mb
 
-####estimate values that are constant across SNPs###
-samplePars<-data.frame(Year=c(1998:2013),stringsAsFactors=FALSE)
-
-samplePars[samplePars$Year==1998,'Nt']<- 2*length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==1,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==2,1]) + 2*length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==1,1]) +
-  2*length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==2,1]) + length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==2,1]) + 2*length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==1,1])
-
-for(yr in c(1999:2013)){
-  samYr<-samplePars$Year
-  
-  indivYr<-indivlist[which(indivlist$Year==yr),]
-  #number of inds each yr in each Category (total, survivors, immigrants, nestlings of each sex)
-  
-  samplePars[samYr==yr,'NMs']<-2*length(indivYr[indivYr$Category=='survivor'&indivYr$Sex==1,1])
-  samplePars[samYr==yr,'NFs']<-length(indivYr[indivYr$Category=='survivor'&indivYr$Sex==2,1])
-  samplePars[samYr==yr,'NMi']<-2*length(indivYr[indivYr$Category=='immigrant'&indivYr$Sex==1,1])
-  samplePars[samYr==yr,'NFi']<-length(indivYr[indivYr$Category=='immigrant'&indivYr$Sex==2,1])
-  samplePars[samYr==yr,'NMb']<-2*length(indivYr[indivYr$Category=='nestling'&indivYr$Sex==1,1])
-  samplePars[samYr==yr,'NFb']<-length(indivYr[indivYr$Category=='nestling'&indivYr$Sex==2,1])
-  
-  samplePars[samYr==yr,'Nt']<- samplePars[samYr==yr,'NFb'] + samplePars[samYr==yr,'NMb'] + samplePars[samYr==yr,'NFi'] + 	samplePars[samYr==yr,'NMi'] + samplePars[samYr==yr,'NMs'] +  samplePars[samYr==yr,'NFs'] 
-  
-  #proportion of chromosomes each yr in each Category
-  samplePars[samYr==yr,'propMS']<-samplePars[samYr==yr,'NMs']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propFS']<-samplePars[samYr==yr,'NFs']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propMI']<-samplePars[samYr==yr,'NMi']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propFI']<-samplePars[samYr==yr,'NFi']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propMB']<-samplePars[samYr==yr,'NMb']/samplePars[samYr==yr,'Nt']
-  samplePars[samYr==yr,'propFB']<-samplePars[samYr==yr,'NFb']/samplePars[samYr==yr,'Nt']
+win_global = 0
+for(win in seq(from=0,to=max(ZSNPS_chip$SNPpos,na.rm=T),by = w_size)){
+  if(win+w_size<Z_size){
+    #cat( ((win/w_size) + win_global)," ",win," ",Z_size,"\n")
+    ZSNPS_chip$bootstrap[ZSNPS_chip$SNPpos > win & ZSNPS_chip$SNPpos <= (win+w_size) ] <- (win/w_size) + win_global
+  }else{
+    cat( ((win/w_size) + win_global)," ",win," ",Z_size," skipped\n")
+    
+  }
 }
 
-####sim unchanging parameters####
 
-ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
-pedinfo <- ped[,1:5]
-colnames(pedinfo) <- c("Family", "Indiv", "Dad", "Mom", "Sex")
+markersInPedOrder_chip_Z <- ZSNPS_chip[,c(5,11)]
+names(markersInPedOrder_chip_Z)[1]<- "SNP"
 
-indivlist_sim <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='Indiv')
+markersInPedOrder_chip_Z_tally <- markersInPedOrder_chip_Z %>% group_by(bootstrap) %>% tally()
+big_boots <- markersInPedOrder_chip_Z_tally$bootstrap[markersInPedOrder_chip_Z_tally$n >= 5]
+markersInPedOrder_chip_Z <- markersInPedOrder_chip_Z[markersInPedOrder_chip_Z$bootstrap %in% big_boots,]
 
-#sort indivlist_sim
-indivlist_sim <- indivlist_sim[order(indivlist_sim$Year),]
 
-#get unique indivs 
-simindivgeno<-indivlist_sim[!duplicated(indivlist_sim$Indiv),]
-colnames(simindivgeno) <- c("Indiv", "Year", "Category", "Genotyped", "Mom", "Dad", "og_Sex")
-
-#check for unsexed indivs & assign them a sex
-#unsexed_indivs <- simindivgeno$Indiv[simindivgeno$Sex==0]
-#simulated_sexes <- sample(x = c(1,2), size = length(unsexed_indivs), prob = c(0.5,0.5), replace = TRUE)
-#simindivgeno$Sex[simindivgeno$Sex==0] <- simulated_sexes
-simulated_sexes <- fread('working_files/FSJ_sex_data_real_and_simulated_20201015.csv')
-colnames(simulated_sexes) <- c("Indiv", "Sex")
-simindivgeno <- left_join(simindivgeno[,-7],simulated_sexes,by=c("Indiv"="Indiv"))
-
-#add assigned sexes of unsexed birds back to indivlist_sim 
-#(this way, a given unsexed bird will always have the same assigned sex even if it appears multiple times in indivlist)
-indivlist_sim$Sex <- simindivgeno$Sex[match(indivlist_sim$Indiv, simindivgeno$Indiv)]
+###
+#start sim file
+indivlist <- indivlistgeno[order(indivlistgeno$Year),c(1:6,8)]
+simindivgeno<-indivlist[!duplicated(indivlist$USFWS),]
+colnames(simindivgeno) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
 
 #separate into moms vs dads vs nestlings
 simindivgenoMoms<-
@@ -99,36 +65,8 @@ simindivgenoDads<-
 simindivgenoNestlings<-
   simindivgeno[simindivgeno$Category=='nestling' & !is.na(simindivgeno$Mom),]
 
-#estimate values that vary with SNP
-####start bootstrap####
-markersInPedOrder <- cbind.data.frame("SNPs"=names(indivlistgeno[,-c(1:7)]),"rank"=c(1:length(indivlistgeno[,-c(1:7)])))
 
-chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
-
-chip_Z <- chip[chip$NewScaff == "ScYP8k310HRSCAF43chZ" ,] # only Z & 
-
-Z_size <- 75605511
-
-w_size = 3400000
-nloci<- round(100000*(w_size/Z_size)) #set sim loci number relative to window size; regular sim nloci / genome size in mb
-
-win_global = 0
-for(win in seq(from=0,to=max(chip_Z$SNPpos,na.rm=T),by = w_size)){
-  if(win+w_size<Z_size){
-    cat( ((win/w_size) + win_global)," ",win," ",Z_size,"\n")
-    chip_Z$bootstrap[chip_Z$SNPpos > win & chip_Z$SNPpos <= (win+w_size) ] <- (win/w_size) + win_global
-  }else{
-    cat( ((win/w_size) + win_global)," ",win," ",Z_size," skipped\n")
-    
-  }
-}
-win_global <- (win/w_size) + win_global #need to increase window number with each loop across chromosomes
-
-chip_Z_tally <- chip_Z %>% group_by(bootstrap) %>% tally()
-
-markersInPedOrder_chip_Z <- left_join(markersInPedOrder,chip_Z,by=c("SNPs"="SNPname"))
-names(markersInPedOrder_chip_Z)[1]<- "SNP"
-
+#start sample file
 allVar <- 
   rbind.data.frame(
     data.frame(Year=rep(c(1999:2013),each=28),Category=rep(c(
@@ -171,15 +109,11 @@ allVar <-
   )
 
 
-
-
 ####start the loop####
 loop=1
 
-#boots <- sample(unique(na.omit(markersInPedOrder_chip_Z$bootstrap)), 1000, replace=T)
-
 for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
-  cat(win,"\n")
+  cat("window= ",win,"\n")
   
   #n = number of Genotyped individuals, x = sample allele frequency
   #calculate allele freq
@@ -204,6 +138,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   
   markers <- markersInPedOrder_chip_Z$SNP[markersInPedOrder_chip_Z$bootstrap == win]
   markers <- c(na.omit(markers))
+  
+  indivlistgeno <- indivlistgeno_Z[,-c(8)]
   
   for(snp in markers){ 
     sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]<-
@@ -469,6 +405,9 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
       mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xFfam-xt',c(3:length(sampleFreq))])^2)
   }
 ####start sim####
+  
+  indivlistgeno <- indivlistgeno_Z
+  
   indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
   indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
   indivlistgeno$Mom<-as.character(indivlistgeno$Mom)
@@ -476,11 +415,12 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   #get real frequency of each allele in 1990 (accounting for different total # of alleles in males & females)
   datafreq1990<-laply(markers,function(x) 
     sum(indivlistgeno[indivlistgeno$Year==1990,x],na.rm=TRUE)/
-      ((2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==1,x])))
-       +(sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==2,x])))))
+      ((2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==1,x+1])))
+       +(sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==2,x+1])))))
   
   #randomly sample from real allele frequencies
   simfreq<-sample(datafreq1990,nloci,replace=TRUE)
+  
   
   #simulate genotypes for adults
   #moms - 0 1
@@ -1424,7 +1364,7 @@ save(allVar,file=paste("working_files/intermediate_files/allVar_int_boot_Z_w",(w
 }
 
 today<-format(Sys.Date(),format="%d%b%Y")
-save(allVar,file=paste("working_files/intermediate_files/allVar_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+save(allVar,file=paste("working_files/intermediate_files/allVar_boot_Z_w",(w_size/1000000),"mb.rdata",sep=''))
 
 
 

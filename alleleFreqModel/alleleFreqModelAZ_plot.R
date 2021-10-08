@@ -29,19 +29,14 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
 
 ####start calculations for autosomal loci####
 
-#load tables
-load("working_files/simindivFIXmin2obs.rdata")
-genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
 
-load("working_files/FSJpedgeno_A.rdata")
-ped_AgenoT <- ped_Ageno[ped_Ageno$V2 %in% genotyped_official,] 
-indivlist <- merge(simindivFIXmin2obs,ped_AgenoT[c(1,4)],by.x="USFWS",by.y="V2")
-names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
+load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
+indivlist <- indivlistgeno_A[,c(1:7)]
 
+load("working_files/intermediate_files/sampleVar_A.rdata") #samplevar
+load("working_files/intermediate_files/simVarA.rdata") #simvar
 
-load("working_files/intermediate_files/sampleVar_A_SR24Aug2021.rdata") #samplevar
-load("working_files/intermediate_files/simVarA_30Aug2021.rdata") #simvar
-load("working_files/intermediate_files/allVar_boot_A_w3.4mb_01Sep2021.rdata") #bootstrap
+load("working_files/intermediate_files/allVar_boot_A_w3.4mb.rdata") #bootstrap
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
 
 allVar_s <-  allVar[,col_sample]
@@ -732,17 +727,12 @@ alleleFreqVarAvg1_A <- alleleFreqVarAvg2
 
 
 #indivlist
-load("working_files/simindivFIXmin2obs.rdata")
-ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
-pedinfo <- ped[,1:5]
-colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
-indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
-indivlist <- indivlist[order(indivlist$Year),]
+load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
+indivlist <- indivlistgeno_Z[,c(1:7)]
 
-
-load("working_files/intermediate_files/sampleVar_Z_SR23Aug2021.rdata") #samplevar
+load("working_files/intermediate_files/sampleVar_Z.rdata") #samplevar
 load("working_files/intermediate_files/simVarZ.rdata") #simvar
-load("working_files/intermediate_files/allVar_boot_Z_w3.4mb_24Aug2021.rdata") #bootstrap
+load("working_files/intermediate_files/allVar_boot_Z_w3.4mb.rdata") #bootstrap
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
 
 allVar_s <-  allVar[,col_sample]

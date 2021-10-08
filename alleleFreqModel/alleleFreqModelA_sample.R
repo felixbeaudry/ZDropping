@@ -9,52 +9,8 @@ library(plyr)
 ####get & make starting data.frames####
 
 #get input files
-load("working_files/simindivFIXmin2obs.rdata") #list of indiv in each category each year
-load("working_files/FSJpedgeno_A.rdata") #pedigree
-
-#only keep genotyped individuals
-genotyped_official <- unique(simindivFIXmin2obs$USFWS[simindivFIXmin2obs$genotyped == "Y"])
-ped_AgenoT <- ped_Ageno[ped_Ageno$V2 %in% genotyped_official,] 
-
-indivlist <- merge(simindivFIXmin2obs,ped_AgenoT[c(1,4)],by.x="USFWS",by.y="V2")
-names(indivlist)<-c('Indiv','Year','Category','Genotyped','Mom','Dad','Sex')
-
-
-####values constant across SNPs####
-#estimate values that are constant across SNPs
-samplePars<-data.frame(Year=c(1998:2013),stringsAsFactors=FALSE)
-
-samplePars[samplePars$Year==1998,'Nt']<- 
-  2*(length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==1,1]) + 
-  length(indivlist[indivlist$Year==1998&indivlist$Category=='survivor'&indivlist$Sex==2,1]) + 
-    length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==1,1]) +
-  length(indivlist[indivlist$Year==1998&indivlist$Category=='immigrant'&indivlist$Sex==2,1]) + 
-    length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==2,1]) + 
-    length(indivlist[indivlist$Year==1998&indivlist$Category=='nestling'&indivlist$Sex==1,1]))
-
-
-for(yr in c(1999:2013)){
-	samYr<-samplePars$Year
-	indivYr<-indivlist[which(indivlist$Year==yr),]
-	
-	#number of inds each yr in each category (total, survivors, immigrants, nestlings of each sex)
-	samplePars[samYr==yr,'NMs']<-2*length(indivYr[indivYr$Category=='survivor'&indivYr$Sex==1,1])
-	samplePars[samYr==yr,'NFs']<-2*length(indivYr[indivYr$Category=='survivor'&indivYr$Sex==2,1])
-	samplePars[samYr==yr,'NMi']<-2*length(indivYr[indivYr$Category=='immigrant'&indivYr$Sex==1,1])
-	samplePars[samYr==yr,'NFi']<-2*length(indivYr[indivYr$Category=='immigrant'&indivYr$Sex==2,1])
-	samplePars[samYr==yr,'NMb']<-2*length(indivYr[indivYr$Category=='nestling'&indivYr$Sex==1,1])
-	samplePars[samYr==yr,'NFb']<-2*length(indivYr[indivYr$Category=='nestling'&indivYr$Sex==2,1])
-	
-	samplePars[samYr==yr,'Nt']<- samplePars[samYr==yr,'NFb'] + samplePars[samYr==yr,'NMb'] + samplePars[samYr==yr,'NFi'] + 	samplePars[samYr==yr,'NMi'] + samplePars[samYr==yr,'NMs'] +  samplePars[samYr==yr,'NFs'] 
-	
-	#proportion of chromosomes each yr in each category
-	samplePars[samYr==yr,'propMS']<-samplePars[samYr==yr,'NMs']/samplePars[samYr==yr,'Nt']
-	samplePars[samYr==yr,'propFS']<-samplePars[samYr==yr,'NFs']/samplePars[samYr==yr,'Nt']
-	samplePars[samYr==yr,'propMI']<-samplePars[samYr==yr,'NMi']/samplePars[samYr==yr,'Nt']
-	samplePars[samYr==yr,'propFI']<-samplePars[samYr==yr,'NFi']/samplePars[samYr==yr,'Nt']
-	samplePars[samYr==yr,'propMB']<-samplePars[samYr==yr,'NMb']/samplePars[samYr==yr,'Nt']
-	samplePars[samYr==yr,'propFB']<-samplePars[samYr==yr,'NFb']/samplePars[samYr==yr,'Nt']
-}
+load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
+indivlistgeno <- indivlistgeno_A[,-c(8)]
 
 ####allele frequencies####
 #estimate values that vary with SNP
@@ -78,10 +34,8 @@ sampleFreq<-rbind(data.frame(Year=rep(1998,2),Category=c('nt','xt'),
 SNPyr<-sampleFreq$Year
 SNPcat<-sampleFreq$Category
 
-indivlistgeno <- merge(indivlist,ped_AgenoT[,c(1,5:length(ped_AgenoT))],by.x="Indiv",by.y="V2")
-save(indivlistgeno,file='working_files/intermediate_files/indivlistgenoA.rdata')
-
 igYear<-indivlistgeno$Year
+
 
 for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){
   
@@ -274,25 +228,25 @@ for(year in c(1999:2013)){
 ####Mendelian noise####
 #get unique individuals
 genoUnique<-indivlistgeno[!duplicated(indivlistgeno$Indiv),]
-names(genoUnique)[1] <- "USFWS"
+names(genoUnique)[2] <- "USFWS"
 
 #get sample allele frequencies of parents
 for(year in c(1999:2013)){
 	dadsofmales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==1,'Dad']
 	dadsofmales<-data.frame(USFWS=dadsofmales[!is.na(dadsofmales)],stringsAsFactors=FALSE)
-	dadsofmalesgeno<-merge(dadsofmales,genoUnique[,c(1,8:length(genoUnique))],by='USFWS',all.x=TRUE)
+	dadsofmalesgeno<-merge(dadsofmales,genoUnique[,c(2,8:length(genoUnique))],by='USFWS',all.x=TRUE)
 	
 	momsofmales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==1,'Mom']
 	momsofmales<-data.frame(USFWS=momsofmales[!is.na(momsofmales)],stringsAsFactors=FALSE)
-	momsofmalesgeno<-merge(momsofmales,genoUnique[,c(1,8:length(genoUnique))],by='USFWS',all.x=TRUE)
+	momsofmalesgeno<-merge(momsofmales,genoUnique[,c(2,8:length(genoUnique))],by='USFWS',all.x=TRUE)
 	
 	dadsoffemales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==2,'Dad']
 	dadsoffemales<-data.frame(USFWS=dadsoffemales[!is.na(dadsoffemales)],stringsAsFactors=FALSE)
-	dadsoffemalesgeno<-merge(dadsoffemales,genoUnique[,c(1,8:length(genoUnique))],by='USFWS',all.x=TRUE)
+	dadsoffemalesgeno<-merge(dadsoffemales,genoUnique[,c(2,8:length(genoUnique))],by='USFWS',all.x=TRUE)
 	
 	momsoffemales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==2,'Mom']
 	momsoffemales<-data.frame(USFWS=momsoffemales[!is.na(momsoffemales)],stringsAsFactors=FALSE)
-	momsoffemalesgeno<-merge(momsoffemales,genoUnique[,c(1,8:length(genoUnique))],by='USFWS',all.x=TRUE)
+	momsoffemalesgeno<-merge(momsoffemales,genoUnique[,c(2,8:length(genoUnique))],by='USFWS',all.x=TRUE)
 
 		for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){
 		sampleFreq[SNPyr==year & SNPcat=='xMdad',snp]<-mean(dadsofmalesgeno[,snp],na.rm=TRUE)/2
@@ -351,12 +305,9 @@ for(year in c(1999:2013)){
 	  mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xFfam-xt',c(3:length(sampleFreq))])^2)
 }
 
-#get date script is run
-today<-format(Sys.Date(),format="%d%b%Y")
+#today<-format(Sys.Date(),format="%d%b%Y")
 
 #save output
-save(samplePars,sampleFreq,file=paste("working_files/intermediate_files/modelAIntermediateFiles_",today,".rdata",sep=''))
-save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_A_SR",today,".rdata",sep=''))
 save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_A.rdata",sep=''))
 
 
