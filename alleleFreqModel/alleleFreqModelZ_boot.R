@@ -31,6 +31,7 @@ Z_size <- sizes$V2[sizes$V1 %in% unique(ZSNPS_chip$NewScaff)]
 
 w_size = 3400000
 nloci<- 5000 #set sim loci number relative to window size; regular sim nloci / genome size in mb
+#nloci=4
 
 win_global = 0
 for(win in seq(from=0,to=max(ZSNPS_chip$SNPpos,na.rm=T),by = w_size)){
@@ -56,7 +57,7 @@ markersInPedOrder_chip_Z <- markersInPedOrder_chip_Z[markersInPedOrder_chip_Z$bo
 #start sim file
 simindivlist <- indivlistgeno[order(indivlistgeno$Year),c(1:6,8)]
 colnames(simindivlist) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
-simindivgeno<-indivlist[!duplicated(indivlist$Indiv),]
+simindivgeno<-simindivlist[!duplicated(simindivlist$Indiv),]
 colnames(simindivgeno) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
 
 #separate into moms vs dads vs nestlings
@@ -332,18 +333,19 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   genoUnique<-indivlistgeno[!duplicated(indivlistgeno$Indiv),]
   
   #get sample allele frequencies of parents
+ # year =1999
   for(year in c(1999:2013)){
-    dadsofmales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==1,'Dad']
+    dadsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
     dadsofmales<-data.frame(Indiv=dadsofmales[!is.na(dadsofmales)],stringsAsFactors=FALSE)
-    dadsofmalesgeno<-merge(dadsofmales,genoUnique[,c(1,8:length(genoUnique))],by='Indiv',all.x=TRUE)
+    dadsofmalesgeno<-merge(dadsofmales,genoUnique[,c(2,8:length(genoUnique))],by='Indiv',all.x=TRUE)
     
-    momsofmales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==1,'Mom']
+    momsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Mom']
     momsofmales<-data.frame(Indiv=momsofmales[!is.na(momsofmales)],stringsAsFactors=FALSE)
-    momsofmalesgeno<-merge(momsofmales,genoUnique[,c(1,8:length(genoUnique))],by='Indiv',all.x=TRUE)
+    momsofmalesgeno<-merge(momsofmales,genoUnique[,c(2,8:length(genoUnique))],by='Indiv',all.x=TRUE)
     
-    dadsoffemales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==2,'Dad']
+    dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Dad']
     dadsoffemales<-data.frame(Indiv=dadsoffemales[!is.na(dadsoffemales)],stringsAsFactors=FALSE)
-    dadsoffemalesgeno<-merge(dadsoffemales,genoUnique[,c(1,8:length(genoUnique))],by='Indiv',all.x=TRUE)
+    dadsoffemalesgeno<-merge(dadsoffemales,genoUnique[,c(2,8:length(genoUnique))],by='Indiv',all.x=TRUE)
     
     #Moms don't contribute to daughters on Z so skip these
     #momsoffemales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==2,'Mom']
@@ -419,8 +421,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   #get real frequency of each allele in 1990 (accounting for different total # of alleles in males & females)
   datafreq1990<-laply(markers,function(x) 
     sum(indivlistgeno[indivlistgeno$Year==1990,x],na.rm=TRUE)/
-      ((2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==1,x+1])))
-       +(sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==2,x+1])))))
+      ((2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==1,x])))
+       +(sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==2,x])))))
   
   #randomly sample from real allele frequencies
   simfreq<-sample(datafreq1990,nloci,replace=TRUE)
@@ -539,7 +541,7 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   }
   
   #now we want to have each indiv appear multiple times again
-  simdataTrue<-merge(indivlist,simindivgenoAll[,c(1,8:(nloci+7))], by.x='Indiv',by.y='Indiv',all.x=TRUE)	
+  simdataTrue<-merge(simindivlist,simindivgenoAll[,c(2,8:(nloci+7))], by.x='Indiv',by.y='Indiv',all.x=TRUE)	
 
   
 

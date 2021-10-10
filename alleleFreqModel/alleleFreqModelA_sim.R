@@ -11,8 +11,8 @@ library(data.table)
 
 ####set variables and make/import tables####
 #number of SNPs to simulate
-nloci=4
-#nloci<-100000
+#nloci=4
+nloci<-100000
 
 #get date script is run
 today<-format(Sys.Date(),format="%d%b%Y")
