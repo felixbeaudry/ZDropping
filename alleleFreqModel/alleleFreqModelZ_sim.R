@@ -12,6 +12,7 @@ library(dplyr)
 ####set variables and make/import tables####
 #number of SNPs to simulate
 nloci<-100000
+#nloci=2
 
 #get date script is run
 today<-format(Sys.Date(),format="%d%b%Y")
@@ -177,16 +178,6 @@ save(simdataTrue,file='working_files/intermediate_files/simdataTrueZ.rdata')
 #colnames(simdataTrue)[7] <- "Sex"
 
 ####calculate error in freq estimation due to sampling####
-#get number of all genotyped indivs by category and in total
-counts<-ddply(indivlist,.(Year,Category,Sex),summarize,Genotyped=sum(Genotyped=='Y'),
-              total=length(Category))
-counts[counts$Sex==1,'Genotyped']<-2*counts$Genotyped[counts$Sex==1]
-counts[counts$Sex==1,'total']<-2*counts$total[counts$Sex==1]
-countsAll<-ddply(indivlist,.(Year,Sex),summarize,Genotyped=sum(Genotyped=='Y'),
-                 total=length(Category))
-countsAll[countsAll$Sex==1,'Genotyped']<-2*countsAll$Genotyped[countsAll$Sex==1]
-countsAll[countsAll$Sex==1,'total']<-2*countsAll$total[countsAll$Sex==1]
-#category is just here to calculate the number of rows
 
 #calculate sample allele freq
 #mimic sampling of genotyped indiv by selecting only indivs who actually were genotyped
@@ -235,9 +226,6 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
 #save the data from this year
 save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqZYr_",year,".rdata",sep=''))
 
-sim[c(1:3),c(1:5)]
-nrow(sim)
-ncol(sim)
 
 #Names for the values we just calculated (year and category/parameter)
 simName<-data.frame(Year=rep(year,each=3),Category=c('pt','xt','errT'),
@@ -249,7 +237,7 @@ sim1<-cbind(simName,sim)
 #Add the simulation data to simAlleleFreq (we'll collect the data from all years here)
 simAlleleFreq<-rbind(simAlleleFreq,sim1)
 
-year = 1999
+#year = 1999
 for(year in c(1999:2013)){
   #get moms of sons, dads of sons, and dads of daughters for this year
   
@@ -408,7 +396,7 @@ for(year in c(1999:2013)){
   save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqZYr_",year,".rdata",sep=''))
   
   #categories (parameter names) and years to combine with the results of our calculations
-  simName<-data.frame(Year=rep(year,each=67),category=c(
+  simName<-data.frame(Year=rep(year,each=67),Category=c(
     'pt','xt','errT', 'pt1-pt',
     
     'pMs','xMs','errMS', 'pMs-pt', 'xMs-xt', 'errMS-errT',
@@ -642,7 +630,7 @@ for(year in c(1999:2013)){
 save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqZ.rdata")
 
 ####calculate variances and covariances####
-simVar<-data.frame(Year=rep(c(1999:2013),each=112),category=rep(c(
+simVar<-data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
     'pt1-pt',
     'pMs-pt','xMs-xt','errMS-errT','pMspterrMSerrT',
     'pFs-pt','xFs-xt','errFS-errT','pFspterrFSerrT',

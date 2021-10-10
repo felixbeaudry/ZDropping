@@ -4,6 +4,7 @@
 #Last updated: 7 July 2021
 
 library(plyr)
+library(tidyverse)
 
 
 ####get & make starting data.frames####
@@ -224,21 +225,22 @@ for(year in c(1999:2013)){
 ####Mendelian noise####
 #get unique individuals
 genoUnique<-indivlistgeno[!duplicated(indivlistgeno$Indiv),]
-names(genoUnique)[2] <- "USFWS"
+#names(genoUnique)[2] <- "USFWS"
 
+#year=1999
 #get sample allele frequencies of parents
 for(year in c(1999:2013)){
-	dadsofmales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==1,'Dad']
-	dadsofmales<-data.frame(USFWS=dadsofmales[!is.na(dadsofmales)],stringsAsFactors=FALSE)
-	dadsofmalesgeno<-merge(dadsofmales,genoUnique[,c(2,8:(snp_length+7))],by='USFWS',all.x=TRUE)
+	dadsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
+	dadsofmales<-data.frame(Indiv=dadsofmales[!is.na(dadsofmales)],stringsAsFactors=FALSE)
+	dadsofmalesgeno<-left_join(dadsofmales,genoUnique[,c(2,8:(snp_length+7))])
 	
-	momsofmales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==1,'Mom']
-	momsofmales<-data.frame(USFWS=momsofmales[!is.na(momsofmales)],stringsAsFactors=FALSE)
-	momsofmalesgeno<-merge(momsofmales,genoUnique[,c(2,8:(snp_length+7))],by='USFWS',all.x=TRUE)
+	momsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Mom']
+	momsofmales<-data.frame(Indiv=momsofmales[!is.na(momsofmales)],stringsAsFactors=FALSE)
+	momsofmalesgeno<-left_join(momsofmales,genoUnique[,c(2,8:(snp_length+7))])
 	
-	dadsoffemales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==2,'Dad']
-	dadsoffemales<-data.frame(USFWS=dadsoffemales[!is.na(dadsoffemales)],stringsAsFactors=FALSE)
-	dadsoffemalesgeno<-merge(dadsoffemales,genoUnique[,c(2,8:(snp_length+7))],by='USFWS',all.x=TRUE)
+	dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Dad']
+	dadsoffemales<-data.frame(Indiv=dadsoffemales[!is.na(dadsoffemales)],stringsAsFactors=FALSE)
+	dadsoffemalesgeno<-left_join(dadsoffemales,genoUnique[,c(2,8:(snp_length+7))])
 	
 	#Moms don't contribute to daughters on Z so skip these
 	#momsoffemales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==2,'Mom']
@@ -303,8 +305,6 @@ for(year in c(1999:2013)){
 	sampleVar[varYr==year & varCat=='xFfam-xt',3]<-
 	  mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xFfam-xt',c(3:(snp_length+2))])^2)
 }
-
-
 
 
 #save output

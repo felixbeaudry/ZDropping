@@ -12,7 +12,6 @@ library(data.table)
 `%ni%` <- Negate(`%in%`)
 
 
-
 ####get input files####
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
 indivlistgeno <- indivlistgeno_Z
@@ -21,6 +20,8 @@ indivlistgeno <- indivlistgeno_Z
 map<-read.table('working_files/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05geno.map')
 ZSNPS <- map[map$V1 == 39 ,]
 ZSNPS$map_pos <- seq(1,length(ZSNPS$V1))
+ZSNPS$SNP_name <- names(indivlistgeno_Z[,-c(1:8)])
+
 
 chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
 ZSNPS_chip <- left_join(ZSNPS,chip,by=c("V2"="SNPname"))
@@ -43,7 +44,7 @@ for(win in seq(from=0,to=max(ZSNPS_chip$SNPpos,na.rm=T),by = w_size)){
 }
 
 
-markersInPedOrder_chip_Z <- ZSNPS_chip[,c(5,11)]
+markersInPedOrder_chip_Z <- ZSNPS_chip[,c(6,12)]
 names(markersInPedOrder_chip_Z)[1]<- "SNP"
 
 markersInPedOrder_chip_Z_tally <- markersInPedOrder_chip_Z %>% group_by(bootstrap) %>% tally()
@@ -53,8 +54,9 @@ markersInPedOrder_chip_Z <- markersInPedOrder_chip_Z[markersInPedOrder_chip_Z$bo
 
 ###
 #start sim file
-indivlist <- indivlistgeno[order(indivlistgeno$Year),c(1:6,8)]
-simindivgeno<-indivlist[!duplicated(indivlist$USFWS),]
+simindivlist <- indivlistgeno[order(indivlistgeno$Year),c(1:6,8)]
+colnames(simindivlist) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
+simindivgeno<-indivlist[!duplicated(indivlist$Indiv),]
 colnames(simindivgeno) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
 
 #separate into moms vs dads vs nestlings
@@ -111,9 +113,9 @@ allVar <-
 
 ####start the loop####
 loop=1
-
+#win=4
 for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
-  cat("window= ",win,"\n")
+  cat("window = ",win,"\n")
   
   #n = number of Genotyped individuals, x = sample allele frequency
   #calculate allele freq
@@ -141,6 +143,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   
   indivlistgeno <- indivlistgeno_Z[,-c(8)]
   
+  #snp="SNP10732"
+  #match(snp,markers)
   for(snp in markers){ 
     sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]<-
       2*sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==1,snp])) +
@@ -538,16 +542,7 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   simdataTrue<-merge(indivlist,simindivgenoAll[,c(1,8:(nloci+7))], by.x='Indiv',by.y='Indiv',all.x=TRUE)	
 
   
-  #get number of all Genotyped indivs by Category and in total
-  counts<-ddply(indivlist,.(Year,Category,Sex),summarize,Genotyped=sum(Genotyped=='Y'),
-                total=length(Category))
-  counts[counts$Sex==1,'Genotyped']<-2*counts$Genotyped[counts$Sex==1]
-  counts[counts$Sex==1,'total']<-2*counts$total[counts$Sex==1]
-  countsAll<-ddply(indivlist,.(Year,Sex),summarize,Genotyped=sum(Genotyped=='Y'),
-                   total=length(Category))
-  countsAll[countsAll$Sex==1,'Genotyped']<-2*countsAll$Genotyped[countsAll$Sex==1]
-  countsAll[countsAll$Sex==1,'total']<-2*countsAll$total[countsAll$Sex==1]
-  #Category is just here to calculate the number of rows
+
   
   #calculate sample allele freq
   #mimic sampling of Genotyped indiv by selecting only indivs who actually were Genotyped

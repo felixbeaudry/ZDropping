@@ -17,8 +17,11 @@ indivlistgeno <- indivlistgeno_A
 
 #Z SNP info
 map<-read.table('working_files/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05geno.map')
-ASNPS <- map[map$V1 %in% c(1:38),]
+ASNPS <- map[map$V1 %in% c(0:38),]
+ASNPS$SNP_name <- names(indivlistgeno_A[,-c(1:8)])
+ASNPS <- ASNPS[ASNPS$V1 %in% c(1:38),]
 ASNPS$map_pos <- seq(1,length(ASNPS$V1))
+
 
 chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
 ASNPS_chip <- left_join(ASNPS,chip,by=c("V2"="SNPname"))
@@ -57,7 +60,7 @@ for(lg in unique(sizes$V1)){
   
 }
 
-markersInPedOrder_chip_A <- ASNPS_chip[,c(5,11,6)]
+markersInPedOrder_chip_A <- ASNPS_chip[,c(5,12,7)]
 names(markersInPedOrder_chip_A)[1]<- "SNP"
 
 
@@ -66,9 +69,21 @@ markersInPedOrder_chip_A_tally <- markersInPedOrder_chip_A %>% group_by(bootstra
 big_boots <- markersInPedOrder_chip_A_tally$bootstrap[markersInPedOrder_chip_A_tally$n >= 5]
 markersInPedOrder_chip_A <- markersInPedOrder_chip_A[markersInPedOrder_chip_A$bootstrap %in% big_boots,]
 
-#rename SNPs
-#markersInPedOrder_chip_A$SNP <- paste(markersInPedOrder_chip_A$SNP,"_1",sep="")
 
+#set constants
+simindivlist <- indivlistgeno[order(indivlistgeno$Year),c(1:6,8)]
+colnames(simindivlist) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
+
+simindivgeno<-simindivlist[!duplicated(simindivlist$Indiv),]
+colnames(simindivgeno) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
+
+#separate into moms vs dads vs nestlings
+simindivgenoMoms<-
+  simindivgeno[(simindivgeno$Category!='nestling' | is.na(simindivgeno$Mom)) & simindivgeno$Sex==2,]
+simindivgenoDads<-
+  simindivgeno[(simindivgeno$Category!='nestling' | is.na(simindivgeno$Mom)) & simindivgeno$Sex==1,]
+simindivgenoNestlings<-
+  simindivgeno[simindivgeno$Category=='nestling' & !is.na(simindivgeno$Mom),]
 
 
 allVar <- 
@@ -119,7 +134,7 @@ data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
 loop=1
 
 #boots <- sample(unique(na.omit(markersInPedOrder_chip_A$bootstrap)), 1000, replace=T)
-
+#win=33
 for(win in unique(na.omit(markersInPedOrder_chip_A$bootstrap))){
   cat(win,"\n")
   
@@ -339,25 +354,27 @@ for(year in c(1999:2013)){
 #### calculate Mendelian noise####
 #get unique individuals
 genoUnique<-indivlistgeno[!duplicated(indivlistgeno$Indiv),]
-names(genoUnique)[1] <- "USFWS"
+#names(genoUnique)[1] <- "USFWS"
 
 #get sample allele frequencies of parents
 for(year in c(1999:2013)){
-  dadsofmales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==1,'Dad']
-  dadsofmales<-data.frame(USFWS=dadsofmales[!is.na(dadsofmales)],stringsAsFactors=FALSE)
-  dadsofmalesgeno<-merge(dadsofmales,genoUnique[,c(1,8:length(genoUnique))],by='USFWS',all.x=TRUE)
+  dadsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
+  dadsofmales<-data.frame(Indiv=dadsofmales[!is.na(dadsofmales)],stringsAsFactors=FALSE)
+  dadsofmalesgeno<-left_join(dadsofmales,genoUnique[,c(2,8:length(genoUnique))])
   
-  momsofmales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==1,'Mom']
-  momsofmales<-data.frame(USFWS=momsofmales[!is.na(momsofmales)],stringsAsFactors=FALSE)
-  momsofmalesgeno<-merge(momsofmales,genoUnique[,c(1,8:length(genoUnique))],by='USFWS',all.x=TRUE)
+  #genoUnique[,c(1,8)]
   
-  dadsoffemales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==2,'Dad']
-  dadsoffemales<-data.frame(USFWS=dadsoffemales[!is.na(dadsoffemales)],stringsAsFactors=FALSE)
-  dadsoffemalesgeno<-merge(dadsoffemales,genoUnique[,c(1,8:length(genoUnique))],by='USFWS',all.x=TRUE)
+  momsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Mom']
+  momsofmales<-data.frame(Indiv=momsofmales[!is.na(momsofmales)],stringsAsFactors=FALSE)
+  momsofmalesgeno<-left_join(momsofmales,genoUnique[,c(2,8:length(genoUnique))])
   
-  momsoffemales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==2,'Mom']
-  momsoffemales<-data.frame(USFWS=momsoffemales[!is.na(momsoffemales)],stringsAsFactors=FALSE)
-  momsoffemalesgeno<-merge(momsoffemales,genoUnique[,c(1,8:length(genoUnique))],by='USFWS',all.x=TRUE)
+  dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Dad']
+  dadsoffemales<-data.frame(Indiv=dadsoffemales[!is.na(dadsoffemales)],stringsAsFactors=FALSE)
+  dadsoffemalesgeno<-left_join(dadsoffemales,genoUnique[,c(2,8:length(genoUnique))])
+  
+  momsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Mom']
+  momsoffemales<-data.frame(Indiv=momsoffemales[!is.na(momsoffemales)],stringsAsFactors=FALSE)
+  momsoffemalesgeno<-left_join(momsoffemales,genoUnique[,c(2,8:length(genoUnique))])
   
   for(snp in markers){
     sampleFreq[SNPyr==year & SNPcat=='xMdad',snp]<-mean(dadsofmalesgeno[,snp],na.rm=TRUE)/2
@@ -433,6 +450,7 @@ datafreq1990<-laply(markers,function(x)
      +(2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==2,x])))))
 
 #randomly sample from real allele frequencies
+#nloci=10
 simfreq<-sample(datafreq1990,nloci,replace=TRUE)
 
 #simulate genotypes for adults
@@ -554,16 +572,8 @@ for(year in nest.years){
 }
 
 #now we want to have each indiv appear multiple times again
-simdataTrue<-merge(indivlist_sim,simindivgenoAll[,c(1,8:(nloci+7))],
-                   by.x='USFWS',by.y='Indiv',all.x=TRUE)	
-
-
-#get number of all genotyped indivs by category and in total
-counts<-ddply(indivlist_sim,.(Year,category,Sex),summarize,genotyped=2*sum(genotyped=='Y'),
-              total=length(category))
-countsAll<-ddply(indivlist_sim,.(Year),summarize,genotyped=2*sum(genotyped=='Y'),
-                 total=length(category))
-#category is just here to calculate the number of rows
+simdataTrue<-merge(simindivlist,simindivgenoAll[,c(2,8:(nloci+7))],
+                   by.x='Indiv',by.y='Indiv',all.x=TRUE)	
 
 #calculate sample allele freq
 #mimic sampling of genotyped indiv by selecting only indivs who actually were genotyped
@@ -616,7 +626,7 @@ for(year in c(1999:2013)){
   #get moms of sons, dads of sons, and dads of daughters for this year
   
   #get moms of male nestlings born this year
-  moms_of_sons<-simdataTrue[simdataTrue$Year==year & simdataTrue$category=='nestling' & simdataTrue$Sex==1,'mom']
+  moms_of_sons<-simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==1,'Mom']
   #convert list of moms of sons to a data frame
   moms_of_sons<-data.frame(Indiv=moms_of_sons[!is.na(moms_of_sons)],stringsAsFactors=FALSE)
   #collect simulated moms of sons genotypes (including those simulated for ungenotyped indivs) from simdataTrueUnique
