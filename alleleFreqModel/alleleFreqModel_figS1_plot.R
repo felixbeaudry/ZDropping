@@ -7,6 +7,7 @@
 
 library(dplyr)
 library(ggplot2)
+library(cowplot)
 
 #plot theme
 plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.line.y = element_line(colour="black",size=0.3),
@@ -20,27 +21,28 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
                     legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(0.25,"cm"))
 
 #indivlist
-load("working_files/simindivFIXmin2obs.rdata")
-ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
-pedinfo <- ped[,1:5]
-colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
-indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
-indivlist <- indivlist[order(indivlist$Year),]
-
+#load("working_files/simindivFIXmin2obs.rdata")
+#ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
+#pedinfo <- ped[,1:5]
+#colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
+#indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
+#indivlist <- indivlist[order(indivlist$Year),]
+load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
+indivlist <- indivlistgeno_A[,c(1:8)]
 
 
 ## Number of genotyped & not genotyped indivs in each category in each year
-counts_to_plot <- group_by(indivlist, Year, category, Sex, genotyped) %>%
+counts_to_plot <- group_by(indivlist, Year, Category, Sex, Genotyped) %>%
   dplyr::summarize(num_birds = n()) %>%
   # truncate to start from 1991 as 1990 is just "founder"
   filter(Year>1990) %>%
   # make males negative & make is_genotyped (true/false) column
-  mutate(num_birds_males_negative = ifelse(Sex==1, -num_birds, num_birds), is_genotyped = ifelse(genotyped=="Y", TRUE, FALSE))
+  mutate(num_birds_males_negative = ifelse(Sex==1, -num_birds, num_birds), is_genotyped = ifelse(Genotyped=="Y", TRUE, FALSE))
 
 # Make survivor, immigrant, and birth tables
-survivor_counts_to_plot <- filter(counts_to_plot, category == "survivor")
-immigrant_counts_to_plot <- filter(counts_to_plot, category == "immigrant")
-birth_counts_to_plot <- filter(counts_to_plot, category == "nestling")
+survivor_counts_to_plot <- filter(counts_to_plot, Category == "survivor")
+immigrant_counts_to_plot <- filter(counts_to_plot, Category == "immigrant")
+birth_counts_to_plot <- filter(counts_to_plot, Category == "nestling")
 
 
 
