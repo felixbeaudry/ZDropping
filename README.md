@@ -50,7 +50,7 @@ Use `SignalsOfSelection_Sel.sh` to run the gene dropping simulations with real g
 Run `SignalsOfSelection_analyzeSelOutput_Z.R` to test for selection based on the gene dropping simulations.
 
 #### Step 3 - Plot
-Run x to correct selection results for multiple comparisons genome-wide and create manhattanplots to display selection results.
+Run `SignalsOfSelection_plot_figS5_figS6.R` to correct selection results for multiple comparisons genome-wide and create manhattanplots to display selection results.
 
 ## Allele Frequency Change Model
 The final directory, `\alleleFreqModel`, holds scripts to partition change in allele frequencies between years between demographic groups by sex for autosomal and Z-linked loci. This analysis is broken down into four steps: 1 - sampling, 2 - simulating error, 3 - bootstrapping, and 4 - plotting. This is repeated for the Z and autosomes seperately, given different inheritance patterns, but both are plotted together. These scripts assume a flexible sex ratio; we also ran a model assuming a fixed sex ratio but instead partitioned allele frequency change between years to each sex. 
