@@ -28,42 +28,35 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
 
 
 #indivlist
-load("working_files/simindivFIXmin2obs.rdata")
-ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
-pedinfo <- ped[,1:5]
-colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
-indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
-indivlist <- indivlist[order(indivlist$Year),]
+load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
+indivlist <- indivlistgeno_A[,1:7]
 
-#samplevar
-load("working_files/intermediate_files/sampleVarA_06May2021_rose.rdata")
-
-#simvar
-load("working_files/intermediate_files/simVarA_07Apr2021_rose.rdata")
+load("working_files/intermediate_files/sampleVarA_FSR.rdata") #samplevar
+load("working_files/intermediate_files/simVarA_FSR.rdata") #simvar
 
 
 ## Number of all & genotyped indivs; proportion of indivs in each category
 #need to multiply by 2 for everyone here (not just males)
 
-counts<-ddply(indivlist,.(Year,category,Sex),summarize,genotyped=sum(genotyped=='Y'),
-              total=length(category))
-counts[counts$Sex==1,'genotyped']<-2*counts$genotyped[counts$Sex==1]
-counts[counts$Sex==2,'genotyped']<-2*counts$genotyped[counts$Sex==2]
+counts<-ddply(indivlist,.(Year,Category,Sex),summarize,Genotyped=sum(Genotyped=='Y'),
+              total=length(Category))
+counts[counts$Sex==1,'Genotyped']<-2*counts$Genotyped[counts$Sex==1]
+counts[counts$Sex==2,'Genotyped']<-2*counts$Genotyped[counts$Sex==2]
 counts[counts$Sex==1,'total']<-2*counts$total[counts$Sex==1]
 counts[counts$Sex==2,'total']<-2*counts$total[counts$Sex==2]
-countsAll<-ddply(indivlist,.(Year,Sex),summarize,genotyped=sum(genotyped=='Y'),
-                 total=length(category))
-countsAll[countsAll$Sex==1,'genotyped']<-2*countsAll$genotyped[countsAll$Sex==1]
-countsAll[countsAll$Sex==2,'genotyped']<-2*countsAll$genotyped[countsAll$Sex==2]
+countsAll<-ddply(indivlist,.(Year,Sex),summarize,Genotyped=sum(Genotyped=='Y'),
+                 total=length(Category))
+countsAll[countsAll$Sex==1,'Genotyped']<-2*countsAll$Genotyped[countsAll$Sex==1]
+countsAll[countsAll$Sex==2,'Genotyped']<-2*countsAll$Genotyped[countsAll$Sex==2]
 countsAll[countsAll$Sex==1,'total']<-2*countsAll$total[countsAll$Sex==1]
 countsAll[countsAll$Sex==2,'total']<-2*countsAll$total[countsAll$Sex==2]
 
-propMS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='survivor' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
-propFS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='survivor' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
-propMI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='immigrant' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
-propFI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='immigrant' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
-propMB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='nestling' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
-propFB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='nestling' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
+propMS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='survivor' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
+propFS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='survivor' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
+propMI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='immigrant' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
+propFI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='immigrant' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
+propMB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='nestling' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
+propFB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='nestling' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
 # I think this is proportion of indivs that are in each category and also genotyped? 
 # so it is out of total # indivs for that year
 prop<-data.frame(propMS=propMS,propFS=propFS,propMI=propMI,propFI=propFI,propMB=propMB,propFB=propFB)
@@ -82,47 +75,47 @@ alleleFreqVarAvg<-data.frame(Year=rep(c(2000:2013),each=21),
                              stringsAsFactors=FALSE)
 
 #square terms
-x=2000
+#x=2000
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((1/2)*prop[yr,'propMS'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xMs-xMt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errMS-errMT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pMspMterrMSerrMT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errMS-errMT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pMspMterrMSerrMT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((1/2)*prop[yr,'propFS'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xFs-xFt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errFS-errFT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pFspFterrFSerrFT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errFS-errFT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pFspFterrFSerrFT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MIsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((1/2)*prop[yr,'propMI'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xMi-xMt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errMI-errMT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pMipMterrMIerrMT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errMI-errMT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pMipMterrMIerrMT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FIsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((1/2)*prop[yr,'propFI'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xFi-xFt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errFI-errFT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pFipFterrFIerrFT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errFI-errFT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pFipFterrFIerrFT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MBsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((1/2)*prop[yr,'propMB'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xMb-xMt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errMB-errMT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pMbpMterrMBerrMT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errMB-errMT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pMbpMterrMBerrMT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FBsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((1/2)*prop[yr,'propFB'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xFb-xFt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errFB-errFT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pFbpFterrFBerrFT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errFB-errFT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pFbpFterrFBerrFT',3])
 })
 
 #MM
@@ -130,27 +123,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSMI','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*((1/2)^2)*(prop[yr,'propMS']*prop[yr,'propMI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxMi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrMI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxMi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrMI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrMI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxMi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrMI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSMB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*((1/2)^2)*(prop[yr,'propMS']*prop[yr,'propMB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxMb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrMB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxMb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrMB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrMB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxMb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrMB',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MIMB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*((1/2)^2)*(prop[yr,'propMI']*prop[yr,'propMB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMixMb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMierrMB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMIxMb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMIerrMB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMierrMB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMIxMb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMIerrMB',3])
 })
 
 #FF
@@ -158,27 +151,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSFI','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*((1/2)^2)*(prop[yr,'propFS']*prop[yr,'propFI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFsxFi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFserrFI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFSxFi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFSerrFI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFserrFI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFSxFi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFSerrFI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*((1/2)^2)*(prop[yr,'propFS']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFsxFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFserrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFSxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFSerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFserrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFSxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFSerrFB',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FIFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*((1/2)^2)*(prop[yr,'propFI']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFixFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFierrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFIxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFIerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFierrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFIxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFIerrFB',3])
 })
 
 #MF - same category
@@ -186,27 +179,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSFS','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*(1/2)*(1/2)*(prop[yr,'propMS']*prop[yr,'propFS'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxFs','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrFS',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxFs',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrFS',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrFS',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxFs',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrFS',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MIFI','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(1/2)*(1/2)*(prop[yr,'propMI']*prop[yr,'propFI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMixFi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMierrFI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMIxFi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMIerrFI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMierrFI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMIxFi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMIerrFI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MBFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(1/2)*(1/2)*(prop[yr,'propMB']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMbxFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMberrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMBxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMBerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMberrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMBxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMBerrFB',3])
 })
 
 #MF - different categories
@@ -215,27 +208,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSFI','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*(1/2)*(1/2)*(prop[yr,'propMS']*prop[yr,'propFI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxFi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrFI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxFi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrFI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrFI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxFi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrFI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(1/2)*(1/2)*(prop[yr,'propMS']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrFB',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MIFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(1/2)*(1/2)*(prop[yr,'propMI']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMixFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMierrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMIxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMIerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMierrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMIxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMIerrFB',3])
 })
 
 #F then M
@@ -243,27 +236,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSMI','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*(1/2)*(1/2)*(prop[yr,'propFS']*prop[yr,'propMI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFsxMi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFserrMI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFSxMi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFSerrMI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFserrMI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFSxMi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFSerrMI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSMB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(1/2)*(1/2)*(prop[yr,'propFS']*prop[yr,'propMB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFsxMb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFserrMB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFSxMb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFSerrMB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFserrMB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFSxMb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFSerrMB',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FIMB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(1/2)*(1/2)*(prop[yr,'propFI']*prop[yr,'propMB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFixMb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFierrMB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFIxMb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFIerrMB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFierrMB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFIxMb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFIerrMB',3])
 })
 
 
@@ -282,36 +275,27 @@ alleleFreqVarAvg_A <-alleleFreqVarAvg[alleleFreqVarAvg$Category != 'MSMI'
 
 ####Z####
 
-ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
-pedinfo <- ped[,1:5]
-colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
-indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
-indivlist <- indivlist[order(indivlist$Year),]
-
-#samplevar
-load("working_files/intermediate_files/sampleVarZ_21Jan2021_rose.rdata")
-
-#simvar
-load("working_files/intermediate_files/simVarZ_23Jan2021_rose.rdata")
+load("working_files/intermediate_files/sampleVarZ_FSR.rdata") #samplevar
+load("working_files/intermediate_files/simVarZ_FSR.rdata") #simvar
 
 
 ## Number of all & genotyped indivs; proportion of indivs in each category
 
-counts<-ddply(indivlist,.(Year,category,Sex),summarize,genotyped=sum(genotyped=='Y'),
-              total=length(category))
-counts[counts$Sex==1,'genotyped']<-2*counts$genotyped[counts$Sex==1]
+counts<-ddply(indivlist,.(Year,Category,Sex),summarize,Genotyped=sum(Genotyped=='Y'),
+              total=length(Category))
+counts[counts$Sex==1,'Genotyped']<-2*counts$Genotyped[counts$Sex==1]
 counts[counts$Sex==1,'total']<-2*counts$total[counts$Sex==1]
-countsAll<-ddply(indivlist,.(Year,Sex),summarize,genotyped=sum(genotyped=='Y'),
-                 total=length(category))
-countsAll[countsAll$Sex==1,'genotyped']<-2*countsAll$genotyped[countsAll$Sex==1]
+countsAll<-ddply(indivlist,.(Year,Sex),summarize,Genotyped=sum(Genotyped=='Y'),
+                 total=length(Category))
+countsAll[countsAll$Sex==1,'Genotyped']<-2*countsAll$Genotyped[countsAll$Sex==1]
 countsAll[countsAll$Sex==1,'total']<-2*countsAll$total[countsAll$Sex==1]
 
-propMS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='survivor' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
-propFS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='survivor' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
-propMI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='immigrant' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
-propFI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='immigrant' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
-propMB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='nestling' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
-propFB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$category=='nestling' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
+propMS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='survivor' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
+propFS<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='survivor' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
+propMI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='immigrant' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
+propFI<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='immigrant' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
+propMB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='nestling' & counts$Sex==1,'total']/countsAll[countsAll$Year==x & countsAll$Sex==1,'total'])
+propFB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=='nestling' & counts$Sex==2,'total']/countsAll[countsAll$Year==x & countsAll$Sex==2,'total'])
 # I think this is proportion of indivs that are in each category and also genotyped? 
 # so it is out of total # indivs for that year
 prop<-data.frame(propMS=propMS,propFS=propFS,propMI=propMI,propFI=propFI,propMB=propMB,propFB=propFB)
@@ -332,43 +316,43 @@ alleleFreqVarAvg<-data.frame(Year=rep(c(2000:2013),each=21),
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((2/3)*prop[yr,'propMS'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xMs-xMt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errMS-errMT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pMspMterrMSerrMT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errMS-errMT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pMspMterrMSerrMT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((1/3)*prop[yr,'propFS'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xFs-xFt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errFS-errFT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pFspFterrFSerrFT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errFS-errFT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pFspFterrFSerrFT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MIsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((2/3)*prop[yr,'propMI'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xMi-xMt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errMI-errMT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pMipMterrMIerrMT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errMI-errMT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pMipMterrMIerrMT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FIsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((1/3)*prop[yr,'propFI'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xFi-xFt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errFI-errFT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pFipFterrFIerrFT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errFI-errFT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pFipFterrFIerrFT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MBsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((2/3)*prop[yr,'propMB'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xMb-xMt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errMB-errMT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pMbpMterrMBerrMT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errMB-errMT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pMbpMterrMBerrMT',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FBsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   (((1/3)*prop[yr,'propFB'])^2)*(sampleVar[sampleVar$Year==x & sampleVar$Category=='xFb-xFt','avg'] 
-                                 - simVar[simVar$Year==x & simVar$category=='errFB-errFT',3] 
-                                 - 2*simVar[simVar$Year==x & simVar$category=='pFbpFterrFBerrFT',3])
+                                 - simVar[simVar$Year==x & simVar$Category=='errFB-errFT',3] 
+                                 - 2*simVar[simVar$Year==x & simVar$Category=='pFbpFterrFBerrFT',3])
 })
 
 #MM
@@ -376,27 +360,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSMI','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*((2/3)^2)*(prop[yr,'propMS']*prop[yr,'propMI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxMi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrMI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxMi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrMI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrMI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxMi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrMI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSMB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*((2/3)^2)*(prop[yr,'propMS']*prop[yr,'propMB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxMb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrMB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxMb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrMB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrMB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxMb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrMB',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MIMB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*((2/3)^2)*(prop[yr,'propMI']*prop[yr,'propMB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMixMb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMierrMB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMIxMb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMIerrMB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMierrMB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMIxMb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMIerrMB',3])
 })
 
 #FF
@@ -404,27 +388,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSFI','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*((1/3)^2)*(prop[yr,'propFS']*prop[yr,'propFI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFsxFi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFserrFI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFSxFi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFSerrFI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFserrFI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFSxFi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFSerrFI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*((1/3)^2)*(prop[yr,'propFS']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFsxFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFserrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFSxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFSerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFserrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFSxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFSerrFB',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FIFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*((1/3)^2)*(prop[yr,'propFI']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFixFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFierrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFIxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFIerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFierrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFIxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFIerrFB',3])
 })
 
 #MF - same category
@@ -432,27 +416,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSFS','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*(2/3)*(1/3)*(prop[yr,'propMS']*prop[yr,'propFS'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxFs','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrFS',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxFs',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrFS',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrFS',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxFs',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrFS',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MIFI','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(2/3)*(1/3)*(prop[yr,'propMI']*prop[yr,'propFI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMixFi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMierrFI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMIxFi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMIerrFI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMierrFI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMIxFi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMIerrFI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MBFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(2/3)*(1/3)*(prop[yr,'propMB']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMbxFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMberrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMBxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMBerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMberrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMBxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMBerrFB',3])
 })
 
 #MF - different categories
@@ -461,27 +445,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSFI','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*(2/3)*(1/3)*(prop[yr,'propMS']*prop[yr,'propFI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxFi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrFI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxFi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrFI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrFI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxFi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrFI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(2/3)*(1/3)*(prop[yr,'propMS']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMsxFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMserrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMSxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMSerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMserrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMSxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMSerrFB',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MIFB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(2/3)*(1/3)*(prop[yr,'propMI']*prop[yr,'propFB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xMixFb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xMierrFB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errMIxFb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errMIerrFB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xMierrFB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errMIxFb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errMIerrFB',3])
 })
 
 #F then M
@@ -489,27 +473,27 @@ alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSMI','avg']<-laply(c(2000:2013), f
   yr<-as.character(x)
   2*(2/3)*(1/3)*(prop[yr,'propFS']*prop[yr,'propMI'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFsxMi','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFserrMI',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFSxMi',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFSerrMI',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFserrMI',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFSxMi',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFSerrMI',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FSMB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(2/3)*(1/3)*(prop[yr,'propFS']*prop[yr,'propMB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFsxMb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFserrMB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFSxMb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFSerrMB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFserrMB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFSxMb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFSerrMB',3])
 })
 
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='FIMB','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   2*(2/3)*(1/3)*(prop[yr,'propFI']*prop[yr,'propMB'])*
     (sampleVar[sampleVar$Year==x & sampleVar$Category=='xFixMb','avg'] 
-     - simVar[simVar$Year==x & simVar$category=='xFierrMB',3] 
-     - simVar[simVar$Year==x & simVar$category=='errFIxMb',3] 
-     + simVar[simVar$Year==x & simVar$category=='errFIerrMB',3])
+     - simVar[simVar$Year==x & simVar$Category=='xFierrMB',3] 
+     - simVar[simVar$Year==x & simVar$Category=='errFIxMb',3] 
+     + simVar[simVar$Year==x & simVar$Category=='errFIerrMB',3])
 })
 
 
@@ -596,7 +580,7 @@ AZ_AFVA$year_adj <- AZ_AFVA$Year
 AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] <- AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] + 0.25
 varp_title2 <- expression(paste("Proportional Contribution to ",Delta, "p variance"))
 
-pdf(paste("fig_S7_sep1.pdf",sep=''),width=5.5,height=4)
+pdf(paste("fig_S8_oct14.pdf",sep=''),width=5.5,height=4)
 
 ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
   geom_hline(yintercept = 0,alpha=0.5)+
@@ -625,26 +609,4 @@ ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) +
 
 dev.off()
 
-##
-AZ_AFVA$year_adj <- AZ_AFVA$Year 
-AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] <- AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] + 0.25
 
-ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
-  geom_hline(yintercept = 0,alpha=0.5)+
-  
-  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
-  
-  geom_point(aes(color=Category2,shape=chrom)) + 
-  guides(color=FALSE) +
-  facet_grid(  supercategory ~sexCat,scales="free")+
-  
-  theme_bw(base_size = 16) + 
-  scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
-  scale_color_manual(values=fills_to_use)+  
-  scale_shape_manual(values=c(1,16)) +
-  # scale_linetype_manual(values=c("solid","dashed")) +
-  labs(y=varp_title,x="Year",color="Category",linetype="") + 
-  theme(strip.background =element_rect(fill="white")) +
-  geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 1,dl.trans(x = x + .2))) +
-  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) #+ 
-coord_cartesian(ylim = c(-0.25, 0.5))
