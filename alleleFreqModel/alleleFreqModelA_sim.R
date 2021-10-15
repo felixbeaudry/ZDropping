@@ -211,7 +211,7 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
                                                     stringsAsFactors=FALSE)
   
   frqYr1<-tmp$Year
-  frqCat1<-tmp$category
+  frqCat1<-tmp$Category
   
   tmp[frqYr1==year & frqCat1=='pt',3]<-
   sum(simdataTrue[simdataTrue$Year==year,i],na.rm=TRUE)/
@@ -668,6 +668,8 @@ simVar<-data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
 
 bsYr<-simVar$Year
 bsCat<-simVar$Category
+
+#year=1999
 for(year in c(1999:2013)){
   #total variance, for males and females
   simVar[bsYr==year & bsCat=='pt1-pt',3]<-
