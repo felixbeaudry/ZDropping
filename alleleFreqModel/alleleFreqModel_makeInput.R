@@ -11,13 +11,14 @@ ped_only <- fread('working_files/pedigree.txt')
 maleCode <- unique(ped_only$Sex[ped_only$Indiv %in% ped_only$Dad]) #makes var that contains what number is male
 femaleCode <- unique(ped_only$Sex[ped_only$Indiv %in% ped_only$Mom]) #makes var that contains what number is female
 
-write.table(ped_only[,c(1,2)], 
-            file = "working_files/intermediate_files/keepInds.list", append = F, quote = FALSE, sep = " ", 
-            eol = "\n", na = "NA", dec = ".", row.names = FALSE, 
-            col.names = FALSE, qmethod = c("escape", "double"))
+##write to file subset of individuals from genotype file to include in analysis
+#write.table(ped_only[,c(1,2)], 
+#            file = "working_files/intermediate_files/keepInds.list", append = F, quote = FALSE, sep = " ", 
+#            eol = "\n", na = "NA", dec = ".", row.names = FALSE, 
+#            col.names = FALSE, qmethod = c("escape", "double"))
 
 ###
-#run plink 
+#run plink filtering in command line
 ###
 
 ped<-read.table('working_files/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05geno.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
