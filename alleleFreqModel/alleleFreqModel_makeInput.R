@@ -1,3 +1,6 @@
+#script to make input files for alleleFreqModel from plink and pedigree
+#Felix Beaudry & Rose Driscoll 
+#Last updated: Oct 15 2021
 
 library(tidyverse)
 '%ni%' <- Negate('%in%')

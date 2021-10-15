@@ -55,6 +55,10 @@ Run `SignalsOfSelection_plot_figS5_figS6.R` to correct selection results for mul
 ## Allele Frequency Change Model
 The final directory, `\alleleFreqModel`, holds scripts to partition change in allele frequencies between years between demographic groups by sex for autosomal and Z-linked loci. This analysis is broken down into four steps: 1 - sampling, 2 - simulating error, 3 - bootstrapping, and 4 - plotting. This is repeated for the Z and autosomes seperately, given different inheritance patterns, but both are plotted together. These scripts assume a flexible sex ratio; we also ran a model assuming a fixed sex ratio but instead partitioned allele frequency change between years to each sex. 
 
+#### Step 0 - Convert files from plink format to input
+Run `alleleFreqModel_makeInput.R` to convert plink files to input files for alleleFreqModel and randomly assign sexes to unsexed individuals.
+
+
 #### Step 1 - Sample
 Run `alleleFreqModelA_sample.R` and `alleleFreqModelZ_sample.R` to calculate variance in allele frequencies between years. These scripts will also set up the files necessary for the next step.
 
@@ -69,9 +73,6 @@ Run `alleleFreqModelA_boot.R` and `alleleFreqModelZ_boot.R` to calculate confide
 
 ### Fixed Sex Ratio model
 Scripts for the fixed sex ratio model are in the directory `\fixedSexRatio_model`, and follow the same format as steps 1, 2 and 4 above, with an additional initial step to randomly assign sexes to unsexed individuals. We do not run bootstraps on the fixed sex ratio model.
-
-#### Step 0 - Assign sexes
-Run `alleleFreqModelA_sexRatio_assign_sexes.R` to randomly assign sexes to unsexed individuals.
 
 #### Step 1 - Sample
 Run `alleleFreqModelA_sexRatio_sample.R` and `alleleFreqModelZ_sexRatio_sample.R` to calculate variance in allele frequencies between years. These scripts will also set up the files necessary for the next step.
