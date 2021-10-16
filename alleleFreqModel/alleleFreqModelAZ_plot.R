@@ -1541,7 +1541,13 @@ cat_stack_plot <-
   theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank()) +
   scale_y_continuous(breaks=c(0,0.5,1))
 
-AZ_AFVA_cat_only[AZ_AFVA_cat_only$supercategory %in% c("Survivor","Birth","Cov(S,B)") & AZ_AFVA_cat_only$chrom == "A",]
+rep_sum_A <- AZ_AFVA_cat_only[AZ_AFVA_cat_only$supercategory %in% c("Survivor","Birth","Cov(S,B)") & AZ_AFVA_cat_only$chrom == "A",] %>% 
+  group_by(chrom,Year) %>% 
+  summarize(rep_sum=sum( catCat_sum)) 
+
+rep_sum_Z <- AZ_AFVA_cat_only[AZ_AFVA_cat_only$supercategory %in% c("Survivor","Birth","Cov(S,B)") & AZ_AFVA_cat_only$chrom == "Z",] %>% 
+  group_by(chrom,Year) %>% 
+  summarize(rep_sum=sum( catCat_sum)) 
 
 
 #quartz(width=6, height=4,dpi=300)
