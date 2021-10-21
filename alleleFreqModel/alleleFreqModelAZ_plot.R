@@ -1789,7 +1789,8 @@ ggplot(newBsq_ZA,aes(x=prop.A,y=prop.Z)) +
   scale_x_continuous(guide = guide_axis(check.overlap = TRUE))+
   theme( panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
   theme(strip.background =element_rect(fill="white")) +
-  scale_color_manual(values=c("indianred1","cornflowerblue" )) 
+  scale_color_manual(values=c("indianred1","cornflowerblue" )) +
+  theme(panel.spacing = unit(0.3, "cm")) 
  
 dev.off()
 
