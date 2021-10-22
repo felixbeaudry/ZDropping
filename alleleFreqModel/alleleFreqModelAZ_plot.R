@@ -1782,7 +1782,7 @@ ggplot(newBsq_ZA,aes(x=prop.A,y=prop.Z)) +
   geom_smooth(method="lm",color="black") +  
   geom_point(aes(color=as.factor(SexCat),shape=Birth)) + 
   #geom_text(aes(color=as.factor(Year),label=as.factor(Year))) + 
-  labs(x=Avarp_title,y=Zvarp_title,color="Year") + 
+  labs(x=Avarp_title,y=Zvarp_title,color="Sex",shape="Birth Term") + 
   guides() +
   scale_shape_manual(values=c(3,4)) + 
   theme_bw(base_size = 8) + 
