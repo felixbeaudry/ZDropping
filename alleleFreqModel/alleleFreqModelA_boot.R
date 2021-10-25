@@ -16,14 +16,14 @@ load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
 indivlistgeno <- indivlistgeno_A
 
 #Z SNP info
-map<-read.table('working_files/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05geno.map')
+map<-read.table('working_files/geno.map')
 ASNPS <- map[map$V1 %in% c(0:38),]
 ASNPS$SNP_name <- names(indivlistgeno_A[,-c(1:8)])
 ASNPS <- ASNPS[ASNPS$V1 %in% c(1:38),]
 ASNPS$map_pos <- seq(1,length(ASNPS$V1))
 
 
-chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
+chip <- fread('working_files/chrom.map',fill=TRUE,header=TRUE)
 ASNPS_chip <- left_join(ASNPS,chip,by=c("V2"="SNPname"))
 
 sizes <- fread('working_files/FSJ.chrom.sizes')

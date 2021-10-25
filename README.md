@@ -72,7 +72,7 @@ Run `alleleFreqModelA_boot.R` and `alleleFreqModelZ_boot.R` to calculate confide
 `alleleFreqModelAZ_plot.R` will combine Z and autosomal analyses into one set of plots for easy comparison.
 
 ### Fixed Sex Ratio model
-Scripts for the fixed sex ratio model are in the directory `\fixedSexRatio_model`, and follow the same format as steps 1, 2 and 4 above, with an additional initial step to randomly assign sexes to unsexed individuals. We do not run bootstraps on the fixed sex ratio model.
+Scripts for the fixed sex ratio model follow the same format as steps 1, 2 and 4 above, with an additional initial step to randomly assign sexes to unsexed individuals. We do not run bootstraps on the fixed sex ratio model.
 
 #### Step 1 - Sample
 Run `alleleFreqModelA_sexRatio_sample.R` and `alleleFreqModelZ_sexRatio_sample.R` to calculate variance in allele frequencies between years. These scripts will also set up the files necessary for the next step.

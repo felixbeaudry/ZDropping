@@ -17,13 +17,13 @@ load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
 indivlistgeno <- indivlistgeno_Z
 
 #Z SNP info
-map<-read.table('working_files/FSJfullPedFiltDogFINAL12July2016finalSexNumMAF05geno.map')
+map<-read.table('working_files/geno.map')
 ZSNPS <- map[map$V1 == 39 ,]
 ZSNPS$map_pos <- seq(1,length(ZSNPS$V1))
 ZSNPS$SNP_name <- names(indivlistgeno_Z[,-c(1:8)])
 
 
-chip <- fread('working_files/FSJbeadchipSeqLocFSJgenomeV2_06May2021.txt',fill=TRUE,header=TRUE)
+chip <- fread('working_files/chrom.map',fill=TRUE,header=TRUE)
 ZSNPS_chip <- left_join(ZSNPS,chip,by=c("V2"="SNPname"))
 
 sizes <- fread('working_files/FSJ.chrom.sizes')
