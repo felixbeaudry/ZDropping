@@ -1,7 +1,14 @@
 # ZDropping
 Sex-biased demography, including sex-biased survival or migration, can impact allele frequency changes across the genome. In particular, we expect different patterns of genetic variation on autosomes and sex chromosomes due to sex-specific differences in life histories, as well as differences in effective population size, transmission modes, and the strength and mode of selection. Here, we present a set of scripts to directly characterize the relative roles of sex-biased demography and inheritance in shaping genome-wide allele frequency trajectories. These scripts are associated with Driscoll et al. (biorXiv). This work also build on [Chen et al 2019](https://www.pnas.org/content/116/6/2158) with associated scripts and data [here](http://dx.doi.org/10.6084/m9.figshare.7044368).
 
-Scripts are seperated into one directory for those sections of the methods which employ gene dropping (expected genetic contributions of individuals and immigrants, signals of selection) and one section for the allele frequency variance model.
+Scripts are seperated into one directory for those sections of the methods which employ gene dropping (expected genetic contributions of individuals and immigrants, signals of selection) and one section for the allele frequency variance model. An additional directory of genotype files and a preliminary script is used to generate input files for downstream analyses
+
+## Make genotype input files
+Raw genotypes are stored in a zipped format to save space. First, unzip the genotype file in the `genotypeFiles` directory using:
+
+`gzip -d geno.anon.ped.gz`
+
+To generate input files for the gene dropping and allele frequency model, run `makeGenotypeInput.R`. This script uses `geno.anon.ped`, `geno.map`, and `indivlist.txt` from the `genotypeFiles` directory and generates files `pedigree.txt`, `geno.map`, `FSJpedgeno_Zsexlinked.ped`, `FSJpedgeno_Zpseudoautosomal.ped`, `indivlistgeno_A.rdata`, and `indivlistgeno_Z.rdata` in the appropriate directories.
 
 ## Gene Dropping
 
@@ -29,7 +36,7 @@ We use gene dropping to simulate the expected genetic contributions of individua
 Use `GenContrib_Indiv.sh` to run the gene dropping simulations for a set of 926 breeders. This script also runs `GenContrib_Indiv_input.R` in order to generate the pedigrees that are the input for the gene dropping simulations.
 
 #### Step 2 - Plotting
-`GenContrib_Indiv_plot_fig1_couple.R` and `GenContrib_Indiv_plot_fig2.R` plot the individual expected genetic contributions for a selected pair of breeders and the full set of 926 breeders respectively.
+`GenContrib_Indiv_plot_fig1_pair.R` and `GenContrib_Indiv_plot_fig2.R` plot the individual expected genetic contributions for a selected pair of breeders and the full set of 926 breeders respectively.
 
 ### Expected genetic contributions of immigrants
 We use gene dropping to simulate the combined expected genetic contributions of immigrants into the population. This analysis is broken down into two steps: 1 - gene dropping, and 2 - plotting. 
@@ -55,10 +62,6 @@ Run `SignalsOfSelection_plot_figS5_figS6.R` to correct selection results for mul
 ## Allele Frequency Change Model
 The final directory, `\alleleFreqModel`, holds scripts to partition change in allele frequencies between years between demographic groups by sex for autosomal and Z-linked loci. This analysis is broken down into four steps: 1 - sampling, 2 - simulating error, 3 - bootstrapping, and 4 - plotting. This is repeated for the Z and autosomes seperately, given different inheritance patterns, but both are plotted together. These scripts assume a flexible sex ratio; we also ran a model assuming a fixed sex ratio but instead partitioned allele frequency change between years to each sex. 
 
-#### Step 0 - Convert files from plink format to input
-Run `alleleFreqModel_makeInput.R` to convert plink files to input files for alleleFreqModel and randomly assign sexes to unsexed individuals.
-
-
 #### Step 1 - Sample
 Run `alleleFreqModelA_sample.R` and `alleleFreqModelZ_sample.R` to calculate variance in allele frequencies between years. These scripts will also set up the files necessary for the next step.
 
@@ -72,7 +75,7 @@ Run `alleleFreqModelA_boot.R` and `alleleFreqModelZ_boot.R` to calculate confide
 `alleleFreqModelAZ_plot.R` will combine Z and autosomal analyses into one set of plots for easy comparison.
 
 ### Fixed Sex Ratio model
-Scripts for the fixed sex ratio model follow the same format as steps 1, 2 and 4 above, with an additional initial step to randomly assign sexes to unsexed individuals. We do not run bootstraps on the fixed sex ratio model.
+Scripts for the fixed sex ratio model follow the same format as steps 1, 2 and 4 above. We do not run bootstraps on the fixed sex ratio model.
 
 #### Step 1 - Sample
 Run `alleleFreqModelA_sexRatio_sample.R` and `alleleFreqModelZ_sexRatio_sample.R` to calculate variance in allele frequencies between years. These scripts will also set up the files necessary for the next step.
