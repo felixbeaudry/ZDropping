@@ -24,9 +24,12 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
 
 # Read in pedigree
 pedigree <- read.table("working_files/pedigree.txt", header = TRUE, sep = " ", stringsAsFactors = FALSE)
+colnames(pedigree) <- c("Fam", "Indiv", "Dad", "Mom", "Sex", "Pheno")
+pedigree$Indiv <- as.character(pedigree$Indiv)
 
 # Read in immigrant cohort data
-indivdata <- read.table("working_files/IndivDataUSFWS.txt", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+indivdata <- read.table("working_files/IndivData.txt", header = TRUE, sep = " ", stringsAsFactors = FALSE)
+indivdata$Indiv <- as.character(indivdata$Indiv)
 # just need immigrant cohorts
 immdata <- dplyr::select(indivdata, Indiv, ImmCohort)
 # And join the immigrant cohorts to the pedigree

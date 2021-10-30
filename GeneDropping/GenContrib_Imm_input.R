@@ -8,9 +8,12 @@ library(plyr)
 
 #read in input files
 pedigree<-read.table('working_files/pedigree.txt',header=TRUE,sep=' ',stringsAsFactors=FALSE)
+colnames(pedigree) <- c("Fam", "Indiv", "Dad", "Mom", "Sex", "Pheno")
+pedigree$Indiv <- as.character(pedigree$Indiv)
 
 #nestling data
-indiv<-read.table('working_files/IndivDataUSFWS.txt',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+indiv<-read.table('working_files/IndivData.txt',header=TRUE,sep=' ',stringsAsFactors=FALSE)
+indiv$Indiv <- as.character(indiv$Indiv)
 cohortAll<-indiv[!is.na(indiv$NatalYear),1:2]
 
 #assign immigrants from each year a different allele

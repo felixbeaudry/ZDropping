@@ -8,8 +8,11 @@ library(dplyr)
 #read in input files
 #1990-2013 breeders data
 breeders <- read.table("working_files/926_breeders.txt", header = TRUE, sep = ' ', stringsAsFactors = FALSE)
+breeders$Indiv <- as.character(breeders$Indiv)
 #pedigree + genotype data
 pedigree<-read.table("working_files/pedigree.txt",header=TRUE,sep=' ',stringsAsFactors=FALSE)
+colnames(pedigree) <- c("Fam", "Indiv", "Dad", "Mom", "Sex", "Pheno")
+pedigree$Indiv <- as.character(pedigree$Indiv)
 
 #generate ped files for each individual
 for (ind in breeders$Indiv) {
@@ -31,7 +34,8 @@ for (ind in breeders$Indiv) {
 }
 
 #get nestling data
-indiv<-read.table('working_files/IndivDataUSFWS.txt',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+indiv<-read.table('working_files/IndivData.txt',header=TRUE,sep=' ',stringsAsFactors=FALSE)
+indiv$Indiv <- as.character(indiv$Indiv)
 cohortAll<-indiv[!is.na(indiv$NatalYear),1:2]
 
 #print out file with nestling cohorts

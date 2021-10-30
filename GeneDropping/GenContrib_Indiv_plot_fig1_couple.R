@@ -32,12 +32,16 @@ breeders_926 <- read.table("working_files/926_breeders.txt", header = TRUE, stri
 
 # Read in pedigree
 pedigree <- read.table("working_files/pedigree.txt", header = TRUE, sep = " ", stringsAsFactors = FALSE)
+colnames(pedigree) <- c("Fam", "Indiv", "Dad", "Mom", "Sex", "Pheno")
+pedigree$Indiv <- as.character(pedigree$Indiv)
 
 # Read in data on individuals including natal years
-indiv_data <- read.table('working_files/IndivDataUSFWS.txt', header = TRUE, sep = '\t', stringsAsFactors = FALSE)
+indiv_data <- read.table('working_files/IndivData.txt', header = TRUE, sep = ' ', stringsAsFactors = FALSE)
+indiv_data$Indiv <- as.character(indiv_data$Indiv)
 
 # Read in 2013 status data
 alive_2013 <- read.table("working_files/alive_2013.txt", header = TRUE, stringsAsFactors = FALSE)
+alive_2013$Indiv <- as.character(alive_2013$Indiv)
 
 ## Genealogical contributions for all breeders
 
@@ -73,8 +77,8 @@ num_nestlings_yearly <- group_by(nestling_data, NatalYear) %>%
 ## Figure 1: genetic (A & Z) and genealogical contributions across years for a mated pair
 
 # The pair is:
-m<-"1513-50363"
-f<-"1043-90505"
+m<-"3267"
+f<-"277"
 
 # make a table for this pair's genealogical contributions by year
 # these two were each others' exclusive mates so can just use the descendants of one of them

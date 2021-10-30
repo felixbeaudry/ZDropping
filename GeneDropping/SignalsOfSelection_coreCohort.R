@@ -6,6 +6,7 @@ library(plyr)
 
 #read in input file
 #nestling data
-indiv<-read.table('working_files/IndivDataUSFWS.txt',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+indiv<-read.table('working_files/IndivData.txt',header=TRUE,sep=' ',stringsAsFactors=FALSE)
+indiv$Indiv <- as.character(indiv$Indiv)
 cohort<-indiv[indiv$CoreNestling=='Y' & !is.na(indiv$NatalYear),1:2]
 write.table(cohort,file="working_files/coreDemoNestlings.txt",quote=FALSE,sep=" ",row.names=FALSE,col.names=FALSE)

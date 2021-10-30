@@ -26,12 +26,13 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
 
 # Read in 1990-2013 breeders data
 breeders_926 <- read.table("working_files/926_breeders.txt", header = TRUE, stringsAsFactors = FALSE)
+breeders_926$Indiv <- as.character(breeders_926$Indiv)
 
 # Read in pedigree
 pedigree <- read.table("working_files/pedigree.txt", header = TRUE, sep = " ", stringsAsFactors = FALSE)
+colnames(pedigree) <- c("Fam", "Indiv", "Dad", "Mom", "Sex", "Pheno")
+pedigree$Indiv <- as.character(pedigree$Indiv)
 
-# Read in all of the data tables including breeders data
-load("all_tables_v2.rdata")
 
 ## Genealogical contributions for all breeders
 
@@ -54,7 +55,8 @@ for (i in breeders_926$Indiv) {
 }
 
 # get indiv data including natal years
-indiv_data<-read.table('working_files/IndivDataUSFWS.txt',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+indiv_data<-read.table('working_files/IndivData.txt',header=TRUE,sep=' ',stringsAsFactors=FALSE)
+indiv_data$Indiv <- as.character(indiv_data$Indiv)
 nestling_data<-select(indiv_data, Indiv, NatalYear)
 
 # add natal year info to descendants dataset
@@ -255,9 +257,6 @@ AZ_mods_sex <- lm(Z_mean ~  auto_mean*Sex + 0 , data=indiv_contribs_A_Z_2013_sex
 summary(AZ_mods_sex)  
 
 ## Plot of male contrib vs. female contrib for breeding pairs amongst the 926 breeders
-
-# read in pedigree
-pedigree <- read.table("working_files/pedigree.txt", header = TRUE, stringsAsFactors = FALSE)
 
 # squish pedigree to get sex ratio of moms' offspring, then combine with indiv contribs
 # get rid of entries where mom is unknown
