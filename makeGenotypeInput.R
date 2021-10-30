@@ -16,6 +16,11 @@ write.table(ped,
             eol = "\n", na = "NA", dec = ".", row.names = FALSE, 
             col.names = TRUE, qmethod = c("escape", "double"))
 
+write.table(ped, 
+            file = "GeneDropping/working_files/pedigree.txt", append = F, quote = FALSE, sep = " ", 
+            eol = "\n", na = "NA", dec = ".", row.names = FALSE, 
+            col.names = TRUE, qmethod = c("escape", "double"))
+
 map<-read.table('genotypeFiles/geno.map')
 map$map_pos <- seq(1,length(map$V1))
 write.table(map, 
@@ -42,11 +47,12 @@ write.table(PARpedgeno,
             eol = "\n", na = "NA", dec = ".", row.names = FALSE, 
             col.names = FALSE, qmethod = c("escape", "double"))
 
-####make pedgenos for allelefreq####
+####make pedgenos for allele freq models####
 indivlist <- fread('genotypeFiles/indivlist.txt')
 
-#add assigned sexes of unsexed birds back to indivlist 
-#(this way, a given unsexed bird will always have the same assigned sex even if it appears multiple times in indivlist)
+# We use simulated sexes for unsexed individuals in the pedigree in our allele frequency models.
+# For reproducibility, the simulated sex data that we use is preserved in column `simSex` in indivlist.txt
+# Below, we show but do not run the code that was used to simulate sexes.
 
 #check for unsexed indivs & assign them a sex
 #unsexed_indivs <- ped$Indiv[ped$Sex==0]
