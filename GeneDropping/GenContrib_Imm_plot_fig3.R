@@ -326,6 +326,10 @@ simImmYrZM$totAlleles<-lapply(c(1:length(simImmYrZM$cohort)), function(x) unique
 #get mean 
 simImmYrZAvgM<-ddply(simImmYrZM,.(Year,allele),summarize, mean=mean(unlist(rep(allele_count,all_alleles_count))))
 
+simImmYrZM$allele_count <- as.numeric(simImmYrZM$allele_count)
+simImmYrZM$totAlleles <- as.numeric(simImmYrZM$totAlleles)
+
+
 simsumImmYrZM<-ddply(simImmYrZM,.(Year,allele),summarize, mean=mean(unlist(rep(allele_count/totAlleles,all_alleles_count))), q1=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.025), q3=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.975))
 simsumImmYrZM<-simsumImmYrZM[simsumImmYrZM$allele != 1,]
 
@@ -350,6 +354,9 @@ simImmYrZF$totAlleles<-lapply(c(1:length(simImmYrZF$cohort)), function(x) unique
 
 #get mean 
 simImmYrZAvgF<-ddply(simImmYrZF,.(Year,allele),summarize, mean=mean(unlist(rep(allele_count,all_alleles_count))))
+
+simImmYrZF$allele_count <- as.numeric(simImmYrZF$allele_count)
+simImmYrZF$totAlleles <- as.numeric(simImmYrZF$totAlleles)
 
 simsumImmYrZF<-ddply(simImmYrZF,.(Year,allele),summarize, mean=mean(unlist(rep(allele_count/totAlleles,all_alleles_count))), q1=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.025), q3=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.975))
 simsumImmYrZF<-simsumImmYrZF[simsumImmYrZF$allele != 1,]

@@ -146,9 +146,13 @@ for (i in breeders_926[breeders_926$Kids,'Indiv']) {
   indiv_contribs_A_Z_2013<-rbind(indiv_contribs_A_Z_2013, indivrow)
   
 }
+#library(data.table)
+#key <- fread('key.ped')
+#indiv_contribs_A_Z_2013 <- left_join(indiv_contribs_A_Z_2013,key[,c(1,2)])
+#indiv_contribs_A_Z_2013$ID <- as.character(indiv_contribs_A_Z_2013$ID)
 
 # Add back in breeders with no kids, with 0 contributions
-indiv_contribs_A_Z_2013 <- left_join(select(breeders_926, Indiv), indiv_contribs_A_Z_2013) %>%
+indiv_contribs_A_Z_2013 <- left_join(select(breeders_926, Indiv), indiv_contribs_A_Z_2013,by=c("Indiv"="ID")) %>%
   mutate(Z_mean = ifelse(is.na(Z_mean), 0, Z_mean), auto_mean = ifelse(is.na(auto_mean), 0, auto_mean))
 
 # add sex info from pedigree
@@ -193,13 +197,13 @@ filter(indiv_contribs_prop_nestlings_2013, prop_2013_nestlings != 0) %>%
 
 ####descents vs genes####
 #genealogical vs autosomal expected model
-A_FM_mod_lm <- lm(auto_mean ~  prop_2013_nestlings*Sex  , data=indiv_contribs_prop_nestlings_2013)  
+A_FM_mod_lm <- lm(auto_mean ~  prop_2013_nestlings *Sex  , data=indiv_contribs_prop_nestlings_2013)  
 summary(A_FM_mod_lm)
 
 
 
 #genealogical vs Z expected model
-Z_FM_mod_lm <- lm(Z_mean ~  prop_2013_nestlings*Sex  , data=indiv_contribs_prop_nestlings_2013)  
+Z_FM_mod_lm <- lm(Z_mean ~  prop_2013_nestlings * Sex  , data=indiv_contribs_prop_nestlings_2013)  
 summary(Z_FM_mod_lm)
 
 
@@ -250,8 +254,8 @@ plot_grid(A_contribs_vs_descendants, Z_contribs_vs_descendants, A_vs_Z_contribs,
 
 #AZ
 
-AZ_mod <- lm(Z_mean ~  auto_mean + 0  , data=indiv_contribs_A_Z_2013_sex)  
-summary(AZ_mod)  
+#AZ_mod <- lm(Z_mean ~  auto_mean + 0  , data=indiv_contribs_A_Z_2013_sex)  
+#summary(AZ_mod)  
 
 AZ_mods_sex <- lm(Z_mean ~  auto_mean*Sex + 0 , data=indiv_contribs_A_Z_2013_sex)  
 summary(AZ_mods_sex)  
