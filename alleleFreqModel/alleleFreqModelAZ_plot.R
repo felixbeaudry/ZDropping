@@ -764,6 +764,8 @@ propFB<-laply(c(2000:2013), function(x) counts[counts$Year==x & counts$Category=
 prop<-data.frame(propMS=propMS,propFS=propFS,propMI=propMI,propFI=propFI,propMB=propMB,propFB=propFB)
 rownames(prop)<-c(2000:2013)
 
+
+
 alleleFreqVarAvg<-data.frame(Year=rep(c(2000:2013),each=21),
                              Category=rep(c('MSsq','FSsq','MIsq','FIsq','MBsq','FBsq',
                                             'MSMI','MSMB','MIMB','FSFI','FSFB','FIFB',
@@ -1414,6 +1416,25 @@ alleleFreqVarAvg2$prop<-alleleFreqVarAvg2$avg/alleleFreqVarAvg2$sum
 alleleFreqVarAvg2$q5_prop <- alleleFreqVarAvg2$q5 / alleleFreqVarAvg2$sum
 alleleFreqVarAvg2$q95_prop <- alleleFreqVarAvg2$q95 / alleleFreqVarAvg2$sum
 
+##obs v exp
+Z_obsDiff <- laply(c(2000:2013), function(x) {
+  yr<-as.character(x)
+  cbind(yr,(sampleVar[sampleVar$Year==x & sampleVar$Category=='xt1-xt','avg'] - simVar[simVar$Year==x & simVar$Category=='errt1-errt',3]))
+})
+Z_obsDiff <- as.data.frame(Z_obsDiff)
+Z_obsDiff$yr <- as.numeric(Z_obsDiff$yr)
+Z_obsDiff$V2 <- as.numeric(Z_obsDiff$V2)
+
+Z_expDiff <- unique(alleleFreqVarAvg2[,c(1,6)])
+
+Z_EO <- left_join(Z_expDiff,Z_obsDiff,by=c("Year"="yr"))
+
+ggplot(Z_EO,aes(x=sum,y=V2)) + geom_point() + theme_bw() + geom_abline(slope=1) + labs(x="Expected Change",y="Observed Change") + xlim(0,0.004) + ylim(0,0.004) + theme(aspect.ratio = 1)
+
+EO_lm <- lm(V2~ sum,data=Z_EO)
+summary(EO_lm)
+
+##
 alleleFreqVarAvg1_Z <- alleleFreqVarAvg2
 
 ####combine A and Z####
