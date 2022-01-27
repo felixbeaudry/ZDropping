@@ -1429,7 +1429,9 @@ Z_expDiff <- unique(alleleFreqVarAvg2[,c(1,6)])
 
 Z_EO <- left_join(Z_expDiff,Z_obsDiff,by=c("Year"="yr"))
 
-ggplot(Z_EO,aes(x=sum,y=V2)) + geom_point() + theme_bw() + geom_abline(slope=1) + labs(x="Expected Change",y="Observed Change") + xlim(0,0.004) + ylim(0,0.004) + theme(aspect.ratio = 1)
+
+
+ggplot(Z_EO,aes(x=sum,y=V2)) + geom_point() + theme_bw() + geom_abline(slope=1) + labs(x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + xlim(0,0.004) + ylim(0,0.004) + theme(aspect.ratio = 1)
 
 EO_lm <- lm(V2~ sum,data=Z_EO)
 summary(EO_lm)
