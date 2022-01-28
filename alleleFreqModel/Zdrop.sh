@@ -13,6 +13,3 @@ Rscript --vanilla alleleFreqModelZ_sim.R
 
 module load sendemail/1.56
 sendEmail -f fbeaudry@ur.rochester.edu -t fbeaudry@ur.rochester.edu -u Zdrop -m Zdrop
-
-
-
