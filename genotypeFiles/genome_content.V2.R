@@ -616,6 +616,51 @@ size_homology <- homologyMap(conversionFile='FSJV3_convert.txt',size=sizes) #Chi
 ####Recombination####
 
 genmap <- makeGeneticMap(genmapFile='crimap/all.fixed.txt')
+frameworkSNPs <- fread('frameworkSNPs.list')
+frameworkSNPs$framework <- 1
+
+genmap_frame <- left_join(frameworkSNPs,genmap,by=c("V1"="lg","V2"="raworder"))
+names(genmap_frame)[c(1,2)] <- names(genmap)[c(1,2)]
+
+genmap_boot <- genmap_frame
+genmap_boot <- genmap
+
+
+w_size_cm = 10
+#nloci<- 5000 #set sim loci number relative to window size; regular sim nloci / genome size in mb
+
+#loop across scaffolds making windows of SNPs
+win_global = 0
+
+genmap_boot$bootstrap <- NA
+
+for(LG in unique(genmap_boot$lg)){
+  
+  size_tmp <- na.omit(genmap_boot$cm[genmap_boot$lg == LG])
+  
+  #loop across windows
+  for(win in seq(from=0,to=max(genmap_boot$cm[genmap_boot$lg == LG],na.rm=T),by = w_size_cm)){
+    if(win+w_size_cm<max(size_tmp)){
+      cat(LG," ", ((win/w_size_cm) + win_global)," ",win," ",size_tmp,"\n")
+      genmap_boot$bootstrap[genmap_boot$cm > win & genmap_boot$cm <= (win+w_size_cm) & genmap_boot$lg == LG] <- (win/w_size_cm) + win_global
+    } #else{ #skip windows at the end of scaffolds with too few SNPs
+     # cat(LG," ", ((win/w_size_cm) + win_global)," ",win," ",size_tmp," skipped\n")
+      
+   # }
+  }
+  win_global <- (win/w_size_cm) + win_global #need to increase window number with each loop across chromosomes
+  
+}
+
+
+
+genmap_boot_tally <- genmap_boot %>% group_by(bootstrap,lg) %>% tally()
+genmap_boot_tally %>% group_by(lg) %>% summarise(ave_SNP = mean(n))
+
+
+ggplot(genmap_boot_tally %>% filter(!is.na(bootstrap)),aes(x=n,fill=as.factor(lg))) + geom_histogram()
+
+##
 
 marey <- makeMareyMap(chipFile='FSJV3.beadChip.r060122.sam.pos',genmap=genmap,size_homology=size_homology)
 
