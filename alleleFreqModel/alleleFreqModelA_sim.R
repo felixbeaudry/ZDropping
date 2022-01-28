@@ -1,17 +1,20 @@
 #script to model variance in allele frequency change over time
 #run sims for n loci to get empirical estimates of covariances and errors for autosomal loci
 #Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
+#tested on R v.4.1.2
+
+library(foreach)
+library(doParallel)
 
 library(plyr)
-library(foreach)
-library(dplyr)
-library(doParallel)
-library(data.table)
+library(tidyverse) #v.1.3.1
+
 
 ####set variables and make/import tables####
 #number of SNPs to simulate
 #nloci=10
 nloci<-100000
+cores=10
 
 #get sample allele freq for simulations, from _sample script
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
@@ -23,10 +26,10 @@ indivlistgeno$Mom<-as.character(indivlistgeno$Mom)
 
 ####simulate starting genotypes####
 #get real frequency of each allele in 1990 (accounting for different total # of alleles in males & females)
-datafreq1990<-laply(names(indivlistgeno)[9:length(indivlistgeno)],function(x) 
-  sum(indivlistgeno[indivlistgeno$Year==1990,..x],na.rm=TRUE)/
-    ((2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==1,..x])))
-     +(2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==2,..x])))))
+datafreq1990<-plyr::laply(names(indivlistgeno)[9:length(indivlistgeno)],function(x) 
+  sum(indivlistgeno[indivlistgeno$Year==1990,x],na.rm=TRUE)/
+    ((2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==1,x])))
+     +(2*sum(!is.na(indivlistgeno[indivlistgeno$Year==1990&indivlistgeno$Sex==2,x])))))
 
 #randomly sample from real allele frequencies
 simfreq<-sample(datafreq1990,nloci,replace=TRUE)
@@ -167,7 +170,7 @@ for(year in nest.years){
 cols_id <- c(2,8:(nloci+7))
 
 #now we want to have each indiv appear multiple times again
-simdataTrue<-merge(indivlist,simindivgenoAll[,..cols_id],
+simdataTrue<-merge(indivlist,simindivgenoAll[,cols_id],
                    by.x='Indiv',by.y='Indiv',all.x=TRUE)	
 
 #save
@@ -192,12 +195,6 @@ simdataSampleUnique<-simdataSample[!duplicated(simdataSample$Indiv),]
 #create data frame to hold simulated allele freqs
 simAlleleFreq<-data.frame(Year=integer(),Category=character(),stringsAsFactors=FALSE)
 
-#un-comment to parallelize snps
-#cores=detectCores() #uncomment these two lines if you want to use more than 4 cores
-#cl <- makeCluster(cores[1]-1) #not to overload your computer
-#cl <- makeCluster(4) #use 4 cores
-#registerDoParallel(cl)
-
 
 year<-1998
 sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
@@ -209,18 +206,18 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
   frqCat1<-tmp$Category
   
   tmp[frqYr1==year & frqCat1=='pt',3]<-
-  sum(simdataTrue[simdataTrue$Year==year,..i],na.rm=TRUE)/
-    ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,..i])))
-     +(2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==2,..i]))))
+  sum(simdataTrue[simdataTrue$Year==year,i],na.rm=TRUE)/
+    ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,i])))
+     +(2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==2,i]))))
   
   tmp[frqYr1==year & frqCat1=='xt',3]<-
-  sum(simdataSample[simdataSample$Year==year,..i],na.rm=TRUE)/
-    ((2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==1,..i])))
-     +(2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==2,..i]))))
+  sum(simdataSample[simdataSample$Year==year,i],na.rm=TRUE)/
+    ((2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==1,i])))
+     +(2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==2,i]))))
   
   tmp[,3]
 }
-#stopCluster(cl)
+
 
 #save the data from this year
 #save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqAYr_",year,".rdata",sep=''))
@@ -234,34 +231,36 @@ sim1<-cbind(simName,sim)
 #Add the simulation data to simAlleleFreq (we'll collect the data from all years here)
 simAlleleFreq<-rbind(simAlleleFreq,sim1)
 
+cl <- makeCluster(cores)
+registerDoParallel(cl)
 #year=1999
 
 for(year in c(1999:2013)){
   cols_id <- c(1,8:(nloci+7))
   
-  moms_of_sons<-simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==1 & !is.na(simdataTrue$Mom),'Mom']
+  moms_of_sons<- as.data.frame(simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==1 & !is.na(simdataTrue$Mom),'Mom'])
   names(moms_of_sons)[1] <- "Indiv"
-  moms_of_sons_geno       <- left_join(moms_of_sons,simdataTrueUnique[,..cols_id])
-  moms_of_sons_genoSample <- left_join(moms_of_sons,simdataSampleUnique[,..cols_id])
+  moms_of_sons_geno       <- left_join(moms_of_sons,simdataTrueUnique[,cols_id])
+  moms_of_sons_genoSample <- left_join(moms_of_sons,simdataSampleUnique[,cols_id])
   
-  dads_of_sons<-simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==1 & !is.na(simdataTrue$Dad),'Dad']
+  dads_of_sons<- as.data.frame(simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==1 & !is.na(simdataTrue$Dad),'Dad'])
   names(dads_of_sons)[1] <- "Indiv"
-  dads_of_sons_geno       <- left_join(dads_of_sons,simdataTrueUnique[,..cols_id])
-  dads_of_sons_genoSample <- left_join(dads_of_sons,simdataSampleUnique[,..cols_id])
+  dads_of_sons_geno       <- left_join(dads_of_sons,simdataTrueUnique[,cols_id])
+  dads_of_sons_genoSample <- left_join(dads_of_sons,simdataSampleUnique[,cols_id])
   
-  dads_of_daughters <-simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==2 & !is.na(simdataTrue$Dad),'Dad']
+  dads_of_daughters <- as.data.frame(simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==2 & !is.na(simdataTrue$Dad),'Dad'])
   names(dads_of_daughters)[1] <- "Indiv"
-  dads_of_daughters_geno       <- left_join(dads_of_daughters,simdataTrueUnique[,..cols_id])
-  dads_of_daughters_genoSample <- left_join(dads_of_daughters,simdataSampleUnique[,..cols_id])
+  dads_of_daughters_geno       <- left_join(dads_of_daughters,simdataTrueUnique[,cols_id])
+  dads_of_daughters_genoSample <- left_join(dads_of_daughters,simdataSampleUnique[,cols_id])
   
-  moms_of_daughters <-simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==2 & !is.na(simdataTrue$Mom),'Mom']
+  moms_of_daughters <- as.data.frame(simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==2 & !is.na(simdataTrue$Mom),'Mom'])
   names(moms_of_daughters)[1] <- "Indiv"
-  moms_of_daughters_geno       <- left_join(moms_of_daughters,simdataTrueUnique[,..cols_id])
-  moms_of_daughters_genoSample <- left_join(moms_of_daughters,simdataSampleUnique[,..cols_id])
+  moms_of_daughters_geno       <- left_join(moms_of_daughters,simdataTrueUnique[,cols_id])
+  moms_of_daughters_genoSample <- left_join(moms_of_daughters,simdataSampleUnique[,cols_id])
     
   #for each snp
     #SNP="V1"
-  sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
+  sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %dopar% {
     #make a data frame to put all these parameters in for each year
     tmp<-data.frame(Year=rep(year,each=72),Category=c(
       'pt','xt','errT', 'pt1-pt', 'xt1-xt', 'errt1-errt',
@@ -294,78 +293,78 @@ for(year in c(1999:2013)){
     
     #pt is just the mean of all of the simulated data (no sampling)
     tmp[frqYr1==year & frqCat1=='pt',3]<-
-    sum(simdataTrue[simdataTrue$Year==year,..i],na.rm=TRUE)/
-      ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,..i])))
-       +(2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==2,..i]))))
+    sum(simdataTrue[simdataTrue$Year==year,i],na.rm=TRUE)/
+      ((2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==1,i])))
+       +(2*sum(!is.na(simdataTrue[simdataTrue$Year==year&simdataTrue$Sex==2,i]))))
     
     #xt is the mean of the sampled simulated data
     tmp[frqYr1==year & frqCat1=='xt',3]<-
-      sum(simdataSample[simdataSample$Year==year,..i],na.rm=TRUE)/
-      ((2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==1,..i])))
-       +(2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==2,..i]))))
+      sum(simdataSample[simdataSample$Year==year,i],na.rm=TRUE)/
+      ((2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==1,i])))
+       +(2*sum(!is.na(simdataSample[simdataSample$Year==year&simdataSample$Sex==2,i]))))
     
     #ps
     tmp[frqYr1==year & frqCat1=='pMs',3]<-mean(unlist(simdataTrue[simdataTrue$Year==year & 
-      simdataTrue$Category=='survivor' & simdataTrue$Sex==1,..i]))/2
+      simdataTrue$Category=='survivor' & simdataTrue$Sex==1,i]))/2
     tmp[frqYr1==year & frqCat1=='pFs',3]<-mean(unlist(simdataTrue[simdataTrue$Year==year & 
-      simdataTrue$Category=='survivor' & simdataTrue$Sex==2,..i]))/2
+      simdataTrue$Category=='survivor' & simdataTrue$Sex==2,i]))/2
     
     #xs
     tmp[frqYr1==year & frqCat1=='xMs',3]<-mean(unlist(simdataSample[simdataSample$Year==year & 
-      simdataSample$Category=='survivor' & simdataSample$Sex==1,..i]))/2
+      simdataSample$Category=='survivor' & simdataSample$Sex==1,i]))/2
     tmp[frqYr1==year & frqCat1=='xFs',3]<-mean(unlist(simdataSample[simdataSample$Year==year & 
-      simdataSample$Category=='survivor' & simdataSample$Sex==2,..i]))/2
+      simdataSample$Category=='survivor' & simdataSample$Sex==2,i]))/2
     
     #pi
     tmp[frqYr1==year & frqCat1=='pMi',3]<-mean(unlist(simdataTrue[simdataTrue$Year==year & 
-      simdataTrue$Category=='immigrant' & simdataTrue$Sex==1,..i]))/2
+      simdataTrue$Category=='immigrant' & simdataTrue$Sex==1,i]))/2
     tmp[frqYr1==year & frqCat1=='pFi',3]<-mean(unlist(simdataTrue[simdataTrue$Year==year & 
-      simdataTrue$Category=='immigrant' & simdataTrue$Sex==2,..i]))/2
+      simdataTrue$Category=='immigrant' & simdataTrue$Sex==2,i]))/2
     
     #xi
     tmp[frqYr1==year & frqCat1=='xMi',3]<-
       ifelse(
-        is.na(mean(simdataSample[simdataSample$Year==year & simdataSample$Category=='immigrant' & simdataSample$Sex==1,..i])/2),0,
-        mean(simdataSample[simdataSample$Year==year & simdataSample$Category=='immigrant' & simdataSample$Sex==1,..i])/2)
+        is.na(mean(simdataSample[simdataSample$Year==year & simdataSample$Category=='immigrant' & simdataSample$Sex==1,i])/2),0,
+        mean(simdataSample[simdataSample$Year==year & simdataSample$Category=='immigrant' & simdataSample$Sex==1,i])/2)
     
     tmp[frqYr1==year & frqCat1=='xFi',3]<-
       ifelse(
-        is.na(mean(simdataSample[simdataSample$Year==year & simdataSample$Category=='immigrant' & simdataSample$Sex==2,..i])/2),0,
-        mean(simdataSample[simdataSample$Year==year & simdataSample$Category=='immigrant' & simdataSample$Sex==2,..i])/2)
+        is.na(mean(simdataSample[simdataSample$Year==year & simdataSample$Category=='immigrant' & simdataSample$Sex==2,i])/2),0,
+        mean(simdataSample[simdataSample$Year==year & simdataSample$Category=='immigrant' & simdataSample$Sex==2,i])/2)
     #ifelse here to catch years with no genotyped imms
     #imms are the only category that sometimes is 0 - we checked
     
     #pb
     tmp[frqYr1==year & frqCat1=='pMb',3]<-mean(unlist(simdataTrue[simdataTrue$Year==year & 
-      simdataTrue$Category=='nestling' & simdataTrue$Sex==1,..i]))/2
+      simdataTrue$Category=='nestling' & simdataTrue$Sex==1,i]))/2
     tmp[frqYr1==year & frqCat1=='pFb',3]<-mean(unlist(simdataTrue[simdataTrue$Year==year & 
-      simdataTrue$Category=='nestling' & simdataTrue$Sex==2,..i]))/2
+      simdataTrue$Category=='nestling' & simdataTrue$Sex==2,i]))/2
     
     #xb
     tmp[frqYr1==year & frqCat1=='xMb',3]<-mean(unlist(simdataSample[simdataSample$Year==year &
-      simdataSample$Category=='nestling' & simdataSample$Sex==1,..i]))/2
+      simdataSample$Category=='nestling' & simdataSample$Sex==1,i]))/2
     tmp[frqYr1==year & frqCat1=='xFb',3]<-mean(unlist(simdataSample[simdataSample$Year==year &
-      simdataSample$Category=='nestling' & simdataSample$Sex==2,..i]))/2
+      simdataSample$Category=='nestling' & simdataSample$Sex==2,i]))/2
     
     #pMmom & xMmom
-    tmp[frqYr1==year & frqCat1=='pMmom',3]<-mean(unlist(moms_of_sons_geno[,..i]),na.rm=TRUE)/2
-    tmp[frqYr1==year & frqCat1=='xMmom',3]<-mean(unlist(moms_of_sons_genoSample[,..i]),na.rm=TRUE)/2
+    tmp[frqYr1==year & frqCat1=='pMmom',3]<-mean(unlist(moms_of_sons_geno[,i]),na.rm=TRUE)/2
+    tmp[frqYr1==year & frqCat1=='xMmom',3]<-mean(unlist(moms_of_sons_genoSample[,i]),na.rm=TRUE)/2
     
     #pMdad & xMdad
-    tmp[frqYr1==year & frqCat1=='pMdad',3]<-mean(unlist(dads_of_sons_geno[,..i]),na.rm=TRUE)/2
-    tmp[frqYr1==year & frqCat1=='xMdad',3]<-mean(unlist(dads_of_sons_genoSample[,..i]),na.rm=TRUE)/2
+    tmp[frqYr1==year & frqCat1=='pMdad',3]<-mean(unlist(dads_of_sons_geno[,i]),na.rm=TRUE)/2
+    tmp[frqYr1==year & frqCat1=='xMdad',3]<-mean(unlist(dads_of_sons_genoSample[,i]),na.rm=TRUE)/2
     
     #pFdad & xFdad
-    tmp[frqYr1==year & frqCat1=='pFdad',3]<-mean(unlist(dads_of_daughters_geno[,..i]),na.rm=TRUE)/2
-    tmp[frqYr1==year & frqCat1=='xFdad',3]<-mean(unlist(dads_of_daughters_genoSample[,..i]),na.rm=TRUE)/2
+    tmp[frqYr1==year & frqCat1=='pFdad',3]<-mean(unlist(dads_of_daughters_geno[,i]),na.rm=TRUE)/2
+    tmp[frqYr1==year & frqCat1=='xFdad',3]<-mean(unlist(dads_of_daughters_genoSample[,i]),na.rm=TRUE)/2
     
     #pFdad & xFdad
-    tmp[frqYr1==year & frqCat1=='pFmom',3]<-mean(unlist(moms_of_daughters_geno[,..i]),na.rm=TRUE)/2
-    tmp[frqYr1==year & frqCat1=='xFmom',3]<-mean(unlist(moms_of_daughters_genoSample[,..i]),na.rm=TRUE)/2
+    tmp[frqYr1==year & frqCat1=='pFmom',3]<-mean(unlist(moms_of_daughters_geno[,i]),na.rm=TRUE)/2
+    tmp[frqYr1==year & frqCat1=='xFmom',3]<-mean(unlist(moms_of_daughters_genoSample[,i]),na.rm=TRUE)/2
     
     tmp[,3]
   }
- # stopCluster(cl)
+
   #sim <- tmp[,3]
   #save p and x results from this year (in case run gets interrupted)
  # save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqA_",year,".rdata",sep=''))
@@ -396,7 +395,7 @@ for(year in c(1999:2013)){
   #combine with simAlleleFreq which is where we are collecting the results from all the snps
   simAlleleFreq<-rbind(simAlleleFreq,sim1)
 }
-
+ stopCluster(cl)
 
 ####calculate error and allele freq differences between each category and the year before####
 #err = true error (no hypergeometric error)

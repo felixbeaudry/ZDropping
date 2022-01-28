@@ -1,9 +1,9 @@
 #script to model variance in allele frequency change over time
 #estimate sample values using real data for autosomal loci
 #Nancy Chen, Rose Driscoll & Felix Beaudry
+#tested on R v.4.1.2
 
-library(plyr)
-library(tidyverse)
+library(tidyverse) #v.1.3.1
 `%notin%` <- Negate(`%in%`)
 
 ####get & make starting data.frames####
@@ -44,12 +44,12 @@ for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){
   
   # number of genotyped chromosomes
 	sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]<-
-		2*(sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==1,..snp])) +
-	  sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==2,..snp])))
+		2*(sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==1,snp])) +
+	  sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==2,snp])))
 	
 	#allele frequencies
 	sampleFreq[SNPyr==1998 & SNPcat=='xt',snp]<-
-	  sum(indivlistgeno[igYear==1998,..snp],na.rm=TRUE)/
+	  sum(indivlistgeno[igYear==1998,snp],na.rm=TRUE)/
 	  sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]
 	
 	for(year in c(1999:2013)){
@@ -57,48 +57,48 @@ for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){
 		
 		# number of genotyped chromosomes
 		sampleFreq[SNPyr==year & SNPcat=='nt',snp]<-
-		  2*(sum(!is.na(genoYr[genoYr$Sex==1,snp])) + sum(!is.na(genoYr[genoYr$Sex==2,..snp])))
+		  2*(sum(!is.na(genoYr[genoYr$Sex==1,snp])) + sum(!is.na(genoYr[genoYr$Sex==2,snp])))
 		
 		sampleFreq[SNPyr==year & SNPcat=='nMs',snp]<-
-		  2*(sum(!is.na(genoYr[genoYr$Category=='survivor'&genoYr$Sex==1,..snp])))
+		  2*(sum(!is.na(genoYr[genoYr$Category=='survivor'&genoYr$Sex==1,snp])))
 		sampleFreq[SNPyr==year & SNPcat=='nFs',snp]<-
-		  2*(sum(!is.na(genoYr[genoYr$Category=='survivor'&genoYr$Sex==2,..snp])))
+		  2*(sum(!is.na(genoYr[genoYr$Category=='survivor'&genoYr$Sex==2,snp])))
 		
 		sampleFreq[SNPyr==year & SNPcat=='nMi',snp]<-
-		  2*(sum(!is.na(genoYr[genoYr$Category=='immigrant'&genoYr$Sex==1,..snp])))
+		  2*(sum(!is.na(genoYr[genoYr$Category=='immigrant'&genoYr$Sex==1,snp])))
 		sampleFreq[SNPyr==year & SNPcat=='nFi',snp]<-
-		  2*(sum(!is.na(genoYr[genoYr$Category=='immigrant'&genoYr$Sex==2,..snp])))
+		  2*(sum(!is.na(genoYr[genoYr$Category=='immigrant'&genoYr$Sex==2,snp])))
 		
 		sampleFreq[SNPyr==year & SNPcat=='nMb',snp]<-
-		  2*(sum(!is.na(genoYr[genoYr$Category=='nestling'&genoYr$Sex==1,..snp])))
+		  2*(sum(!is.na(genoYr[genoYr$Category=='nestling'&genoYr$Sex==1,snp])))
 		sampleFreq[SNPyr==year & SNPcat=='nFb',snp]<-
-		  2*(sum(!is.na(genoYr[genoYr$Category=='nestling'&genoYr$Sex==2,..snp])))
+		  2*(sum(!is.na(genoYr[genoYr$Category=='nestling'&genoYr$Sex==2,snp])))
 		
 		#allele frequencies
-		sampleFreq[SNPyr==year & SNPcat=='xt',snp]<-sum(genoYr[,..snp],na.rm=TRUE)/
+		sampleFreq[SNPyr==year & SNPcat=='xt',snp]<-sum(genoYr[,snp],na.rm=TRUE)/
 			sampleFreq[SNPyr==year & SNPcat=='nt',snp]
 
 		sampleFreq[SNPyr==year & SNPcat=='xMs',snp]<-
-			sum(genoYr[genoYr$Category=='survivor'&genoYr$Sex==1,..snp],na.rm=TRUE)/
+			sum(genoYr[genoYr$Category=='survivor'&genoYr$Sex==1,snp],na.rm=TRUE)/
 			sampleFreq[SNPyr==year & SNPcat=='nMs',snp]
 		sampleFreq[SNPyr==year & SNPcat=='xFs',snp]<-
-		  sum(genoYr[genoYr$Category=='survivor'&genoYr$Sex==2,..snp],na.rm=TRUE)/
+		  sum(genoYr[genoYr$Category=='survivor'&genoYr$Sex==2,snp],na.rm=TRUE)/
 		  sampleFreq[SNPyr==year & SNPcat=='nFs',snp]
 		
 		sampleFreq[SNPyr==year & SNPcat=='xMi',snp]<-
 			ifelse(sampleFreq[SNPyr==year & SNPcat=='nMi',snp]==0,0,
-			sum(genoYr[genoYr$Category=='immigrant'&genoYr$Sex==1,..snp],na.rm=TRUE)/
+			sum(genoYr[genoYr$Category=='immigrant'&genoYr$Sex==1,snp],na.rm=TRUE)/
 			sampleFreq[SNPyr==year & SNPcat=='nMi',snp])
 		sampleFreq[SNPyr==year & SNPcat=='xFi',snp]<-
 		  ifelse(sampleFreq[SNPyr==year & SNPcat=='nFi',snp]==0,0,
-		         sum(genoYr[genoYr$Category=='immigrant'&genoYr$Sex==2,..snp],na.rm=TRUE)/
+		         sum(genoYr[genoYr$Category=='immigrant'&genoYr$Sex==2,snp],na.rm=TRUE)/
 		           sampleFreq[SNPyr==year & SNPcat=='nFi',snp])
 
 		sampleFreq[SNPyr==year & SNPcat=='xMb',snp]<-
-			sum(genoYr[genoYr$Category=='nestling'&genoYr$Sex==1,..snp],na.rm=TRUE)/
+			sum(genoYr[genoYr$Category=='nestling'&genoYr$Sex==1,snp],na.rm=TRUE)/
 			sampleFreq[SNPyr==year & SNPcat=='nMb',snp]
 		sampleFreq[SNPyr==year & SNPcat=='xFb',snp]<-
-		  sum(genoYr[genoYr$Category=='nestling'&genoYr$Sex==2,..snp],na.rm=TRUE)/
+		  sum(genoYr[genoYr$Category=='nestling'&genoYr$Sex==2,snp],na.rm=TRUE)/
 		  sampleFreq[SNPyr==year & SNPcat=='nFb',snp]
 	}
 }
@@ -240,23 +240,23 @@ for(year in c(1999:2013)){
 	cols_id <- c(2,8:(snp_length+7))
 	
 	dadsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
-	dadsofmalesgeno<-genoUnique[,..cols_id] %>% filter(Indiv %in% dadsofmales$Dad)
+	dadsofmalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% dadsofmales)
 	
 	momsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Mom']
-	momsofmalesgeno<-genoUnique[,..cols_id] %>% filter(Indiv %in% momsofmales$Mom)
+	momsofmalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% momsofmales)
 	
 	dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
-	dadsoffemalesgeno<-genoUnique[,..cols_id] %>% filter(Indiv %in% dadsoffemales$Dad)
+	dadsoffemalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% dadsoffemales)
 	
 	momsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
-	momsoffemalesgeno<-genoUnique[,..cols_id] %>% filter(Indiv %in% momsoffemales$Dad)
+	momsoffemalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% momsoffemales)
 
 		for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){
-		sampleFreq[SNPyr==year & SNPcat=='xMdad',snp]<-mean(dadsofmalesgeno[,..snp],na.rm=TRUE)/2
-		sampleFreq[SNPyr==year & SNPcat=='xMmom',snp]<-mean(momsofmalesgeno[,..snp],na.rm=TRUE)/2
+		sampleFreq[SNPyr==year & SNPcat=='xMdad',snp]<-mean(dadsofmalesgeno[,snp],na.rm=TRUE)/2
+		sampleFreq[SNPyr==year & SNPcat=='xMmom',snp]<-mean(momsofmalesgeno[,snp],na.rm=TRUE)/2
 		
-		sampleFreq[SNPyr==year & SNPcat=='xFdad',snp]<-mean(dadsoffemalesgeno[,..snp],na.rm=TRUE)/2
-		sampleFreq[SNPyr==year & SNPcat=='xFmom',snp]<-mean(momsoffemalesgeno[,..snp],na.rm=TRUE)/2
+		sampleFreq[SNPyr==year & SNPcat=='xFdad',snp]<-mean(dadsoffemalesgeno[,snp],na.rm=TRUE)/2
+		sampleFreq[SNPyr==year & SNPcat=='xFmom',snp]<-mean(momsoffemalesgeno[,snp],na.rm=TRUE)/2
 	}
 }
 
