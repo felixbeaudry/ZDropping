@@ -14,7 +14,7 @@ library(tidyverse) #v.1.3.1
 #number of SNPs to simulate
 #nloci=10
 nloci<-100000
-cores=10
+cores=20
 
 #get sample allele freq for simulations, from _sample script
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')

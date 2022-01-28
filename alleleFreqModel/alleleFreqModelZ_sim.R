@@ -13,7 +13,7 @@ library(tidyverse) #v.1.3.1
 ####set variables and make/import tables####
 #number of SNPs to simulate
 nloci<-100000
-cores=10
+cores=20
 #nloci=100
 
 #get input files: fixed list of indiv in each Category each year
