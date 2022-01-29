@@ -224,6 +224,7 @@ simAlleleFreq<-rbind(simAlleleFreq,sim1)
 
 #year = 1999
 for(year in c(1999:2013)){
+  print(year)
   cols_id <- c(1,8:(nloci+7))
   
   moms_of_sons<- as.data.frame(simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==1 & !is.na(simdataTrue$Mom),'Mom'])
@@ -245,6 +246,7 @@ for(year in c(1999:2013)){
   #for each snp
   #snp="V1"
   sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %dopar% {
+    print(i)
     #make a data frame to put all these parameters in for each year
     tmp<-data.frame(Year=rep(year,each=69),category=c(
       'pt','xt','errT', 'pt1-pt','xt1-xt', 'errt1-errt',
