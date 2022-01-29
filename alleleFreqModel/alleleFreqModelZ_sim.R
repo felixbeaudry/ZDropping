@@ -15,6 +15,7 @@ library(tidyverse) #v.1.3.1
 nloci<-100000
 cores=20
 #nloci=100
+#cores=4
 
 #get input files: fixed list of indiv in each Category each year
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
