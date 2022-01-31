@@ -12,6 +12,8 @@ library(tidyverse) #v.1.3.1
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
 indivlistgeno <- indivlistgeno_A[,-c(8)]
 
+snp_length <- length(indivlistgeno)-7
+
 ####allele frequencies####
 #estimate values that vary with SNP
 #n = number of genotyped individuals, x = sample allele frequency

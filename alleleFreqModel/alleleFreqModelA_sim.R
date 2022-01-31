@@ -14,7 +14,7 @@ library(tidyverse) #v.1.3.1
 #number of SNPs to simulate
 #nloci=10
 nloci<-100000
-cores=20
+#cores=20
 #nloci=100
 #cores=4
 
@@ -262,7 +262,7 @@ for(year in c(1999:2013)){
     
   #for each snp
     #SNP="V1"
-  sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %dopar% {
+  sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
     #make a data frame to put all these parameters in for each year
     tmp<-data.frame(Year=rep(year,each=72),Category=c(
       'pt','xt','errT', 'pt1-pt', 'xt1-xt', 'errt1-errt',
