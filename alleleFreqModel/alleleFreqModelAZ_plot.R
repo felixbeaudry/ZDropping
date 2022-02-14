@@ -721,6 +721,27 @@ alleleFreqVarAvg2$q95_prop <- alleleFreqVarAvg2$q95 / alleleFreqVarAvg2$sum
 
 alleleFreqVarAvg1_A <- alleleFreqVarAvg2
 
+A_obsDiff <- laply(c(2000:2013), function(x) {
+  yr<-as.character(x)
+  cbind(yr,(sampleVar[sampleVar$Year==x & sampleVar$Category=='xt1-xt','avg'] - simVar[simVar$Year==x & simVar$Category=='errt1-errt',3]))
+})
+A_obsDiff <- as.data.frame(A_obsDiff)
+A_obsDiff$yr <- as.numeric(A_obsDiff$yr)
+A_obsDiff$V2 <- as.numeric(A_obsDiff$V2)
+
+A_expDiff <- unique(alleleFreqVarAvg2[,c(1,6)])
+
+A_EO <- left_join(A_expDiff,A_obsDiff,by=c("Year"="yr"))
+
+
+A_EO_plot <- 
+  
+ggplot(A_EO,aes(x=sum,y=V2)) + geom_point() + theme_bw() + geom_abline(slope=1,color="grey",linetype="dashed") +
+  labs(title="A",x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + theme(aspect.ratio = 1)
+cor(A_EO$V2, A_EO$sum)
+EO_lm <- lm(V2~ sum,data=A_EO)
+
+summary(EO_lm)
 
 ####start Z####
 
@@ -1430,10 +1451,15 @@ Z_expDiff <- unique(alleleFreqVarAvg2[,c(1,6)])
 Z_EO <- left_join(Z_expDiff,Z_obsDiff,by=c("Year"="yr"))
 
 
+Z_EO_plot <- 
+ggplot(Z_EO,aes(x=sum,y=V2)) + geom_point() + theme_bw() + 
+  geom_abline(slope=1,linetype="dashed",color="grey") + 
+ 
+  labs(title="Z",x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + theme(aspect.ratio = 1)
 
-ggplot(Z_EO,aes(x=sum,y=V2)) + geom_point() + theme_bw() + geom_abline(slope=1) + labs(x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + xlim(0,0.004) + ylim(0,0.004) + theme(aspect.ratio = 1)
-
+cor(Z_EO$V2, Z_EO$sum)
 EO_lm <- lm(V2~ sum,data=Z_EO)
+
 summary(EO_lm)
 
 ##
