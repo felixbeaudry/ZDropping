@@ -1,74 +1,22 @@
 #script to estimate variance in variance in allele frequency change over time by bootstrapping  for autosomal loci
-#Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
-#Last updated: Jul 7 2021
+#Felix Beaudry & Rose Driscoll & Nancy Chen & Graham Coop 
 
-library(plyr)
-library(tidyr)
-library(foreach)
-library(dplyr)
-library(doParallel)
-library(data.table)
-`%notin%` <- Negate(`%in%`)
+library(plyr) #v.1.8.6
+library(foreach) #1.5.1
+library(dplyr) #1.0.7
+library(doParallel) #1.0.16
+
 
 ##
 
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
 indivlistgeno <- indivlistgeno_A
 
-#Z SNP info
-map<-read.table('working_files/geno.map')
-ASNPS <- map[map$V1 %in% c(0:38),]
-ASNPS$SNP_name <- names(indivlistgeno_A[,-c(1:8)])
-ASNPS <- ASNPS[ASNPS$V1 %in% c(1:38),]
-ASNPS$map_pos <- seq(1,length(ASNPS$V1))
+map<-read.table('bootstrapMap.A.txt',header=T)
 
 
-chip <- fread('working_files/chrom.map',fill=TRUE,header=TRUE)
-ASNPS_chip <- left_join(ASNPS,chip,by=c("V2"="SNPname"))
-
-sizes <- fread('working_files/FSJ.chrom.sizes')
-#which scaffolds to keep
-
-sizes <- sizes[sizes$V1 %in% c( 
-  "ScYP8k313HRSCAF58ch1"   , "ScYP8k312HRSCAF54ch1A"   , "ScYP8k3629HRSCAF770ch2" ,  "ScYP8k3866HRSCAF1020ch3" , "ScYP8k311HRSCAF50ch4","ScYP8k314HRSCAF84ch4A"  ,
-  "ScYP8k39HRSCAF32ch6" , "ScYP8k35HRSCAF18ch5"     , "ScYP8k34HRSCAF13ch7"   , "ScYP8k31HRSCAF1ch8"   ,  "ScYP8k33HRSCAF8ch9" , "ScYP8k32HRSCAF3ch10"   , 
-  "ScYP8k3869HRSCAF1023ch11",  "ScYP8k3870HRSCAF1029ch12",  "ScYP8k3302HRSCAF431ch13"  , "ScYP8k3651HRSCAF793ch14" ,  "ScYP8k3864HRSCAF1010ch15",
-  "ScYP8k37HRSCAF29ch17"   , "ScYP8k38HRSCAF31ch18"  ,  "ScYP8k36HRSCAF25ch19" ,"ScYP8k3865HRSCAF1011ch20",   "ScYP8k369HRSCAF175ch21" ,   "ScYP8k369HRSCAF175ch22"  , 
-  "ScYP8k369HRSCAF175ch23",  "ScYP8k369HRSCAF175ch24" , "ScYP8k369HRSCAF175ch25" ,"ScYP8k369HRSCAF175ch26", "ScYP8k369HRSCAF175ch27"  , "ScYP8k369HRSCAF175ch28")] 
-
-w_size = 3400000
-nloci<- 5000 #set sim loci number relative to window size; regular sim nloci / genome size in mb
-
-#loop across scaffolds making windows of SNPs
-win_global = 0
-#lg = "ScYP8k313HRSCAF58ch1"
-for(lg in unique(sizes$V1)){
-  
-  size_tmp <- sizes$V2[sizes$V1 == lg]
-  
-  #loop across windows
-  for(win in seq(from=0,to=max(ASNPS_chip$SNPpos[ASNPS_chip$NewScaff == lg],na.rm=T),by = w_size)){
-   if(win+w_size<size_tmp){
-    cat(lg," ", ((win/w_size) + win_global)," ",win," ",size_tmp,"\n")
-     ASNPS_chip$bootstrap[ASNPS_chip$SNPpos > win & ASNPS_chip$SNPpos <= (win+w_size) & ASNPS_chip$NewScaff == lg] <- (win/w_size) + win_global
-   }else{ #skip windows at the end of scaffolds with too few SNPs
-     cat(lg," ", ((win/w_size) + win_global)," ",win," ",size_tmp," skipped\n")
-     
-   }
-  }
-  win_global <- (win/w_size) + win_global #need to increase window number with each loop across chromosomes
-  
-}
-
-markersInPedOrder_chip_A <- ASNPS_chip[,c(5,12,7)]
-names(markersInPedOrder_chip_A)[1]<- "SNP"
-
-
-#remove low SNP bootstraps
-markersInPedOrder_chip_A_tally <- markersInPedOrder_chip_A %>% group_by(bootstrap) %>% tally()
-big_boots <- markersInPedOrder_chip_A_tally$bootstrap[markersInPedOrder_chip_A_tally$n >= 5]
-markersInPedOrder_chip_A <- markersInPedOrder_chip_A[markersInPedOrder_chip_A$bootstrap %in% big_boots,]
-
+markersInPedOrder_chip_A <- map[,c(1,6)] #%>% dplyr::select(SNP,bootstrap_cm)
+w_size = 5
 
 #set constants
 simindivlist <- indivlistgeno[order(indivlistgeno$Year),c(1:6,8)]
@@ -76,6 +24,9 @@ colnames(simindivlist) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Da
 
 simindivgeno<-simindivlist[!duplicated(simindivlist$Indiv),]
 colnames(simindivgeno) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
+
+simindivgeno$Mom[simindivgeno$Mom == 0] <- NA
+simindivgeno$Dad[simindivgeno$Dad == 0] <- NA
 
 #separate into moms vs dads vs nestlings
 simindivgenoMoms<-
@@ -127,15 +78,15 @@ data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
   ,15),stringsAsFactors=FALSE)
 )
 
+nloci<- 5000 #set sim loci number relative to window size; regular sim nloci / genome size in mb
+
 
 ####start the loop####
 
 
 loop=1
-#nloci=4
-#boots <- sample(unique(na.omit(markersInPedOrder_chip_A$bootstrap)), 1000, replace=T)
-#win=33
-for(win in unique(na.omit(markersInPedOrder_chip_A$bootstrap))){
+#win=481
+for(win in unique(na.omit(markersInPedOrder_chip_A$bootstrap_cm))){
   cat(win,"\n")
   
 #n = number of genotyped individuals, x = sample allele frequency
