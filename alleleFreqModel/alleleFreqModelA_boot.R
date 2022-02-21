@@ -79,7 +79,7 @@ data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
 )
 
 nloci<- 5000 #set sim loci number relative to window size; regular sim nloci / genome size in mb
-
+#nloci<- 5
 
 ####start the loop####
 
@@ -311,20 +311,24 @@ genoUnique<-indivlistgeno[!duplicated(indivlistgeno$Indiv),]
 for(year in c(1999:2013)){
   dadsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
   dadsofmales<-data.frame(Indiv=dadsofmales[!is.na(dadsofmales)],stringsAsFactors=FALSE)
+  dadsofmales$Indiv <- as.character(dadsofmales$Indiv)
   dadsofmalesgeno<-left_join(dadsofmales,genoUnique[,c(2,8:length(genoUnique))])
   
-  #genoUnique[,c(1,8)]
+  #genoUnique[,c(2,8)]
   
   momsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Mom']
   momsofmales<-data.frame(Indiv=momsofmales[!is.na(momsofmales)],stringsAsFactors=FALSE)
+  momsofmales$Indiv <- as.character(momsofmales$Indiv)
   momsofmalesgeno<-left_join(momsofmales,genoUnique[,c(2,8:length(genoUnique))])
   
   dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Dad']
   dadsoffemales<-data.frame(Indiv=dadsoffemales[!is.na(dadsoffemales)],stringsAsFactors=FALSE)
+  dadsoffemales$Indiv <- as.character(dadsoffemales$Indiv)
   dadsoffemalesgeno<-left_join(dadsoffemales,genoUnique[,c(2,8:length(genoUnique))])
   
   momsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Mom']
   momsoffemales<-data.frame(Indiv=momsoffemales[!is.na(momsoffemales)],stringsAsFactors=FALSE)
+  momsoffemales$Indiv <- as.character(momsoffemales$Indiv)
   momsoffemalesgeno<-left_join(momsoffemales,genoUnique[,c(2,8:length(genoUnique))])
   
   for(snp in markers){
@@ -462,63 +466,61 @@ make.female.gametes<-function(g){
 }
 
 #get kid genotypes, one year at a time
+#year=1991
 for(year in nest.years){
-  #pull out female nestlings for this year
-  these.female.nestlings<-simindivgenoNestlings[simindivgenoNestlings$Year==year 
-                                                & simindivgenoNestlings$Sex==2, "Indiv"]
-  #pull out male nestlings for this year
-  these.male.nestlings<-simindivgenoNestlings[simindivgenoNestlings$Year==year 
-                                              & simindivgenoNestlings$Sex==1, "Indiv"]
+  #pull out nestlings for this year & get a list of the parents of this year's  nestlings
+  these.male.nestlings    <- simindivgenoNestlings$Indiv[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==1]
+  these.moms.of.sons      <- unique(simindivgenoNestlings$Mom[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==1])
+  these.dads.of.sons      <- unique(simindivgenoNestlings$Dad[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==1])
   
-  #include moms of this year's female nestlings as they *do* contribute Zs
-  these.moms.of.daughters<-simindivgenoNestlings[simindivgenoNestlings$Year==year
-                                                 & simindivgenoNestlings$Sex==2,'Mom']
-  #get a list of the moms of this year's male nestlings
-  these.moms.of.sons<-simindivgenoNestlings[simindivgenoNestlings$Year==year
-                                            & simindivgenoNestlings$Sex==1, "Mom"]
-  #get a list of the dads of this year's female nestlings
-  these.dads.of.daughters<-simindivgenoNestlings[simindivgenoNestlings$Year==year
-                                                 & simindivgenoNestlings$Sex==2, "Dad"]
-  #get a list of the dads of this year's male nestlings
-  these.dads.of.sons<-simindivgenoNestlings[simindivgenoNestlings$Year==year
-                                            & simindivgenoNestlings$Sex==1, "Dad"]
+  these.female.nestlings  <- simindivgenoNestlings$Indiv[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==2]
+  these.dads.of.daughters <- unique(simindivgenoNestlings$Dad[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==2])
+  these.moms.of.daughters <- unique(simindivgenoNestlings$Mom[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==2])
   
   #check that the nestlings don't have genotypes yet (should be NA)
-  stopifnot(all(is.na(simindivgenoAll[these.female.nestlings,8:(nloci+7)])))
-  stopifnot(all(is.na(simindivgenoAll[these.male.nestlings,8:(nloci+7)])))
+  stopifnot(all(is.na( simindivgenoAll %>% filter(Indiv %in% these.female.nestlings) %>% dplyr::select(c(8:(nloci+7))) )))
+  stopifnot(all(is.na (simindivgenoAll %>% filter(Indiv %in% these.male.nestlings)   %>% dplyr::select(c(8:(nloci+7))) )))
   
   #get parents' genotypes
-  moms.of.daughters.geno<-simindivgenoAll[these.moms.of.daughters,,drop = FALSE]
-  moms.of.sons.geno<-simindivgenoAll[these.moms.of.sons,,drop = FALSE]
-  dads.of.daughters.geno<-simindivgenoAll[these.dads.of.daughters,,drop = FALSE]
-  dads.of.sons.geno<-simindivgenoAll[these.dads.of.sons,,drop = FALSE]
+  #moms.of.daughters.geno<-simindivgenoAll[these.moms.of.daughters,]
+  moms.of.sons.geno      <- simindivgenoAll %>% filter(Indiv %in% these.moms.of.sons)
+  moms.of.daughters.geno <- simindivgenoAll %>% filter(Indiv %in% these.moms.of.daughters)
+  dads.of.daughters.geno <- simindivgenoAll %>% filter(Indiv %in% these.dads.of.daughters)
+  dads.of.sons.geno      <- simindivgenoAll %>% filter(Indiv %in% these.dads.of.sons)
   
   #check that all parents are genotyped (NOT NA)
-  stopifnot(all(!is.na(moms.of.daughters.geno[,8:(nloci+7)])))
-  stopifnot(all(!is.na(moms.of.sons.geno[,8:(nloci+7)])))
-  stopifnot(all(!is.na(dads.of.daughters.geno[,8:(nloci+7)])))
-  stopifnot(all(!is.na(dads.of.sons.geno[,8:(nloci+7)])))
+  stopifnot(all(!is.na( moms.of.sons.geno       %>% dplyr::select(c(8:(nloci+7))) )))
+  stopifnot(all(!is.na( dads.of.daughters.geno  %>% dplyr::select(c(8:(nloci+7))) )))
+  stopifnot(all(!is.na( dads.of.sons.geno       %>% dplyr::select(c(8:(nloci+7))) )))
+  stopifnot(all(!is.na( moms.of.daughters.geno       %>% dplyr::select(c(8:(nloci+7))) )))
   
-  #run the gamete selector function to pick which gamete dads give their kids
-  Dads.of.daughters.gamete<-apply(dads.of.daughters.geno[,8:(nloci+7)],2,make.male.gametes)
-  Dads.of.sons.gamete<-apply(dads.of.sons.geno[,8:(nloci+7)],2,make.male.gametes)
-  # moms *do* give daughters autosomal alleles so include moms of daughters
-  Moms.of.daughters.gamete<-apply(moms.of.daughters.geno[,8:(nloci+7)],2,make.female.gametes)
-  Moms.of.sons.gamete<-apply(moms.of.sons.geno[,8:(nloci+7)],2,make.female.gametes)
+  #run the gamete selector function to pick which gamete give their kids
+  Dads.of.daughters.gamete <- cbind.data.frame("Dad"=these.dads.of.daughters,apply(dads.of.daughters.geno %>% dplyr::select(c(8:(nloci+7))),2,make.female.gametes))
+  Dads.of.daughters.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==2) %>% left_join(Dads.of.daughters.gamete) %>% dplyr::select(c(8:(nloci+7)))
   
-  #female nestlings get allele from dad + allele from mom
-  female.nestling.geno<-Dads.of.daughters.gamete+Moms.of.daughters.gamete
-  #male nestlings get allele from dad + allele from mom
-  male.nestling.geno<-Dads.of.sons.gamete+Moms.of.sons.gamete
+  Moms.of.daughters.gamete <- cbind.data.frame("Mom"=these.moms.of.daughters,apply(moms.of.daughters.geno %>% dplyr::select(c(8:(nloci+7))),2,make.female.gametes))
+  Moms.of.daughters.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==2) %>% left_join(Moms.of.daughters.gamete) %>% dplyr::select(c(8:(nloci+7)))
+  
+  daughters.gamete <- Dads.of.daughters.gamete + Moms.of.daughters.gamete
+  
+  #sep for mom and dad of son then add back together
+  Dads.of.sons.gamete <- cbind.data.frame("Dad"=these.dads.of.sons,apply(dads.of.sons.geno %>% dplyr::select(c(8:(nloci+7))),2,make.male.gametes))
+  Dads.of.sons.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Dads.of.sons.gamete) %>% dplyr::select(c(8:(nloci+7)))
+  
+  Moms.of.sons.gamete <- cbind.data.frame("Mom"=these.moms.of.sons,apply(moms.of.sons.geno %>% dplyr::select(c(8:(nloci+7))),2,make.male.gametes))
+  Moms.of.sons.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Moms.of.sons.gamete) %>% dplyr::select(c(8:(nloci+7)))
+  
+  sons.gamete <- Dads.of.sons.gamete + Moms.of.sons.gamete
+  
   
   #stick the genotypes for this year's nestlings into the simindivgenoAll table
-  simindivgenoAll[these.female.nestlings,8:(nloci+7)] <- female.nestling.geno
-  simindivgenoAll[these.male.nestlings,8:(nloci+7)] <- male.nestling.geno
+  simindivgenoAll[simindivgenoAll$Indiv %in% these.female.nestlings,8:(nloci+7)] <- daughters.gamete
+  simindivgenoAll[simindivgenoAll$Indiv %in% these.male.nestlings,8:(nloci+7)] <- sons.gamete
   
   
   #check that the nestlings now have genotypes (not NA)
-  stopifnot(all(!is.na(simindivgenoAll[these.female.nestlings,8:(nloci+7)])))
-  stopifnot(all(!is.na(simindivgenoAll[these.male.nestlings,8:(nloci+7)])))
+  stopifnot(all(!is.na( simindivgenoAll %>% filter(Indiv %in% these.female.nestlings) %>% dplyr::select(c(8:(nloci+7))) )))
+  stopifnot(all(!is.na (simindivgenoAll %>% filter(Indiv %in% these.male.nestlings)   %>% dplyr::select(c(8:(nloci+7))) )))
   
 }
 
@@ -1366,10 +1368,10 @@ allVar[,(loop+2)] <- allVar_tmp[,3]
 names(allVar)[(loop+2)] <- paste("bs",win,sep="")
 loop = loop +1
 today<-format(Sys.Date(),format="%d%b%Y")
-save(allVar,file=paste("working_files/intermediate_files/allVar_int_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+#save(allVar,file=paste("working_files/intermediate_files/allVar_int_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
 
 }
 
-today<-format(Sys.Date(),format="%d%b%Y")
-save(allVar,file=paste("working_files/intermediate_files/allVar_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+#today<-format(Sys.Date(),format="%d%b%Y")
+save(allVar,file=paste("working_files/intermediate_files/allVar_boot_A_w",(w_size),"cm.rdata",sep=''))
 
