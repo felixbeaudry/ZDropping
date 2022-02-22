@@ -9,8 +9,12 @@ library(tidyverse) #v.1.3.1
 ####get & make starting data.frames####
 
 #get input files
+#setwd('~/Documents/Github/ZDropping/alleleFreqModel')
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
-indivlistgeno <- indivlistgeno_Z[,-c(8)]
+
+ldprune.SNP <- read.table('ldprune.Z.SNP.list', header = FALSE, sep = "", dec = ".")
+ldprune.cols <- c(names(indivlistgeno_Z)[c(1:7)],ldprune.SNP$V1)
+indivlistgeno <- indivlistgeno_Z[,ldprune.cols]
 
 snp_length <- length(indivlistgeno)-7
 
@@ -311,6 +315,6 @@ for(year in c(1999:2013)){
 
 
 #save output
-save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_Z.rdata",sep=''))
+save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_Z.ldprune.rdata",sep=''))
 
 

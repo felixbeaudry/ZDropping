@@ -12,14 +12,20 @@ library(tidyverse) #v.1.3.1
 
 ####set variables and make/import tables####
 #number of SNPs to simulate
-nloci<-100000
-cores=20
+#nloci<-100000
+nloci<-1000
+
+#cores=20
 #nloci=100
-#cores=4
+cores=4
 
 #get input files: fixed list of indiv in each Category each year
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
-indivlistgeno <- indivlistgeno_Z
+ldprune.SNP <- read.table('ldprune.Z.SNP.list', header = FALSE, sep = "", dec = ".")
+ldprune.cols <- c(names(indivlistgeno_Z)[c(1:8)],ldprune.SNP$V1)
+indivlistgeno <- indivlistgeno_Z[,ldprune.cols]
+
+#indivlistgeno <- indivlistgeno_Z
 
 indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
 indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
@@ -160,7 +166,7 @@ simdataTrue<-merge(indivlist,simindivgenoAll[,cols_id],
 
 
 #save
-save(simdataTrue,file='working_files/intermediate_files/simdataTrueZ.rdata')
+#save(simdataTrue,file='working_files/intermediate_files/simdataTrueZ.ldprune.rdata')
 
 #simdataTrue[c(1:10),c(1:10)]
 #colnames(simdataTrue)[7] <- "Sex"
@@ -202,9 +208,6 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
   tmp[,3]
 }
 #stopCluster(cl)
-
-#save the data from this year
-#save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqZYr_",year,".rdata",sep=''))
 
 #parallelize snps
 #cores=detectCores() #uncomment these two lines if you want to use more than 4 cores
@@ -352,9 +355,6 @@ for(year in c(1999:2013)){
   }
   
   
-  #save p and x results from this year (in case run gets interrupted)
- # save(sim,file=paste("working_files/intermediate_files/SimAlleleFreqZYr_",year,".rdata",sep=''))
-  
   #categories (parameter names) and years to combine with the results of our calculations
   simName<-data.frame(Year=rep(year,each=69),Category=c(
     'pt','xt','errT', 'pt1-pt', 'xt1-xt', 'errt1-errt',
@@ -393,8 +393,6 @@ frqCat<-simAlleleFreq$Category
 simAlleleFreq[frqYr==1998 & frqCat=='errT',c(3:(nloci+2))]<-
   simAlleleFreq[frqYr==1998 & frqCat=='xt',c(3:(nloci+2))]-
   simAlleleFreq[frqYr==1998 & frqCat=='pt',c(3:(nloci+2))]
-
-#save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqZ_SR_intermediate.rdata")
 
 
 #calcuate error for each year based on difference b/w p and x
@@ -596,7 +594,7 @@ for(year in c(1999:2013)){
   
 }
 
-save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqZ.rdata")
+#save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqZ.ldprune.rdata")
 
 ####calculate variances and covariances####
 simVar<-data.frame(Year=rep(c(1999:2013),each=114),Category=rep(c(
@@ -987,4 +985,4 @@ for(year in c(1999:2013)){
 }
 
 #save output
-save(simVar,file="working_files/intermediate_files/simVarZ.rdata")
+save(simVar,file="working_files/intermediate_files/simVarZ.ldprune.rdata")

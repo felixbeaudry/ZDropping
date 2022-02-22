@@ -13,14 +13,18 @@ library(tidyverse) #v.1.3.1
 ####set variables and make/import tables####
 #number of SNPs to simulate
 #nloci=10
-nloci<-100000
+#nloci<-100000
+nloci<-10000
+
 #cores=20
 #nloci=100
-#cores=4
+cores=4
 
 #get sample allele freq for simulations, from _sample script
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
-indivlistgeno <- indivlistgeno_A
+ldprune.SNP <- read.table('ldprune.A.SNP.list', header = FALSE, sep = "", dec = ".")
+ldprune.cols <- c(names(indivlistgeno_A)[c(1:8)],ldprune.SNP$V1)
+indivlistgeno <- indivlistgeno_A[,ldprune.cols]
 
 indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
 indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
@@ -176,7 +180,7 @@ simdataTrue<-merge(indivlist,simindivgenoAll[,cols_id],
                    by.x='Indiv',by.y='Indiv',all.x=TRUE)	
 
 #save
-save(simdataTrue,file='working_files/intermediate_files/simdataTrueA.rdata')
+#save(simdataTrue,file='working_files/intermediate_files/simdataTrueA.rdata')
 #load('working_files/intermediate_files/simdataTrueA.rdata')
 
 
@@ -610,7 +614,7 @@ for(year in c(1999:2013)){
   
 }
 
-save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqA.rdata")
+#save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqA.rdata")
 #load("simAlleleFreqA_11Mar2021.rdata")
 
 ####calculate variances and covariances####
@@ -1003,4 +1007,4 @@ for(year in c(1999:2013)){
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errFFAM-errT',c(3:(nloci+2))])^2)
 }
 #save output
-save(simVar,file=paste("working_files/intermediate_files/simVarA.rdata",sep=''))
+save(simVar,file=paste("working_files/intermediate_files/simVarA.ldprune.rdata",sep=''))

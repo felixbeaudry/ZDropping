@@ -33,8 +33,8 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
 indivlist <- indivlistgeno_A[,c(1:7)]
 
-load("working_files/intermediate_files/sampleVar_A.rdata") #samplevar
-load("working_files/intermediate_files/simVarA.rdata") #simvar
+load("working_files/intermediate_files/sampleVar_A.ldprune.rdata") #samplevar
+load("working_files/intermediate_files/simVarA.ldprune.rdata") #simvar
 load("working_files/intermediate_files/allVar_boot_A_w3.4mb.rdata") #bootstrap
 
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
@@ -738,6 +738,7 @@ A_EO_plot <-
   
 ggplot(A_EO,aes(x=sum,y=V2)) + geom_point() + theme_bw() + geom_abline(slope=1,color="grey",linetype="dashed") +
   labs(title="A",x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + theme(aspect.ratio = 1)
+
 cor(A_EO$V2, A_EO$sum)
 EO_lm <- lm(V2~ sum,data=A_EO)
 
@@ -751,8 +752,8 @@ summary(EO_lm)
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
 indivlist <- indivlistgeno_Z[,c(1:7)]
 
-load("working_files/intermediate_files/sampleVar_Z.rdata") #samplevar
-load("working_files/intermediate_files/simVarZ.rdata") #simvar
+load("working_files/intermediate_files/sampleVar_Z.ldprune.rdata") #samplevar
+load("working_files/intermediate_files/simVarZ.ldprune.rdata") #simvar
 load("working_files/intermediate_files/allVar_boot_Z_w3.4mb.rdata") #bootstrap
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
 
@@ -1630,7 +1631,7 @@ pdf(paste("fig_5.pdf",sep=''),width=5.5,height=4)
 ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
   geom_hline(yintercept = 0,alpha=0.5,size=0.25)+
   
-  geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category2,linetype=chrom), width=.1,alpha=0.5,size=0.15) +
+#  geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category2,linetype=chrom), width=.1,alpha=0.5,size=0.15) +
 #  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
   
   geom_point(aes(color=Category2,shape=chrom),size=0.75) + 
