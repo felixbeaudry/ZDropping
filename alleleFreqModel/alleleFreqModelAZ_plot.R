@@ -33,8 +33,8 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
 indivlist <- indivlistgeno_A[,c(1:7)]
 
-load("working_files/intermediate_files/sampleVar_A.ldprune.rdata") #samplevar
-load("working_files/intermediate_files/simVarA.ldprune.rdata") #simvar
+load("working_files/intermediate_files/sampleVar_A.rdata") #samplevar
+load("working_files/intermediate_files/simVarA.rdata") #simvar
 load("working_files/intermediate_files/allVar_boot_A_w3.4mb.rdata") #bootstrap
 
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
@@ -725,7 +725,8 @@ A_obsDiff <- laply(c(2000:2013), function(x) {
   yr<-as.character(x)
   cbind(yr,(sampleVar[sampleVar$Year==x & sampleVar$Category=='xt1-xt','avg'] 
             - simVar[simVar$Year==x & simVar$Category=='errt1-errt',3]
-            - 2*simVar[simVar$Year==x & simVar$Category=='pt1pterrt1errT',3]))
+          #  - 2*simVar[simVar$Year==x & simVar$Category=='pt1pterrt1errT',3]
+            ))
 })
   
 
@@ -738,7 +739,7 @@ A_expDiff <- unique(alleleFreqVarAvg2[,c(1,6)])
 A_EO <- left_join(A_expDiff,A_obsDiff,by=c("Year"="yr"))
 
 
-A_EO_plot <- 
+#A_EO_plot <- 
   
 ggplot(A_EO,aes(x=sum,y=V2)) + geom_point() + theme_bw() + geom_abline(slope=1,color="grey",linetype="dashed") +
   labs(title="A",x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + theme(aspect.ratio = 1)
@@ -756,14 +757,15 @@ summary(EO_lm)
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
 indivlist <- indivlistgeno_Z[,c(1:7)]
 
-load("working_files/intermediate_files/sampleVar_Z.ldprune.rdata") #samplevar
-load("working_files/intermediate_files/simVarZ.ldprune.rdata") #simvar
-load("working_files/intermediate_files/allVar_boot_Z_w3.4mb.rdata") #bootstrap
+load("working_files/intermediate_files/sampleVar_Z.rdata") #samplevar
+load("working_files/intermediate_files/simVarZ.rdata") #simvar
+load("working_files/intermediate_files/allVar_boot_Z_w5cm.rdata") #bootstrap
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
 
 allVar_s <-  allVar[,col_sample]
 allVar_q <- allVar[,c(1:2)]
 
+allVar_q$median <- apply(allVar_s, 1, function(x) median(x))
 allVar_q$q5 <- apply(allVar_s, 1, function(x) quantile(x,.05,na.rm = T))
 allVar_q$q95 <- apply(allVar_s, 1, function(x) quantile(x,.95,na.rm = T))
 allVar_q$se <- apply(X=allVar_s,1,function(x) sd(x)/sqrt(length(x)))
@@ -1438,6 +1440,8 @@ alleleFreqVarAvg2<-alleleFreqVarAvg[
 # Find sum for each year and calculate proportion for each Category
 alleleFreqVarAvg2$sum<-laply(alleleFreqVarAvg2$Year,function(x)   sum(alleleFreqVarAvg2[alleleFreqVarAvg2$Year==x,'avg']))
 
+alleleFreqVarAvg2$sum_abs<-laply(alleleFreqVarAvg2$Year,function(x)   sum(abs(alleleFreqVarAvg2[alleleFreqVarAvg2$Year==x,'avg'])))
+
 alleleFreqVarAvg2$prop<-alleleFreqVarAvg2$avg/alleleFreqVarAvg2$sum
 alleleFreqVarAvg2$q5_prop <- alleleFreqVarAvg2$q5 / alleleFreqVarAvg2$sum
 alleleFreqVarAvg2$q95_prop <- alleleFreqVarAvg2$q95 / alleleFreqVarAvg2$sum
@@ -1450,27 +1454,45 @@ Z_obsDiff <- laply(c(2000:2013), function(x) {
             - 2*simVar[simVar$Year==x & simVar$Category=='pt1pterrt1errT',3]))
 })
 
-
-
-
-
 Z_obsDiff <- as.data.frame(Z_obsDiff)
 Z_obsDiff$yr <- as.numeric(Z_obsDiff$yr)
 Z_obsDiff$V2 <- as.numeric(Z_obsDiff$V2)
 
-Z_expDiff <- unique(alleleFreqVarAvg2[,c(1,6)])
+Z_obsDiff_bootmed <- laply(c(2000:2013), function(x) {
+  yr<-as.character(x)
+  cbind(yr,(allVar_q[allVar_q$Year==x & allVar_q$Category=='xt1-xt','median'] 
+            - allVar_q[allVar_q$Year==x & allVar_q$Category=='errt1-errt','median']
+            - 2*allVar_q[simVar$Year==x & allVar_q$Category=='pt1pterrt1errT','median']))
+})
+
+Z_obsDiff_bootmed <- as.data.frame(Z_obsDiff_bootmed)
+Z_obsDiff_bootmed$yr <- as.numeric(Z_obsDiff_bootmed$yr)
+Z_obsDiff_bootmed$V2 <- as.numeric(Z_obsDiff_bootmed$V2)
+
+
+
+#Z_expDiff <- unique(alleleFreqVarAvg2[,c(1,6)])
+Z_expDiff <- unique(alleleFreqVarAvg2[,c(1,7)])
 
 Z_EO <- left_join(Z_expDiff,Z_obsDiff,by=c("Year"="yr"))
 
 
-Z_EO_plot <- 
-ggplot(Z_EO,aes(x=sum,y=V2)) + geom_point() + theme_bw() + 
+#Z_EO_plot <- 
+ggplot(Z_EO,aes(x=sum_abs,y=V2)) + 
+ # geom_point() +
+  theme_bw() + 
   geom_abline(slope=1,linetype="dashed",color="grey") + 
- 
-  labs(title="Z",x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + theme(aspect.ratio = 1)
+  geom_abline(slope=0.5,color="grey") + 
+  geom_text(aes(label=Year))+
+  
+ xlim(0,0.002) +  ylim(0,0.001)+
+
+  labs(title="Z",x=expression(paste("Absolute Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + theme(aspect.ratio = 1)
 
 cor(Z_EO$V2, Z_EO$sum)
-EO_lm <- lm(V2~ sum,data=Z_EO)
+cor.test(Z_EO$V2, Z_EO$sum)
+
+EO_lm <- lm(V2~ 0+ sum_abs,data=Z_EO)
 
 summary(EO_lm)
 

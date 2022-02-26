@@ -7,7 +7,6 @@ library(dplyr)
 library(doParallel)
 `%ni%` <- Negate(`%in%`)
 
-
 ####get input files####
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
 indivlistgeno <- indivlistgeno_Z
@@ -51,8 +50,8 @@ allVar <-
       'xFsxMi','xFsxMb','xFixMb',
       'xMfam','xFfam','xMmend','xFmend','xMfam-xt','xFfam-xt'),15),stringsAsFactors=FALSE)
     ,
-    data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
-      'pt1-pt',
+    data.frame(Year=rep(c(1999:2013),each=115),Category=rep(c(
+      'pt1-pt','sxt1-xt', 'errt1-errt', 'pt1pterrt1errT',
       'pMs-pt','sxMs-xt','errMS-errT','pMspterrMSerrT',
       'pFs-pt','sxFs-xt','errFS-errT','pFspterrFSerrT',
       'pMi-pt','sxMi-xt','errMI-errT','pMipterrMIerrT',
@@ -471,16 +470,16 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap_cm))){
     #run the gamete selector function to pick which gamete dads give their kids
     these.dads.of.daughters <- these.dads.of.daughters[these.dads.of.daughters != 0]
     Dads.of.daughters.gamete <- cbind.data.frame("Dad"=these.dads.of.daughters,apply(dads.of.daughters.geno %>% dplyr::select(c(8:(nloci+7))),2,make.male.gametes))
-    daughters.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==2) %>% left_join(Dads.of.daughters.gamete) %>% dplyr::select(c(8:(nloci+7)))
+    daughters.gamete <- suppressMessages(simindivgenoNestlings %>% filter(Year==year & Sex==2) %>% left_join(Dads.of.daughters.gamete) %>% dplyr::select(c(8:(nloci+7))))
     
     #sep for mom and dad of son then add back together
     Dads.of.sons.gamete <- cbind.data.frame("Dad"=these.dads.of.sons,apply(dads.of.sons.geno %>% dplyr::select(c(8:(nloci+7))),2,make.male.gametes))
-    Dads.of.sons.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Dads.of.sons.gamete) %>% dplyr::select(c(8:(nloci+7)))
+    Dads.of.sons.gamete <-suppressMessages( simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Dads.of.sons.gamete) %>% dplyr::select(c(8:(nloci+7))))
     
     Moms.of.sons.gamete      <- moms.of.sons.geno  %>% dplyr::select(c(2,8:(nloci+7)))
     Moms.of.sons.gamete$Indiv <- as.integer(Moms.of.sons.gamete$Indiv)
     
-    Moms.of.sons.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Moms.of.sons.gamete,by=c("Mom"="Indiv")) %>% dplyr::select(c(8:(nloci+7)))
+    Moms.of.sons.gamete <- suppressMessages(simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Moms.of.sons.gamete,by=c("Mom"="Indiv")) %>% dplyr::select(c(8:(nloci+7))))
     
     sons.gamete <- Dads.of.sons.gamete + Moms.of.sons.gamete
     

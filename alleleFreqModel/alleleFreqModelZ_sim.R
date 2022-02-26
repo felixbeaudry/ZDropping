@@ -12,20 +12,19 @@ library(tidyverse) #v.1.3.1
 
 ####set variables and make/import tables####
 #number of SNPs to simulate
-#nloci<-100000
-nloci<-1000
+nloci<-10000
 
 #cores=20
 #nloci=100
-cores=4
+#cores=4
 
 #get input files: fixed list of indiv in each Category each year
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
-ldprune.SNP <- read.table('ldprune.Z.SNP.list', header = FALSE, sep = "", dec = ".")
-ldprune.cols <- c(names(indivlistgeno_Z)[c(1:8)],ldprune.SNP$V1)
-indivlistgeno <- indivlistgeno_Z[,ldprune.cols]
+#ldprune.SNP <- read.table('ldprune.Z.SNP.list', header = FALSE, sep = "", dec = ".")
+#ldprune.cols <- c(names(indivlistgeno_Z)[c(1:8)],ldprune.SNP$V1)
+#indivlistgeno <- indivlistgeno_Z[,ldprune.cols]
 
-#indivlistgeno <- indivlistgeno_Z
+indivlistgeno <- indivlistgeno_Z
 
 indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
 indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
@@ -135,14 +134,14 @@ for(year in nest.years){
   
   #run the gamete selector function to pick which gamete dads give their kids
   Dads.of.daughters.gamete <- cbind.data.frame("Dad"=these.dads.of.daughters,apply(dads.of.daughters.geno %>% dplyr::select(c(8:(nloci+7))),2,make.male.gametes))
-  daughters.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==2) %>% left_join(Dads.of.daughters.gamete) %>% dplyr::select(c(8:(nloci+7)))
+  daughters.gamete <- suppressMessages(simindivgenoNestlings %>% filter(Year==year & Sex==2) %>% left_join(Dads.of.daughters.gamete) %>% dplyr::select(c(8:(nloci+7))))
 
   #sep for mom and dad of son then add back together
   Dads.of.sons.gamete <- cbind.data.frame("Dad"=these.dads.of.sons,apply(dads.of.sons.geno %>% dplyr::select(c(8:(nloci+7))),2,make.male.gametes))
-  Dads.of.sons.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Dads.of.sons.gamete) %>% dplyr::select(c(8:(nloci+7)))
+  Dads.of.sons.gamete <- suppressMessages(simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Dads.of.sons.gamete) %>% dplyr::select(c(8:(nloci+7))))
   
   Moms.of.sons.gamete      <- moms.of.sons.geno  %>% dplyr::select(c(2,8:(nloci+7)))
-  Moms.of.sons.gamete <- simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Moms.of.sons.gamete,by=c("Mom"="Indiv")) %>% dplyr::select(c(8:(nloci+7)))
+  Moms.of.sons.gamete <-suppressMessages( simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Moms.of.sons.gamete,by=c("Mom"="Indiv")) %>% dplyr::select(c(8:(nloci+7))))
   
   sons.gamete <- Dads.of.sons.gamete + Moms.of.sons.gamete
   
@@ -232,18 +231,18 @@ for(year in c(1999:2013)){
   
   moms_of_sons<- as.data.frame(simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==1 & !is.na(simdataTrue$Mom),'Mom'])
   names(moms_of_sons)[1] <- "Indiv"
-  moms_of_sons_geno       <- left_join(moms_of_sons,simdataTrueUnique[,cols_id])
-  moms_of_sons_genoSample <- left_join(moms_of_sons,simdataSampleUnique[,cols_id])
+  moms_of_sons_geno       <- suppressMessages(left_join(moms_of_sons,simdataTrueUnique[,cols_id]))
+  moms_of_sons_genoSample <- suppressMessages(left_join(moms_of_sons,simdataSampleUnique[,cols_id]))
   
   dads_of_sons<-as.data.frame(simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==1 & !is.na(simdataTrue$Dad),'Dad'])
   names(dads_of_sons)[1] <- "Indiv"
-  dads_of_sons_geno       <- left_join(dads_of_sons,simdataTrueUnique[,cols_id])
-  dads_of_sons_genoSample <- left_join(dads_of_sons,simdataSampleUnique[,cols_id])
+  dads_of_sons_geno       <- suppressMessages(left_join(dads_of_sons,simdataTrueUnique[,cols_id]))
+  dads_of_sons_genoSample <- suppressMessages(left_join(dads_of_sons,simdataSampleUnique[,cols_id]))
   
   dads_of_daughters <-as.data.frame(simdataTrue[simdataTrue$Year==year & simdataTrue$Category=='nestling' & simdataTrue$Sex==2 & !is.na(simdataTrue$Dad),'Dad'])
   names(dads_of_daughters)[1] <- "Indiv"
-  dads_of_daughters_geno       <- left_join(dads_of_daughters,simdataTrueUnique[,cols_id])
-  dads_of_daughters_genoSample <- left_join(dads_of_daughters,simdataSampleUnique[,cols_id])
+  dads_of_daughters_geno       <- suppressMessages(left_join(dads_of_daughters,simdataTrueUnique[,cols_id]))
+  dads_of_daughters_genoSample <- suppressMessages(left_join(dads_of_daughters,simdataSampleUnique[,cols_id]))
 
   
   #for each snp
@@ -990,4 +989,6 @@ for(year in c(1999:2013)){
 }
 
 #save output
-save(simVar,file="working_files/intermediate_files/simVarZ.ldprune.rdata")
+save(simVar,file="working_files/intermediate_files/simVarZ.rdata")
+
+#save(simVar,file="working_files/intermediate_files/simVarZ.ldprune.rdata")
