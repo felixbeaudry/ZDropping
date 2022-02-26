@@ -117,9 +117,6 @@ for(year in c(1999:2013)){
 	sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:(snp_length+2))]<-
 		sampleFreq[SNPyr==year & SNPcat=='xt',c(3:(snp_length+2))]-
 		sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:(snp_length+2))]
-	sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:(snp_length+2))]<-
-	  sampleFreq[SNPyr==year & SNPcat=='xt',c(3:(snp_length+2))]-
-	  sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:(snp_length+2))]
 	
 	sampleFreq[SNPyr==year & SNPcat=='xMs-xt',c(3:(snp_length+2))]<-
 		sampleFreq[SNPyr==year & SNPcat=='xMs',c(3:(snp_length+2))]-

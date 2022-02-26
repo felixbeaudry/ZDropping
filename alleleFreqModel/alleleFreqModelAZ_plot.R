@@ -723,8 +723,12 @@ alleleFreqVarAvg1_A <- alleleFreqVarAvg2
 
 A_obsDiff <- laply(c(2000:2013), function(x) {
   yr<-as.character(x)
-  cbind(yr,(sampleVar[sampleVar$Year==x & sampleVar$Category=='xt1-xt','avg'] - simVar[simVar$Year==x & simVar$Category=='errt1-errt',3]))
+  cbind(yr,(sampleVar[sampleVar$Year==x & sampleVar$Category=='xt1-xt','avg'] 
+            - simVar[simVar$Year==x & simVar$Category=='errt1-errt',3]
+            - 2*simVar[simVar$Year==x & simVar$Category=='pt1pterrt1errT',3]))
 })
+  
+
 A_obsDiff <- as.data.frame(A_obsDiff)
 A_obsDiff$yr <- as.numeric(A_obsDiff$yr)
 A_obsDiff$V2 <- as.numeric(A_obsDiff$V2)
@@ -1441,8 +1445,15 @@ alleleFreqVarAvg2$q95_prop <- alleleFreqVarAvg2$q95 / alleleFreqVarAvg2$sum
 ##obs v exp
 Z_obsDiff <- laply(c(2000:2013), function(x) {
   yr<-as.character(x)
-  cbind(yr,(sampleVar[sampleVar$Year==x & sampleVar$Category=='xt1-xt','avg'] - simVar[simVar$Year==x & simVar$Category=='errt1-errt',3]))
+  cbind(yr,(sampleVar[sampleVar$Year==x & sampleVar$Category=='xt1-xt','avg'] 
+            - simVar[simVar$Year==x & simVar$Category=='errt1-errt',3]
+            - 2*simVar[simVar$Year==x & simVar$Category=='pt1pterrt1errT',3]))
 })
+
+
+
+
+
 Z_obsDiff <- as.data.frame(Z_obsDiff)
 Z_obsDiff$yr <- as.numeric(Z_obsDiff$yr)
 Z_obsDiff$V2 <- as.numeric(Z_obsDiff$V2)

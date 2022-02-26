@@ -618,8 +618,8 @@ for(year in c(1999:2013)){
 #load("simAlleleFreqA_11Mar2021.rdata")
 
 ####calculate variances and covariances####
-simVar<-data.frame(Year=rep(c(1999:2013),each=114),Category=rep(c(
-    'pt1-pt','xt1-xt', 'errt1-errt',
+simVar<-data.frame(Year=rep(c(1999:2013),each=115),Category=rep(c(
+    'pt1-pt','xt1-xt', 'errt1-errt', 'pt1pterrt1errT',
     'pMs-pt','xMs-xt','errMS-errT','pMspterrMSerrT',
     'pFs-pt','xFs-xt','errFS-errT','pFspterrFSerrT',
     'pMi-pt','xMi-xt','errMI-errT','pMipterrMIerrT',
@@ -659,6 +659,10 @@ for(year in c(1999:2013)){
   simVar[bsYr==year & bsCat=='errt1-errt',3]<-
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errt1-errt',c(3:(nloci+2))])^2)
 
+  simVar[bsYr==year & bsCat=='pt1pterrt1errT',3]<-
+    mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='pt1-pt',c(3:(nloci+2))])*
+           as.numeric(simAlleleFreq[frqYr==year & frqCat=='errt1-errt',c(3:(nloci+2))]))
+  
   #variance for each category, for males and females
   #survivors
   simVar[bsYr==year & bsCat=='pMs-pt',3]<-

@@ -15,7 +15,7 @@ indivlistgeno <- indivlistgeno_Z
 #Z SNP info
 map<-read.table('bootstrapMap.Z.txt',header=T)
 
-markersInPedOrder_chip_Z <- map[,c(1,5)] #%>% dplyr::select(SNP,bootstrap_cm)
+markersInPedOrder_chip_Z <- map[,c(1,6)] #%>% dplyr::select(SNP,bootstrap_cm)
 w_size = 5
 
 ###
@@ -181,10 +181,7 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap_cm))){
     sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:length(sampleFreq))]<-
       sampleFreq[SNPyr==year & SNPcat=='xt',c(3:length(sampleFreq))]-
       sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:length(sampleFreq))]
-    sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:length(sampleFreq))]<-
-      sampleFreq[SNPyr==year & SNPcat=='xt',c(3:length(sampleFreq))]-
-      sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:length(sampleFreq))]
-    
+
     sampleFreq[SNPyr==year & SNPcat=='xMs-xt',c(3:length(sampleFreq))]<-
       sampleFreq[SNPyr==year & SNPcat=='xMs',c(3:length(sampleFreq))]-
       sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:length(sampleFreq))]
@@ -600,8 +597,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap_cm))){
     #for each snp
     sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
       #make a data frame to put all these parameters in for each year
-      tmp<-data.frame(Year=rep(year,each=70),Category=c(
-        'pt','sxt','errT', 'pt1-pt',
+      tmp<-data.frame(Year=rep(year,each=72),Category=c(
+        'pt','sxt','errT', 'pt1-pt', 'sxt1-xt', 'errt1-errt',
         
         'pMs','sxMs','errMS', 'pMs-pt', 'sxMs-xt', 'errMS-errT',
         'pMi','sxMi','errMI', 'pMi-pt','sxMi-xt','errMI-errT',
@@ -702,8 +699,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap_cm))){
     }
 
     #categories (parameter names) and years to combine with the results of our calculations
-    simName<-data.frame(Year=rep(year,each=70),Category=c(
-      'pt','sxt','errT', 'pt1-pt',
+    simName<-data.frame(Year=rep(year,each=72),Category=c(
+      'pt','sxt','errT', 'pt1-pt', 'sxt1-xt', 'errt1-errt',
       
       'pMs','sxMs','errMS', 'pMs-pt', 'sxMs-xt', 'errMS-errT',
       'pMi','sxMi','errMI', 'pMi-pt','sxMi-xt','errMI-errT',
@@ -811,6 +808,10 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap_cm))){
       simAlleleFreq[frqYr==(year-1) & frqCat=='pt',c(3:(nloci+2))]
     
     #sample freq (x)
+    simAlleleFreq[frqYr==year & frqCat=='sxt1-xt',c(3:(nloci+2))]<-
+      simAlleleFreq[frqYr==year & frqCat=='sxt',c(3:(nloci+2))]-
+      simAlleleFreq[frqYr==(year-1) & frqCat=='sxt',c(3:(nloci+2))]
+    
     simAlleleFreq[frqYr==year & frqCat=='sxMs-xt',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='sxMs',c(3:(nloci+2))]-
       simAlleleFreq[frqYr==(year-1) & frqCat=='sxt',c(3:(nloci+2))]
@@ -833,6 +834,10 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap_cm))){
       simAlleleFreq[frqYr==(year-1) & frqCat=='sxt',c(3:(nloci+2))]
     
     #true errors
+    simAlleleFreq[frqYr==year & frqCat=='errt1-errt',c(3:(nloci+2))]<-
+      simAlleleFreq[frqYr==year & frqCat=='errT',c(3:(nloci+2))]-
+      simAlleleFreq[frqYr==(year-1) & frqCat=='errT',c(3:(nloci+2))]
+    
     simAlleleFreq[frqYr==year & frqCat=='errMS-errT',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='errMS',c(3:(nloci+2))]-
       simAlleleFreq[frqYr==(year-1) & frqCat=='errT',c(3:(nloci+2))]
@@ -929,8 +934,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap_cm))){
   
 
   #calculate variances and covariances
-  simVar<-data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
-    'pt1-pt',
+  simVar<-data.frame(Year=rep(c(1999:2013),each=115),Category=rep(c(
+    'pt1-pt', 'sxt1-xt', 'errt1-errt', 'pt1pterrt1errT',
     'pMs-pt','sxMs-xt','errMS-errT','pMspterrMSerrT',
     'pFs-pt','sxFs-xt','errFS-errT','pFspterrFSerrT',
     'pMi-pt','sxMi-xt','errMI-errT','pMipterrMIerrT',
@@ -962,6 +967,16 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap_cm))){
     #total variance, for males and females
     simVar[bsYr==year & bsCat=='pt1-pt',3]<-
       mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='pt1-pt',c(3:(nloci+2))])^2)
+    simVar[bsYr==year & bsCat=='sxt1-xt',3]<-
+      mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='sxt1-xt',c(3:(nloci+2))])^2)
+    
+    simVar[bsYr==year & bsCat=='errt1-errt',3]<-
+      mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errt1-errt',c(3:(nloci+2))])^2)
+    
+    simVar[bsYr==year & bsCat=='pt1pterrt1errT',3]<-
+      mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='pt1-pt',c(3:(nloci+2))])*
+             as.numeric(simAlleleFreq[frqYr==year & frqCat=='errt1-errt',c(3:(nloci+2))]))
+    
     
     #variance for each Category, for males and females
     #survivors
