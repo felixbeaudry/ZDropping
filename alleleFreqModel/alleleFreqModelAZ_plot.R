@@ -35,7 +35,7 @@ indivlist <- indivlistgeno_A[,c(1:7)]
 
 load("working_files/intermediate_files/sampleVar_A.rdata") #samplevar
 load("working_files/intermediate_files/simVarA.rdata") #simvar
-load("working_files/intermediate_files/allVar_boot_A_w3.4mb.rdata") #bootstrap
+load("working_files/intermediate_files/allVar_boot_A_w5cm.rdata") #bootstrap
 
 col_sample <- sample(length(allVar) -2, 1000, replace=T) + 2
 
@@ -1440,7 +1440,7 @@ alleleFreqVarAvg2<-alleleFreqVarAvg[
 # Find sum for each year and calculate proportion for each Category
 alleleFreqVarAvg2$sum<-laply(alleleFreqVarAvg2$Year,function(x)   sum(alleleFreqVarAvg2[alleleFreqVarAvg2$Year==x,'avg']))
 
-alleleFreqVarAvg2$sum_abs<-laply(alleleFreqVarAvg2$Year,function(x)   sum(abs(alleleFreqVarAvg2[alleleFreqVarAvg2$Year==x,'avg'])))
+#alleleFreqVarAvg2$sum_abs<-laply(alleleFreqVarAvg2$Year,function(x)   sum(abs(alleleFreqVarAvg2[alleleFreqVarAvg2$Year==x,'avg'])))
 
 alleleFreqVarAvg2$prop<-alleleFreqVarAvg2$avg/alleleFreqVarAvg2$sum
 alleleFreqVarAvg2$q5_prop <- alleleFreqVarAvg2$q5 / alleleFreqVarAvg2$sum
@@ -1664,7 +1664,7 @@ pdf(paste("fig_5.pdf",sep=''),width=5.5,height=4)
 ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
   geom_hline(yintercept = 0,alpha=0.5,size=0.25)+
   
-#  geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category2,linetype=chrom), width=.1,alpha=0.5,size=0.15) +
+  geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category2,linetype=chrom), width=.1,alpha=0.5,size=0.15) +
 #  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
   
   geom_point(aes(color=Category2,shape=chrom),size=0.75) + 
