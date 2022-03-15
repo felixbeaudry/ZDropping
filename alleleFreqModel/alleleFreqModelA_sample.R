@@ -251,10 +251,10 @@ for(year in c(1999:2013)){
 	momsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Mom']
 	momsofmalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% momsofmales)
 	
-	dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
+	dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Dad']
 	dadsoffemalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% dadsoffemales)
 	
-	momsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
+	momsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Mom']
 	momsoffemalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% momsoffemales)
 
 		for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){

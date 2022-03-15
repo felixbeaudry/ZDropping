@@ -244,7 +244,7 @@ for(year in c(1999:2013)){
 	momsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Mom']
 	momsofmalesgeno<-genoUnique[,c(2,8:(snp_length+7))] %>% filter(Indiv %in% momsofmales)
 	
-	dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
+	dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Dad']
 	dadsoffemalesgeno<-genoUnique[,c(2,8:(snp_length+7))] %>% filter(Indiv %in% dadsoffemales)
 	
 	#Moms don't contribute to daughters on Z so skip these
@@ -266,12 +266,10 @@ for(year in c(1999:2013)){
 	sampleFreq[SNPyr==year & SNPcat=='xMfam',c(3:(snp_length+2))]<-0.5*
 		(sampleFreq[SNPyr==year & SNPcat=='xMdad',c(3:(snp_length+2))]+
 		sampleFreq[SNPyr==year & SNPcat=='xMmom',c(3:(snp_length+2))]) 
-	  #here we multiply mom by 0.5 since her contribution makes up only 1/2 of her son's genotype
-	
+
 	sampleFreq[SNPyr==year & SNPcat=='xFfam',c(3:(snp_length+2))]<-
 	  sampleFreq[SNPyr==year & SNPcat=='xFdad',c(3:(snp_length+2))]
-	  #here we don't multiply dad by 0.5 since his contribution makes up 100% of his daughter's genotype
-		
+
 	sampleFreq[SNPyr==year & SNPcat=='xMmend',c(3:(snp_length+2))]<-
 		sampleFreq[SNPyr==year & SNPcat=='xMb',c(3:(snp_length+2))]-
 		sampleFreq[SNPyr==year & SNPcat=='xMfam',c(3:(snp_length+2))]

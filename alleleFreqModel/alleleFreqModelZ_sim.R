@@ -4,7 +4,7 @@
 #tested on R v.4.1.2
 
 library(foreach)
-library(doParallel)
+#library(doParallel)
 
 library(plyr)
 library(tidyverse) #v.1.3.1
@@ -211,8 +211,8 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
 #parallelize snps
 #cores=detectCores() #uncomment these two lines if you want to use more than 4 cores
 #cl <- makeCluster(cores[1]-1) #not to overload your computer
-cl <- makeCluster(cores)
-registerDoParallel(cl)
+#cl <- makeCluster(cores)
+#registerDoParallel(cl)
 
 #Names for the values we just calculated (year and category/parameter)
 simName<-data.frame(Year=rep(year,each=3),Category=c('pt','xt','errT'),
@@ -380,7 +380,7 @@ for(year in c(1999:2013)){
   #combine with simAlleleFreq which is where we are collecting the results from all the snps
   simAlleleFreq<-rbind(simAlleleFreq,sim1)
 }
-stopCluster(cl)
+#stopCluster(cl)
 
 
 ####calculate error and allele freq differences between each category and the year before####

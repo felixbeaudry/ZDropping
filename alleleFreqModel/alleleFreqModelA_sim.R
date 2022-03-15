@@ -4,7 +4,7 @@
 #tested on R v.4.1.2
 
 library(foreach)
-library(doParallel)
+#library(doParallel)
 
 library(plyr)
 library(tidyverse) #v.1.3.1
@@ -12,13 +12,10 @@ library(tidyverse) #v.1.3.1
 
 ####set variables and make/import tables####
 #number of SNPs to simulate
-#nloci=10
-#nloci<-100000
-nloci<-10000
 
-#cores=20
-#nloci=100
-cores=4
+nloci<-100000
+
+
 
 #get sample allele freq for simulations, from _sample script
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
@@ -237,8 +234,8 @@ sim1<-cbind(simName,sim)
 #Add the simulation data to simAlleleFreq (we'll collect the data from all years here)
 simAlleleFreq<-rbind(simAlleleFreq,sim1)
 
-cl <- makeCluster(cores)
-registerDoParallel(cl)
+#cl <- makeCluster(cores)
+#registerDoParallel(cl)
 #year=1999
 
 for(year in c(1999:2013)){
@@ -401,7 +398,7 @@ for(year in c(1999:2013)){
   #combine with simAlleleFreq which is where we are collecting the results from all the snps
   simAlleleFreq<-rbind(simAlleleFreq,sim1)
 }
- stopCluster(cl)
+ #stopCluster(cl)
 
 ####calculate error and allele freq differences between each category and the year before####
 #err = true error (no hypergeometric error)
