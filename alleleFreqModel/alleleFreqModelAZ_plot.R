@@ -802,6 +802,7 @@ alleleFreqVarAvg<-data.frame(Year=rep(c(2000:2013),each=21),
                                             'FSMI','FSMB','FIMB'),14),
                              stringsAsFactors=FALSE)
 
+# x=2000
 #square terms
 alleleFreqVarAvg[alleleFreqVarAvg$Category=='MSsq','avg']<-laply(c(2000:2013), function(x) {
   yr<-as.character(x)

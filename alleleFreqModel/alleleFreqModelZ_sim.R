@@ -12,7 +12,7 @@ library(tidyverse) #v.1.3.1
 
 ####set variables and make/import tables####
 #number of SNPs to simulate
-nloci<-10000
+nloci<-100000
 
 #cores=20
 #nloci=100
