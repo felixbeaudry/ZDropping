@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=rosalind  --time=10-00:00:00  --output=Adrop.r220128.log
+#SBATCH --partition=rosalind  --time=10-00:00:00  --output=Adrop.r220315.log
 #SBATCH -c 20 --mem=200G  
 
 module load R

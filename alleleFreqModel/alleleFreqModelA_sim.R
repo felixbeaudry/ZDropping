@@ -19,9 +19,11 @@ nloci<-100000
 
 #get sample allele freq for simulations, from _sample script
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
-ldprune.SNP <- read.table('ldprune.A.SNP.list', header = FALSE, sep = "", dec = ".")
-ldprune.cols <- c(names(indivlistgeno_A)[c(1:8)],ldprune.SNP$V1)
-indivlistgeno <- indivlistgeno_A[,ldprune.cols]
+#ldprune.SNP <- read.table('ldprune.A.SNP.list', header = FALSE, sep = "", dec = ".")
+#ldprune.cols <- c(names(indivlistgeno_A)[c(1:8)],ldprune.SNP$V1)
+#indivlistgeno <- indivlistgeno_A[,ldprune.cols]
+
+indivlistgeno <- indivlistgeno_A
 
 indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
 indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
@@ -1008,4 +1010,5 @@ for(year in c(1999:2013)){
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errFFAM-errT',c(3:(nloci+2))])^2)
 }
 #save output
-save(simVar,file=paste("working_files/intermediate_files/simVarA.ldprune.rdata",sep=''))
+#save(simVar,file=paste("working_files/intermediate_files/simVarA.ldprune.rdata",sep=''))
+save(simVar,file=paste("working_files/intermediate_files/simVarA.rdata",sep=''))

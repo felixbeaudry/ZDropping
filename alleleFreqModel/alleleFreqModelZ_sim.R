@@ -14,10 +14,6 @@ library(tidyverse) #v.1.3.1
 #number of SNPs to simulate
 nloci<-100000
 
-#cores=20
-#nloci=100
-#cores=4
-
 #get input files: fixed list of indiv in each Category each year
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
 #ldprune.SNP <- read.table('ldprune.Z.SNP.list', header = FALSE, sep = "", dec = ".")
@@ -165,7 +161,6 @@ simdataTrue<-merge(indivlist,simindivgenoAll[,cols_id],
 
 
 #save
-#save(simdataTrue,file='working_files/intermediate_files/simdataTrueZ.ldprune.rdata')
 
 #simdataTrue[c(1:10),c(1:10)]
 #colnames(simdataTrue)[7] <- "Sex"
@@ -593,7 +588,6 @@ for(year in c(1999:2013)){
   
 }
 
-#save(simAlleleFreq,file="working_files/intermediate_files/simAlleleFreqZ.ldprune.rdata")
 
 ####calculate variances and covariances####
 simVar<-data.frame(Year=rep(c(1999:2013),each=115),Category=rep(c(

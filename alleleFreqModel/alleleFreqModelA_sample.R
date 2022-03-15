@@ -10,11 +10,11 @@ library(tidyverse) #v.1.3.1
 
 #get input files
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
-ldprune.SNP <- read.table('ldprune.A.SNP.list', header = FALSE, sep = "", dec = ".")
-ldprune.cols <- c(names(indivlistgeno_A)[c(1:7)],ldprune.SNP$V1)
-indivlistgeno <- indivlistgeno_A[,ldprune.cols]
+#ldprune.SNP <- read.table('ldprune.A.SNP.list', header = FALSE, sep = "", dec = ".")
+#ldprune.cols <- c(names(indivlistgeno_A)[c(1:7)],ldprune.SNP$V1)
+#indivlistgeno <- indivlistgeno_A[,ldprune.cols]
 
-#indivlistgeno <- indivlistgeno_A[,-c(8)]
+indivlistgeno <- indivlistgeno_A[,-c(8)]
 
 snp_length <- length(indivlistgeno)-7
 
@@ -319,7 +319,8 @@ for(year in c(1999:2013)){
 #today<-format(Sys.Date(),format="%d%b%Y")
 
 #save output
-save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_A.ldprune.rdata",sep=''))
+save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_A.rdata",sep=''))
+#save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_A.ldprune.rdata",sep=''))
 
 
 
