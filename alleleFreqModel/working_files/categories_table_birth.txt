@@ -1,0 +1,5 @@
+Category	propterm	sampleCat	errCat
+MBsq_mend	propMB	xMmend	errMMEND
+MBsq_fam	propMB	xMfam-xt	errMFAM-errT
+FBsq_mend	propFB	xFmend	errFMEND
+FBsq_fam	propFB	xFfam-xt	errFFAM-errT
