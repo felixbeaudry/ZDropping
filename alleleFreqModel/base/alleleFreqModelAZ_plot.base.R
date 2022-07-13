@@ -256,10 +256,21 @@ OBSvEXPer <- function(core_data,alleleFreqVarAvg,chrom){
       labs(title=chrom,x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + 
       theme(aspect.ratio = 1)
   )
+  pdf(paste("OBSEXP.",chrom,".pdf",sep=''),width=5.5,height=4)
+  print(
+    
+  ggplot(EO,aes(x=sum,y=V2)) + 
+    geom_abline(slope=1,color="grey",linetype="dashed") +
+    geom_point() + theme_bw() + 
+    labs(title=paste("chrom:",chrom),x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + 
+    theme(aspect.ratio = 1)
+  )
+  dev.off()
+  
   print(
     cor(EO$V2, EO$sum)
   )
-  EO_lm <- lm(V2~ sum,data=EO)
+  EO_lm <- lm(V2~ 0 + sum,data=EO)
   print(
     summary(EO_lm)
   )
@@ -374,6 +385,8 @@ AZ_AFVA<-rbind.data.frame(
 )
 
 
+
+
 ####label supercategories for stack####
 #detach(package:plyr)
 
@@ -448,7 +461,7 @@ ggplot(data=AZ_AFVA %>% filter(supercategory == "Survivor"), aes(x=year_adj, y=p
   
   theme_bw(base_size = base_font_size) + 
   scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
-  scale_color_manual(values=fills_to_use[1])+  
+  scale_color_manual(values=fills_to_use[8])+  
   scale_shape_manual(values=c(16,1)) +
   # scale_linetype_manual(values=c("solid","dashed")) +
 #  labs(y=varp_title2,x="Year",color="Category",linetype="") + 
@@ -475,7 +488,7 @@ ggplot(data=AZ_AFVA %>% filter(supercategory == "Cov(S,B)"), aes(x=year_adj, y=p
   
   theme_bw(base_size = base_font_size) + 
   scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
-  scale_color_manual(values=fills_to_use[c(2:4)])+  
+  scale_color_manual(values=fills_to_use[c(3,7,9)])+  
   scale_shape_manual(values=c(16,1)) +
   # scale_linetype_manual(values=c("solid","dashed")) +
   theme(strip.background =element_rect(fill="white")) +
@@ -501,7 +514,7 @@ ggplot(data=AZ_AFVA %>% filter(supercategory ==  "Birth"), aes(x=year_adj, y=pro
   
   theme_bw(base_size = base_font_size) + 
   scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
-  scale_color_manual(values=fills_to_use[5])+  
+  scale_color_manual(values=fills_to_use[1])+  
   scale_shape_manual(values=c(16,1)) +
   theme(strip.background =element_rect(fill="white")) +
   geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 0.5,dl.trans(x = x + .2))) +
@@ -529,7 +542,7 @@ ggplot(data=AZ_AFVA %>% filter(supercategory ==  "Cov(I,B)"), aes(x=year_adj, y=
   
   theme_bw(base_size = base_font_size) + 
   scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
-  scale_color_manual(values=fills_to_use[c(6:8)])+  
+  scale_color_manual(values=fills_to_use[c(5,2,6)])+  
   scale_shape_manual(values=c(16,1)) +
   # scale_linetype_manual(values=c("solid","dashed")) +
 
@@ -558,7 +571,7 @@ ggplot(data=AZ_AFVA %>% filter(supercategory ==  "Immigrant"), aes(x=year_adj, y
   
   theme_bw(base_size = base_font_size) + 
   scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
-  scale_color_manual(values=fills_to_use[9])+  
+  scale_color_manual(values=fills_to_use[4])+  
   scale_shape_manual(values=c(16,1)) +
   # scale_linetype_manual(values=c("solid","dashed")) +
   theme(strip.background =element_rect(fill="white")) +
@@ -864,8 +877,31 @@ ggplot(newBsq_ZA,aes(x=prop.A,y=prop.Z)) +
  
 dev.off()
 
-####OBS EXP####
+####base to prune####
+library(data.table)
 
+AZ_AFVA_prune <- fread('~/Desktop/ZDropping/jul8/LDpruned1June/AZ_AFVA_prune.txt')
+AZ_AFVA_prune <- AZ_AFVA_prune[,c("Category","Year","prop","chrom")]
+names(AZ_AFVA_prune)[3] <- "prop_prune"
 
+AZ_baseVprune <- left_join(AZ_AFVA,AZ_AFVA_prune)
 
+pdf(paste("Full2Pruned.pdf",sep=''),width=6,height=6)
+
+ggplot(AZ_baseVprune,aes(x=prop,y=prop_prune,color=Category2,shape=chrom)) + 
+  geom_point() +
+  facet_grid(.~chrom) +
+  geom_abline(slope=1,color="grey",linetype="dashed") +
+  theme_bw(base_size = base_font_size) + 
+  scale_shape_manual(values=c(16,1)) +
+  
+  scale_color_manual(values=fills_to_use)+  
+  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) +
+  
+  theme(strip.background =element_rect(fill="white")) +
+  labs(x="Full Data",y="Pruned Data",color="Category",shape="Chromosome") +
+  # labs(title=paste("chrom:",chrom),x=expression(paste("Predicted Change ",Sigma)),y=expression(paste("Expected Change (", p["t"],"-", p["t-1"], ")"))) + 
+  theme(aspect.ratio = 1) 
+
+dev.off()
 

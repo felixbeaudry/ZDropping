@@ -373,6 +373,10 @@ AZ_AFVA<-rbind.data.frame(
   cbind.data.frame(alleleFreqVarAvg_Z,"chrom"="Z")
 )
 
+write.table(AZ_AFVA, file = "AZ_AFVA_prune.txt", append = FALSE, quote = FALSE, sep = "\t",
+            eol = "\n", na = "NA", dec = ".", row.names = FALSE,
+            col.names = TRUE, qmethod = c("escape", "double"),
+            fileEncoding = "")
 
 ####label supercategories for stack####
 #detach(package:plyr)
