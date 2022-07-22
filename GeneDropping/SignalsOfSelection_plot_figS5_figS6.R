@@ -1,6 +1,6 @@
 # script to make manhattan plots of the selection tests data
 # Rose Driscoll
-# Last updated: 04 October 2021
+# Last updated: 22 April 2022
 
 
 ## Setup
@@ -45,12 +45,22 @@ pval_change_autosomes <- mutate(pval_change_autosomes, pval_new = ((pval_change_
 # Using FDR method, adjust for all snps in genome (268 Z snps + 10731 autosomal snps)
 
 # adjust 1999-2013 comparisons
-pval_1999to2013$padjAll <- p.adjust(c(pval_1999to2013$pval_new, pval_1999to2013_autosomes$pval_new), method = "fdr", n = 268+10731)[1:268]
-# Apply cutoff
+padj_Z_auto <- p.adjust(c(pval_1999to2013$pval_new, pval_1999to2013_autosomes$pval_new), method = "fdr", n = 268+10731)
+pval_1999to2013$padjAll <- padj_Z_auto[1:268]
+pval_1999to2013_autosomes$padjAll <- padj_Z_auto[269:10999]
+# Apply cutoff of 0.25
 pval_1999to2013 <- mutate(pval_1999to2013, padjAll_sig = ifelse(padjAll < 0.25, 2, 1))
 filter(pval_1999to2013, padjAll_sig==2)
+# Apply cutoff of 0.1
+pval_1999to2013 <- mutate(pval_1999to2013, padjAll_sig_0.1 = ifelse(padjAll < 0.1, 2, 1))
+filter(pval_1999to2013, padjAll_sig_0.1==2)
+# Apply cutoff of 0.25 to autosomal results and compare to Chen 2019 results
+pval_1999to2013_autosomes <- mutate(pval_1999to2013_autosomes, padjAll_sig = ifelse(padjAll < 0.25, 2, 1))
+filter(pval_1999to2013_autosomes, padjAll_sig==2)
+filter(pval_1999to2013_autosomes, adjpval_median1<0.25)
 
-# adjust year-by-year comparisons
+
+# adjust year-by-year comparisons - Z
 collect_padj <- NULL
 pval_change_w_padj <- NULL
 for (i in 1999:2012) {
@@ -59,15 +69,14 @@ for (i in 1999:2012) {
   pval_change_thisyear$padjAll <- collect_padj
   pval_change_w_padj <- rbind(pval_change_w_padj, pval_change_thisyear)
   }
+# Apply cutoff of 0.25
 pval_change_w_padj <- mutate(pval_change_w_padj, padjAll_sig = ifelse(padjAll < 0.25, 2, 1))
 filter(pval_change_w_padj, padjAll_sig==2)
+# Apply cutoff of 0.1
+pval_change_w_padj <- mutate(pval_change_w_padj, padjAll_sig_0.1 = ifelse(padjAll < 0.1, 2, 1))
+filter(pval_change_w_padj, padjAll_sig_0.1==2)
 
-# Check whether the autosomal significance results have changed
-
-# 1999-2013
-pval_1999to2013_autosomes$padjAll <- p.adjust(c(pval_1999to2013$pval_new, pval_1999to2013_autosomes$pval_new), method = "fdr", n = 268+10731)[269:10999]
-filter(pval_1999to2013_autosomes, adjpval_median1 < 0.25, padjAll >= 0.25)
-# year-by-year
+# adjust year-by-year comparisons - auto
 collect_padj <- NULL
 pval_change_w_padj_auto <- NULL
 for (i in 1999:2012) {
@@ -76,20 +85,23 @@ for (i in 1999:2012) {
   pval_change_thisyear$padjAll <- collect_padj
   pval_change_w_padj_auto <- rbind(pval_change_w_padj_auto, pval_change_thisyear)
 }
-filter(pval_change_w_padj_auto, adjpval_median < 0.25, padjAll >= 0.25)
+# Apply cutoff of 0.25 to autosomal results and compare to Chen 2019 results
+pval_change_w_padj_auto <- mutate(pval_change_w_padj_auto, padjAll_sig = ifelse(padjAll < 0.25, 2, 1))
+filter(pval_change_w_padj_auto, padjAll_sig==2)
+filter(pval_change_w_padj_auto, adjpval_median<0.25)
 
 
 ## Plot
 
 # plot with significant 1999-2013 snps after adjusting for all snps in the genome highlighted in orange
-ggplot(data = pval_1999to2013) + 
+(manhattan_1999_2013 <- ggplot(data = pval_1999to2013) + 
   geom_point(aes(x = SNP_order, y = -log10(pval_new), color=as.factor(padjAll_sig)), alpha = 0.75, size = 0.3) +
   plottheme + 
   scale_x_continuous(name='Position on Z chromosome') +
   scale_y_continuous(name='-log10(p-value)') +
   scale_colour_manual(values=c("black","#fc8d59")) +
   theme(legend.position = "none", axis.ticks.x = element_blank(), axis.text.x = element_blank()) +
-  labs(title = "Significant SNPs 1999-2013")
+  labs(title = "Significant SNPs 1999-2013"))
 #ggsave("manhattanplots_all.pdf", width = 4, height = 3, units = "in")
 
 # 1999-2000
@@ -220,3 +232,16 @@ ggplot(data = pval_1999to2013) +
 
 plot_grid(manhattan_1999_2000, manhattan_2000_2001, manhattan_2001_2002, manhattan_2002_2003, manhattan_2003_2004, manhattan_2004_2005, manhattan_2005_2006, manhattan_2006_2007, manhattan_2007_2008, manhattan_2008_2009, manhattan_2009_2010, manhattan_2010_2011, manhattan_2011_2012, manhattan_2012_2013, nrow = 7, ncol = 2, rel_heights = c(1.1,1,1,1,1,1,1))
 #ggsave("manhattanplots_yearly_6-5x8-5.pdf", width = 6.5, height = 8.5, units = "in")
+
+# Plot p-values and observed change in a 2-panel plot for the 1999-2013 comparison
+(obs_change_1999_2013 <- ggplot(data = pval_1999to2013) + 
+  geom_point(aes(x = SNP_order, y = obsChange, color=as.factor(padjAll_sig)), alpha = 0.75, size = 0.3) +
+  plottheme + 
+  scale_x_continuous(name='Position on Z chromosome') +
+  scale_y_continuous(name='Observed change in allele frequency') +
+  scale_colour_manual(values=c("black","#fc8d59","cornflowerblue")) +
+  theme(legend.position = "none", axis.ticks.x = element_blank(), axis.text.x = element_blank()) +
+  labs(title = "Observed change in allele frequency 1999-2013") + 
+  geom_hline(yintercept=0, size=0.2))
+plot_grid(manhattan_1999_2013, obs_change_1999_2013, nrow = 2, ncol = 1, labels = "AUTO")
+#ggsave("manhattanplot_all_w_obs_change.pdf", width = 4, height = 6, units = "in")
