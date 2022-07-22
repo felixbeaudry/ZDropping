@@ -1,18 +1,17 @@
 #!/bin/bash
-#SBATCH --partition=rosalind  --time=10-00:00:00  --output=Zdrop.r230821.log
-#SBATCH -c 32 --mem=200G 
+#SBATCH --partition=rosalind  --time=10-00:00:00  --output=Zdrop.r220315.log
+#SBATCH -c 20 --mem=200G 
 
-module load r/4.0.5/b1
-
-#echo "Z sample"
-#Rscript --vanilla alleleFreqModelZ_sample.R
-#echo "Z sim"
-#Rscript --vanilla alleleFreqModelZ_sim.R
-echo "Z boot"
-Rscript --vanilla alleleFreqModelZ_boot.R
-
+module load R
 module load sendemail/1.56
-sendEmail -f fbeaudry@ur.rochester.edu -t fbeaudry@ur.rochester.edu -u Zdrop -m Zdrop
 
+echo "Z sample"
+Rscript --vanilla alleleFreqModelZ_sample.R
+sendEmail -f fbeaudry@ur.rochester.edu -t fbeaudry@ur.rochester.edu -u Zsample -m Zsample
 
+echo "Z sim"
+Rscript --vanilla alleleFreqModelZ_sim.R
+sendEmail -f fbeaudry@ur.rochester.edu -t fbeaudry@ur.rochester.edu -u Zsim -m Zsim
 
+#echo "Z boot"
+#Rscript --vanilla alleleFreqModelZ_boot.R

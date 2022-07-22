@@ -1,57 +1,21 @@
 #script to estimate variance in variance in allele frequency change over time by bootstrapping  for Z loci
-#Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
-#Last updated: Jul 7 2021
+#Felix Beaudry & Rose Driscoll & Nancy Chen & Graham Coop 
 
 library(plyr)
-library(tidyr)
 library(foreach)
 library(dplyr)
 library(doParallel)
-library(data.table)
-`%notin%` <- Negate(`%in%`)
 `%ni%` <- Negate(`%in%`)
-
 
 ####get input files####
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
 indivlistgeno <- indivlistgeno_Z
 
 #Z SNP info
-map<-read.table('working_files/geno.map')
-ZSNPS <- map[map$V1 == 39 ,]
-ZSNPS$map_pos <- seq(1,length(ZSNPS$V1))
-ZSNPS$SNP_name <- names(indivlistgeno_Z[,-c(1:8)])
+map<-read.table('bootstrapMap.Z.txt',header=T)
 
-
-chip <- fread('working_files/chrom.map',fill=TRUE,header=TRUE)
-ZSNPS_chip <- left_join(ZSNPS,chip,by=c("V2"="SNPname"))
-
-sizes <- fread('working_files/FSJ.chrom.sizes')
-Z_size <- sizes$V2[sizes$V1 %in% unique(ZSNPS_chip$NewScaff)] 
-
-w_size = 3400000
-nloci<- 5000 #set sim loci number relative to window size; regular sim nloci / genome size in mb
-#nloci=4
-
-win_global = 0
-for(win in seq(from=0,to=max(ZSNPS_chip$SNPpos,na.rm=T),by = w_size)){
-  if(win+w_size<Z_size){
-    #cat( ((win/w_size) + win_global)," ",win," ",Z_size,"\n")
-    ZSNPS_chip$bootstrap[ZSNPS_chip$SNPpos > win & ZSNPS_chip$SNPpos <= (win+w_size) ] <- (win/w_size) + win_global
-  }else{
-    cat( ((win/w_size) + win_global)," ",win," ",Z_size," skipped\n")
-    
-  }
-}
-
-
-markersInPedOrder_chip_Z <- ZSNPS_chip[,c(6,12)]
-names(markersInPedOrder_chip_Z)[1]<- "SNP"
-
-markersInPedOrder_chip_Z_tally <- markersInPedOrder_chip_Z %>% group_by(bootstrap) %>% tally()
-big_boots <- markersInPedOrder_chip_Z_tally$bootstrap[markersInPedOrder_chip_Z_tally$n >= 5]
-markersInPedOrder_chip_Z <- markersInPedOrder_chip_Z[markersInPedOrder_chip_Z$bootstrap %in% big_boots,]
-
+markersInPedOrder_chip_Z <- map[,c(1,6)] #%>% dplyr::select(SNP,bootstrap_cm)
+w_size = 5
 
 ###
 #start sim file
@@ -59,6 +23,9 @@ simindivlist <- indivlistgeno[order(indivlistgeno$Year),c(1:6,8)]
 colnames(simindivlist) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
 simindivgeno<-simindivlist[!duplicated(simindivlist$Indiv),]
 colnames(simindivgeno) <- c( "Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
+
+simindivgeno$Mom[simindivgeno$Mom == 0] <- NA
+simindivgeno$Dad[simindivgeno$Dad == 0] <- NA
 
 #separate into moms vs dads vs nestlings
 simindivgenoMoms<-
@@ -83,8 +50,8 @@ allVar <-
       'xFsxMi','xFsxMb','xFixMb',
       'xMfam','xFfam','xMmend','xFmend','xMfam-xt','xFfam-xt'),15),stringsAsFactors=FALSE)
     ,
-    data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
-      'pt1-pt',
+    data.frame(Year=rep(c(1999:2013),each=115),Category=rep(c(
+      'pt1-pt','sxt1-xt', 'errt1-errt', 'pt1pterrt1errT',
       'pMs-pt','sxMs-xt','errMS-errT','pMspterrMSerrT',
       'pFs-pt','sxFs-xt','errFS-errT','pFspterrFSerrT',
       'pMi-pt','sxMi-xt','errMI-errT','pMipterrMIerrT',
@@ -111,11 +78,13 @@ allVar <-
       ,15),stringsAsFactors=FALSE)
   )
 
+nloci<- 500 #set sim loci number relative to window size; regular sim nloci / genome size in mb
+
 
 ####start the loop####
 loop=1
 #win=4
-for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
+for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap_cm))){
   cat("window = ",win,"\n")
   
   #n = number of Genotyped individuals, x = sample allele frequency
@@ -144,7 +113,7 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   
   indivlistgeno <- indivlistgeno_Z[,-c(8)]
   
-  #snp="SNP10732"
+  #snp="SNP10801"
   #match(snp,markers)
   for(snp in markers){ 
     sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]<-
@@ -211,10 +180,7 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:length(sampleFreq))]<-
       sampleFreq[SNPyr==year & SNPcat=='xt',c(3:length(sampleFreq))]-
       sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:length(sampleFreq))]
-    sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:length(sampleFreq))]<-
-      sampleFreq[SNPyr==year & SNPcat=='xt',c(3:length(sampleFreq))]-
-      sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:length(sampleFreq))]
-    
+
     sampleFreq[SNPyr==year & SNPcat=='xMs-xt',c(3:length(sampleFreq))]<-
       sampleFreq[SNPyr==year & SNPcat=='xMs',c(3:length(sampleFreq))]-
       sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:length(sampleFreq))]
@@ -478,65 +444,55 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   #get kid genotypes, one year at a time
   #year= 1991
   for(year in nest.years){
-    #pull out female nestlings for this year
-    these.female.nestlings<-simindivgenoNestlings[simindivgenoNestlings$Year==year 
-                                                  & simindivgenoNestlings$Sex==2, "Indiv"]
-    #pull out male nestlings for this year
-    these.male.nestlings<-simindivgenoNestlings[simindivgenoNestlings$Year==year 
-                                                & simindivgenoNestlings$Sex==1, "Indiv"]
+    #pull out nestlings for this year & get a list of the parents of this year's  nestlings
+    these.male.nestlings    <- simindivgenoNestlings$Indiv[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==1]
+    these.moms.of.sons      <- unique(simindivgenoNestlings$Mom[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==1])
+    these.dads.of.sons      <- unique(simindivgenoNestlings$Dad[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==1])
     
-    #ignore moms of this year's female nestlings as they don't contribute Zs
-    #these.moms.of.daughters<-simindivgenoNestlings[simindivgenoNestlings$Year==year
-    #& simindivgenoNestlings$Sex==2,'Mom']
-    #these.moms.of.sons<-simindivgenoNestlings[simindivgenoNestlings$Year==year,'Mom']
-    #these.moms.of.daughters<-simindivgenoNestlings$Mom[simindivgenoNestlings$Year==year
-    #                                                   & simindivgenoNestlings$Sex==2]
-    
-    #get a list of the moms of this year's male nestlings
-    these.moms.of.sons<-simindivgenoNestlings[simindivgenoNestlings$Year==year
-                                              & simindivgenoNestlings$Sex==1, "Mom"]
-    #get a list of the dads of this year's female nestlings
-    these.dads.of.daughters<-simindivgenoNestlings[simindivgenoNestlings$Year==year
-                                                   & simindivgenoNestlings$Sex==2, "Dad"]
-    #get a list of the dads of this year's male nestlings
-    these.dads.of.sons<-simindivgenoNestlings[simindivgenoNestlings$Year==year
-                                              & simindivgenoNestlings$Sex==1, "Dad"]
+    these.female.nestlings  <- simindivgenoNestlings$Indiv[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==2]
+    these.dads.of.daughters <- unique(simindivgenoNestlings$Dad[simindivgenoNestlings$Year==year & simindivgenoNestlings$Sex==2])
     
     #check that the nestlings don't have genotypes yet (should be NA)
-    stopifnot(all(is.na(simindivgenoAll[these.female.nestlings,8:(nloci+7)])))
-    stopifnot(all(is.na(simindivgenoAll[these.male.nestlings,8:(nloci+7)])))
+    stopifnot(all(is.na( simindivgenoAll %>% filter(Indiv %in% these.female.nestlings) %>% dplyr::select(c(8:(nloci+7))) )))
+    stopifnot(all(is.na (simindivgenoAll %>% filter(Indiv %in% these.male.nestlings)   %>% dplyr::select(c(8:(nloci+7))) )))
     
     #get parents' genotypes
     #moms.of.daughters.geno<-simindivgenoAll[these.moms.of.daughters,]
-    moms.of.sons.geno<-simindivgenoAll[these.moms.of.sons,]
-    dads.of.daughters.geno<-simindivgenoAll[these.dads.of.daughters,]
-    dads.of.sons.geno<-simindivgenoAll[these.dads.of.sons,]
+    moms.of.sons.geno      <- simindivgenoAll %>% filter(Indiv %in% these.moms.of.sons)
+    dads.of.daughters.geno <- simindivgenoAll %>% filter(Indiv %in% these.dads.of.daughters)
+    dads.of.sons.geno      <- simindivgenoAll %>% filter(Indiv %in% these.dads.of.sons)
     
-    #check that all parents are Genotyped (NOT NA)
-    #stopifnot(all(!is.na(moms.of.daughters.geno[,8:(nloci+7)])))
-    stopifnot(all(!is.na(moms.of.sons.geno[,8:(nloci+7)])))
-    stopifnot(all(!is.na(dads.of.daughters.geno[,8:(nloci+7)])))
-    stopifnot(all(!is.na(dads.of.sons.geno[,8:(nloci+7)])))
+    #check that all parents are genotyped (NOT NA)
+    stopifnot(all(!is.na( moms.of.sons.geno       %>% dplyr::select(c(8:(nloci+7))) )))
+    stopifnot(all(!is.na( dads.of.daughters.geno  %>% dplyr::select(c(8:(nloci+7))) )))
+    stopifnot(all(!is.na( dads.of.sons.geno       %>% dplyr::select(c(8:(nloci+7))) )))
     
     #run the gamete selector function to pick which gamete dads give their kids
-    Dads.of.daughters.gamete<-apply(dads.of.daughters.geno[,8:(nloci+7)],2,make.male.gametes)
-    Dads.of.sons.gamete<-apply(dads.of.sons.geno[,8:(nloci+7)],2,make.male.gametes)
-    # moms don't give daughters Z alleles so skip moms of daughters
-    #get mom's genotype -> this is the gamete she gives her son
-    Moms.of.sons.gamete<-moms.of.sons.geno[,8:(nloci+7)]
+    these.dads.of.daughters <- these.dads.of.daughters[these.dads.of.daughters != 0]
+    Dads.of.daughters.gamete <- cbind.data.frame("Dad"=these.dads.of.daughters,apply(dads.of.daughters.geno %>% dplyr::select(c(8:(nloci+7))),2,make.male.gametes))
+    daughters.gamete <- suppressMessages(simindivgenoNestlings %>% filter(Year==year & Sex==2) %>% left_join(Dads.of.daughters.gamete) %>% dplyr::select(c(8:(nloci+7))))
     
-    #female nestlings just get the allele from their dad as their geno
-    female.nestling.geno<-Dads.of.daughters.gamete
-    #male nestlings get allele from dad + allele from mom
-    male.nestling.geno<-Dads.of.sons.gamete+Moms.of.sons.gamete
+    #sep for mom and dad of son then add back together
+    Dads.of.sons.gamete <- cbind.data.frame("Dad"=these.dads.of.sons,apply(dads.of.sons.geno %>% dplyr::select(c(8:(nloci+7))),2,make.male.gametes))
+    Dads.of.sons.gamete <-suppressMessages( simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Dads.of.sons.gamete) %>% dplyr::select(c(8:(nloci+7))))
+    
+    Moms.of.sons.gamete      <- moms.of.sons.geno  %>% dplyr::select(c(2,8:(nloci+7)))
+    Moms.of.sons.gamete$Indiv <- as.integer(Moms.of.sons.gamete$Indiv)
+    
+    Moms.of.sons.gamete <- suppressMessages(simindivgenoNestlings %>% filter(Year==year & Sex==1) %>% left_join(Moms.of.sons.gamete,by=c("Mom"="Indiv")) %>% dplyr::select(c(8:(nloci+7))))
+    
+    sons.gamete <- Dads.of.sons.gamete + Moms.of.sons.gamete
+    
     
     #stick the genotypes for this year's nestlings into the simindivgenoAll table
-    simindivgenoAll[simindivgenoAll$Indiv %in% these.female.nestlings,8:(nloci+7)] <- female.nestling.geno
-    simindivgenoAll[simindivgenoAll$Indiv %in% these.male.nestlings,8:(nloci+7)] <- male.nestling.geno
+    simindivgenoAll[simindivgenoAll$Indiv %in% these.female.nestlings,8:(nloci+7)] <- daughters.gamete
+    simindivgenoAll[simindivgenoAll$Indiv %in% these.male.nestlings,8:(nloci+7)] <- sons.gamete
+    
     
     #check that the nestlings now have genotypes (not NA)
-    stopifnot(all(!is.na(simindivgenoAll[these.female.nestlings,8:(nloci+7)])))
-    stopifnot(all(!is.na(simindivgenoAll[these.male.nestlings,8:(nloci+7)])))
+    stopifnot(all(!is.na( simindivgenoAll %>% filter(Indiv %in% these.female.nestlings) %>% dplyr::select(c(8:(nloci+7))) )))
+    stopifnot(all(!is.na (simindivgenoAll %>% filter(Indiv %in% these.male.nestlings)   %>% dplyr::select(c(8:(nloci+7))) )))
+    
     
   }
   
@@ -640,8 +596,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     #for each snp
     sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
       #make a data frame to put all these parameters in for each year
-      tmp<-data.frame(Year=rep(year,each=70),Category=c(
-        'pt','sxt','errT', 'pt1-pt',
+      tmp<-data.frame(Year=rep(year,each=72),Category=c(
+        'pt','sxt','errT', 'pt1-pt', 'sxt1-xt', 'errt1-errt',
         
         'pMs','sxMs','errMS', 'pMs-pt', 'sxMs-xt', 'errMS-errT',
         'pMi','sxMi','errMI', 'pMi-pt','sxMi-xt','errMI-errT',
@@ -742,8 +698,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     }
 
     #categories (parameter names) and years to combine with the results of our calculations
-    simName<-data.frame(Year=rep(year,each=70),Category=c(
-      'pt','sxt','errT', 'pt1-pt',
+    simName<-data.frame(Year=rep(year,each=72),Category=c(
+      'pt','sxt','errT', 'pt1-pt', 'sxt1-xt', 'errt1-errt',
       
       'pMs','sxMs','errMS', 'pMs-pt', 'sxMs-xt', 'errMS-errT',
       'pMi','sxMi','errMI', 'pMi-pt','sxMi-xt','errMI-errT',
@@ -851,6 +807,10 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
       simAlleleFreq[frqYr==(year-1) & frqCat=='pt',c(3:(nloci+2))]
     
     #sample freq (x)
+    simAlleleFreq[frqYr==year & frqCat=='sxt1-xt',c(3:(nloci+2))]<-
+      simAlleleFreq[frqYr==year & frqCat=='sxt',c(3:(nloci+2))]-
+      simAlleleFreq[frqYr==(year-1) & frqCat=='sxt',c(3:(nloci+2))]
+    
     simAlleleFreq[frqYr==year & frqCat=='sxMs-xt',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='sxMs',c(3:(nloci+2))]-
       simAlleleFreq[frqYr==(year-1) & frqCat=='sxt',c(3:(nloci+2))]
@@ -873,6 +833,10 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
       simAlleleFreq[frqYr==(year-1) & frqCat=='sxt',c(3:(nloci+2))]
     
     #true errors
+    simAlleleFreq[frqYr==year & frqCat=='errt1-errt',c(3:(nloci+2))]<-
+      simAlleleFreq[frqYr==year & frqCat=='errT',c(3:(nloci+2))]-
+      simAlleleFreq[frqYr==(year-1) & frqCat=='errT',c(3:(nloci+2))]
+    
     simAlleleFreq[frqYr==year & frqCat=='errMS-errT',c(3:(nloci+2))]<-
       simAlleleFreq[frqYr==year & frqCat=='errMS',c(3:(nloci+2))]-
       simAlleleFreq[frqYr==(year-1) & frqCat=='errT',c(3:(nloci+2))]
@@ -969,8 +933,8 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   
 
   #calculate variances and covariances
-  simVar<-data.frame(Year=rep(c(1999:2013),each=112),Category=rep(c(
-    'pt1-pt',
+  simVar<-data.frame(Year=rep(c(1999:2013),each=115),Category=rep(c(
+    'pt1-pt', 'sxt1-xt', 'errt1-errt', 'pt1pterrt1errT',
     'pMs-pt','sxMs-xt','errMS-errT','pMspterrMSerrT',
     'pFs-pt','sxFs-xt','errFS-errT','pFspterrFSerrT',
     'pMi-pt','sxMi-xt','errMI-errT','pMipterrMIerrT',
@@ -1002,6 +966,16 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
     #total variance, for males and females
     simVar[bsYr==year & bsCat=='pt1-pt',3]<-
       mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='pt1-pt',c(3:(nloci+2))])^2)
+    simVar[bsYr==year & bsCat=='sxt1-xt',3]<-
+      mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='sxt1-xt',c(3:(nloci+2))])^2)
+    
+    simVar[bsYr==year & bsCat=='errt1-errt',3]<-
+      mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errt1-errt',c(3:(nloci+2))])^2)
+    
+    simVar[bsYr==year & bsCat=='pt1pterrt1errT',3]<-
+      mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='pt1-pt',c(3:(nloci+2))])*
+             as.numeric(simAlleleFreq[frqYr==year & frqCat=='errt1-errt',c(3:(nloci+2))]))
+    
     
     #variance for each Category, for males and females
     #survivors
@@ -1355,13 +1329,15 @@ allVar_tmp <- rbind.data.frame(sampleVar,simVar)
 allVar[,(loop+2)] <- allVar_tmp[,3]
 names(allVar)[(loop+2)] <- paste("bs",win,sep="")
 loop = loop +1
-today<-format(Sys.Date(),format="%d%b%Y")
-save(allVar,file=paste("working_files/intermediate_files/allVar_int_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
+#today<-format(Sys.Date(),format="%d%b%Y")
+#save(allVar,
+#     file=paste("working_files/intermediate_files/allVar_int_boot_Z_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
 
 }
 
-today<-format(Sys.Date(),format="%d%b%Y")
-save(allVar,file=paste("working_files/intermediate_files/allVar_boot_Z_w",(w_size/1000000),"mb.rdata",sep=''))
+#today<-format(Sys.Date(),format="%d%b%Y")
+#save(allVar,file=paste("working_files/intermediate_files/allVar_boot_Z_w",(w_size/1000000),"mb.rdata",sep=''))
+save(allVar,file=paste("working_files/intermediate_files/allVar_boot_Z_w",(w_size),"cm.rdata",sep=''))
 
 
 

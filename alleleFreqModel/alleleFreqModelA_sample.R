@@ -1,17 +1,22 @@
 #script to model variance in allele frequency change over time
 #estimate sample values using real data for autosomal loci
 #Nancy Chen, Rose Driscoll & Felix Beaudry
-#Last updated: 7 July 2021
+#tested on R v.4.1.2
 
-library(plyr)
-library(tidyverse)
+library(tidyverse) #v.1.3.1
 `%notin%` <- Negate(`%in%`)
 
 ####get & make starting data.frames####
 
 #get input files
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
+#ldprune.SNP <- read.table('ldprune.A.SNP.list', header = FALSE, sep = "", dec = ".")
+#ldprune.cols <- c(names(indivlistgeno_A)[c(1:7)],ldprune.SNP$V1)
+#indivlistgeno <- indivlistgeno_A[,ldprune.cols]
+
 indivlistgeno <- indivlistgeno_A[,-c(8)]
+
+snp_length <- length(indivlistgeno)-7
 
 ####allele frequencies####
 #estimate values that vary with SNP
@@ -32,12 +37,15 @@ sampleFreq<-data.frame(Year=rep(c(1999:2013),each=31),Category=rep(c(
 
 sampleFreq<-rbind(data.frame(Year=rep(1998,2),Category=c('nt','xt'),
 	stringsAsFactors=FALSE),sampleFreq)
+
+for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){
+  sampleFreq <- sampleFreq %>% add_column("{snp}" := NA)
+}
+
 SNPyr<-sampleFreq$Year
 SNPcat<-sampleFreq$Category
-
 igYear<-indivlistgeno$Year
 
-#snp="SNP1"
 for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){
   
   # number of genotyped chromosomes
@@ -235,21 +243,19 @@ genoUnique<-indivlistgeno[!duplicated(indivlistgeno$Indiv),]
 
 #get sample allele frequencies of parents
 for(year in c(1999:2013)){
+	cols_id <- c(2,8:(snp_length+7))
+	
 	dadsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
-	dadsofmales<-data.frame(Indiv=dadsofmales[!is.na(dadsofmales)],stringsAsFactors=FALSE)
-	dadsofmalesgeno<-left_join(dadsofmales,genoUnique[,c(2,8:length(genoUnique))])
+	dadsofmalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% dadsofmales)
 	
 	momsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Mom']
-	momsofmales<-data.frame(Indiv=momsofmales[!is.na(momsofmales)],stringsAsFactors=FALSE)
-	momsofmalesgeno<-left_join(momsofmales,genoUnique[,c(2,8:length(genoUnique))])
+	momsofmalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% momsofmales)
 	
 	dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Dad']
-	dadsoffemales<-data.frame(Indiv=dadsoffemales[!is.na(dadsoffemales)],stringsAsFactors=FALSE)
-	dadsoffemalesgeno<-left_join(dadsoffemales,genoUnique[,c(2,8:length(genoUnique))])
+	dadsoffemalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% dadsoffemales)
 	
 	momsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Mom']
-	momsoffemales<-data.frame(Indiv=momsoffemales[!is.na(momsoffemales)],stringsAsFactors=FALSE)
-	momsoffemalesgeno<-left_join(momsoffemales,genoUnique[,c(2,8:length(genoUnique))])
+	momsoffemalesgeno<-genoUnique[,cols_id] %>% filter(Indiv %in% momsoffemales)
 
 		for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){
 		sampleFreq[SNPyr==year & SNPcat=='xMdad',snp]<-mean(dadsofmalesgeno[,snp],na.rm=TRUE)/2
@@ -314,6 +320,7 @@ for(year in c(1999:2013)){
 
 #save output
 save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_A.rdata",sep=''))
+#save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_A.ldprune.rdata",sep=''))
 
 
 

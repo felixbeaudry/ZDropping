@@ -1,14 +1,21 @@
 #script to model variance in allele frequency change over time
 #estimate sample values using real data for Z loci
 #Nancy Chen, Rose Driscoll & Felix Beaudry
-#Last updated: 7 July 2021
+#tested on R v.4.1.2
 
-library(plyr)
-library(tidyverse)
-
+library(tidyverse) #v.1.3.1
+`%notin%` <- Negate(`%in%`)
 
 ####get & make starting data.frames####
+
+#get input files
+#setwd('~/Documents/Github/ZDropping/alleleFreqModel')
 load(file='working_files/intermediate_files/indivlistgeno_Z.rdata')
+
+#ldprune.SNP <- read.table('ldprune.Z.SNP.list', header = FALSE, sep = "", dec = ".")
+#ldprune.cols <- c(names(indivlistgeno_Z)[c(1:7)],ldprune.SNP$V1)
+#indivlistgeno <- indivlistgeno_Z[,ldprune.cols]
+
 indivlistgeno <- indivlistgeno_Z[,-c(8)]
 
 snp_length <- length(indivlistgeno)-7
@@ -29,8 +36,13 @@ sampleFreq<-data.frame(Year=rep(c(1999:2013),each=30),Category=rep(c(
 # allele to their sons, and females transmit an allele to their daughters respectively
 # Omit xFmom for the Z as females never transmit their Z to their daughters
 
-sampleFreq<-rbind(data.frame(Year=rep(1998,2),Category=c('nt','xt'),
+sampleFreq<-rbind.data.frame(data.frame(Year=rep(1998,2),Category=c('nt','xt'),
 	stringsAsFactors=FALSE),sampleFreq)
+
+for(snp in names(indivlistgeno)[8:(snp_length+7)]){
+  sampleFreq <- sampleFreq %>% add_column("{snp}" := NA)
+}
+
 
 #make loop variables
 SNPyr<-sampleFreq$Year
@@ -107,9 +119,6 @@ for(year in c(1999:2013)){
 	sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:(snp_length+2))]<-
 		sampleFreq[SNPyr==year & SNPcat=='xt',c(3:(snp_length+2))]-
 		sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:(snp_length+2))]
-	sampleFreq[SNPyr==year & SNPcat=='xt1-xt',c(3:(snp_length+2))]<-
-	  sampleFreq[SNPyr==year & SNPcat=='xt',c(3:(snp_length+2))]-
-	  sampleFreq[SNPyr==(year-1) & SNPcat=='xt',c(3:(snp_length+2))]
 	
 	sampleFreq[SNPyr==year & SNPcat=='xMs-xt',c(3:(snp_length+2))]<-
 		sampleFreq[SNPyr==year & SNPcat=='xMs',c(3:(snp_length+2))]-
@@ -230,29 +239,26 @@ genoUnique<-indivlistgeno[!duplicated(indivlistgeno$Indiv),]
 #year=1999
 #get sample allele frequencies of parents
 for(year in c(1999:2013)){
+  
 	dadsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Dad']
-	dadsofmales<-data.frame(Indiv=dadsofmales[!is.na(dadsofmales)],stringsAsFactors=FALSE)
-	dadsofmalesgeno<-left_join(dadsofmales,genoUnique[,c(2,8:(snp_length+7))])
+	dadsofmalesgeno<-genoUnique[,c(2,8:(snp_length+7))] %>% filter(Indiv %in% dadsofmales)
 	
 	momsofmales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==1,'Mom']
-	momsofmales<-data.frame(Indiv=momsofmales[!is.na(momsofmales)],stringsAsFactors=FALSE)
-	momsofmalesgeno<-left_join(momsofmales,genoUnique[,c(2,8:(snp_length+7))])
+	momsofmalesgeno<-genoUnique[,c(2,8:(snp_length+7))] %>% filter(Indiv %in% momsofmales)
 	
 	dadsoffemales<-indivlistgeno[indivlistgeno$Year==year & indivlistgeno$Category=='nestling' & indivlistgeno$Sex==2,'Dad']
-	dadsoffemales<-data.frame(Indiv=dadsoffemales[!is.na(dadsoffemales)],stringsAsFactors=FALSE)
-	dadsoffemalesgeno<-left_join(dadsoffemales,genoUnique[,c(2,8:(snp_length+7))])
+	dadsoffemalesgeno<-genoUnique[,c(2,8:(snp_length+7))] %>% filter(Indiv %in% dadsoffemales)
 	
 	#Moms don't contribute to daughters on Z so skip these
 	#momsoffemales<-indivlist[indivlist$Year==year & indivlist$Category=='nestling' & indivlist$Sex==2,'Mom']
 	#momsoffemales<-data.frame(USFWS=momsoffemales[!is.na(momsoffemales)],stringsAsFactors=FALSE)
 	#momsoffemalesgeno<-merge(momsoffemales,genoUnique[,c(1,8:256)],by='USFWS',all.x=TRUE)
 	
-	for(snp in names(indivlistgeno)[8:(snp_length+7)])
-	{
-		sampleFreq[SNPyr==year & SNPcat=='xMdad',snp]<-mean(dadsofmalesgeno[,snp],na.rm=TRUE)/2
-		sampleFreq[SNPyr==year & SNPcat=='xMmom',snp]<-mean(momsofmalesgeno[,snp],na.rm=TRUE)
+	for(snp in names(indivlistgeno)[8:(snp_length+7)]){
+		sampleFreq[SNPyr==year & SNPcat=='xMdad',snp]<-mean(unlist(dadsofmalesgeno[,snp]),na.rm=TRUE)/2
+		sampleFreq[SNPyr==year & SNPcat=='xMmom',snp]<-mean(unlist(momsofmalesgeno[,snp]),na.rm=TRUE)
 		
-		sampleFreq[SNPyr==year & SNPcat=='xFdad',snp]<-mean(dadsoffemalesgeno[,snp],na.rm=TRUE)/2
+		sampleFreq[SNPyr==year & SNPcat=='xFdad',snp]<-mean(unlist(dadsoffemalesgeno[,snp]),na.rm=TRUE)/2
 		#sampleFreq[SNPyr==year & SNPcat=='xFmom',snp]<-mean(momsoffemalesgeno[,snp],na.rm=TRUE)/2
 	}
 }
@@ -262,12 +268,10 @@ for(year in c(1999:2013)){
 	sampleFreq[SNPyr==year & SNPcat=='xMfam',c(3:(snp_length+2))]<-0.5*
 		(sampleFreq[SNPyr==year & SNPcat=='xMdad',c(3:(snp_length+2))]+
 		sampleFreq[SNPyr==year & SNPcat=='xMmom',c(3:(snp_length+2))]) 
-	  #here we multiply mom by 0.5 since her contribution makes up only 1/2 of her son's genotype
-	
+
 	sampleFreq[SNPyr==year & SNPcat=='xFfam',c(3:(snp_length+2))]<-
 	  sampleFreq[SNPyr==year & SNPcat=='xFdad',c(3:(snp_length+2))]
-	  #here we don't multiply dad by 0.5 since his contribution makes up 100% of his daughter's genotype
-		
+
 	sampleFreq[SNPyr==year & SNPcat=='xMmend',c(3:(snp_length+2))]<-
 		sampleFreq[SNPyr==year & SNPcat=='xMb',c(3:(snp_length+2))]-
 		sampleFreq[SNPyr==year & SNPcat=='xMfam',c(3:(snp_length+2))]
@@ -308,6 +312,7 @@ for(year in c(1999:2013)){
 
 
 #save output
+#save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_Z.ldprune.rdata",sep=''))
 save(sampleVar,file=paste("working_files/intermediate_files/sampleVar_Z.rdata",sep=''))
 
 
