@@ -1,0 +1,7 @@
+Category	propterm	sampleCat	errCat	errCov
+MSsq	propMS	xMs-xt	errMS-errT	pMspterrMSerrT
+FSsq	propFS	xFs-xt	errFS-errT	pFspterrFSerrT
+MIsq	propMI	xMi-xt	errMI-errT	pMipterrMIerrT
+FIsq	propFI	xFi-xt	errFI-errT	pFipterrFIerrT
+MBsq	propMB	xMb-xt	errMB-errT	pMbpterrMBerrT
+FBsq	propFB	xFb-xt	errFB-errT	pFbpterrFBerrT

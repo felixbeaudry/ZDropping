@@ -580,33 +580,152 @@ AZ_AFVA$year_adj <- AZ_AFVA$Year
 AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] <- AZ_AFVA$year_adj[AZ_AFVA$chrom == "A"] + 0.25
 varp_title2 <- expression(paste("Proportional Contribution to ",Delta, "p variance"))
 
-pdf(paste("fig_S8_oct14.pdf",sep=''),width=5.5,height=4)
+pdf(paste("fig_S7_jul13.pdf",sep=''),width=5.5,height=4)
 
-ggplot(data=AZ_AFVA, aes(x=year_adj, y=prop)) + 
-  geom_hline(yintercept = 0,alpha=0.5)+
+base_font_size = 8
+
+plot_grid(
   
-  # geom_ribbon(aes(x = Year, ymin = q5_prop, ymax = q95_prop, alpha = chrom)) +
-  #geom_errorbar(aes(ymin=q5_prop, ymax=q95_prop,color=Category3), width=.1,alpha=0.5) +
+  ggplot(data=AZ_AFVA %>% filter(supercategory == "Survivor"), aes(x=year_adj, y=prop)) + 
+    geom_hline(yintercept = 0,alpha=0.5,size=0.25)+
+    
+    #  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
+    
+    geom_point(aes(color=Category2,shape=chrom),size=0.75) + 
+    facet_grid(  supercategory ~sexCat,scales="free")+
+    
+    theme_bw(base_size = base_font_size) + 
+    scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
+    scale_color_manual(values=fills_to_use[8])+  
+    scale_shape_manual(values=c(16,1)) +
+    # scale_linetype_manual(values=c("solid","dashed")) +
+    #  labs(y=varp_title2,x="Year",color="Category",linetype="") + 
+    theme(strip.background =element_rect(fill="white")) +
+    geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 0.5,dl.trans(x = x + .2))) +
+    theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) +
+    coord_cartesian(ylim = c(-0.05, 0.4))  +
+    
+    guides(color=FALSE,shape=FALSE,linetype=FALSE) +  labs(y="",x="Year",color="Category",linetype="") + theme(
+      strip.background = element_blank(),
+      strip.text.x = element_blank()
+    )  + theme(
+      axis.text.x = element_blank(),
+      axis.title.x = element_blank())
+  ,
+  ggplot(data=AZ_AFVA %>% filter(supercategory == "Cov(S,B)"), aes(x=year_adj, y=prop)) + 
+    geom_hline(yintercept = 0,alpha=0.5,size=0.25)+
+    
+    #  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
+    
+    geom_point(aes(color=Category2,shape=chrom),size=0.75) + 
+    facet_grid(  supercategory ~sexCat,scales="free")+
+    
+    theme_bw(base_size = base_font_size) + 
+    scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
+    scale_color_manual(values=fills_to_use[c(3,7,9)])+  
+    scale_shape_manual(values=c(16,1)) +
+    # scale_linetype_manual(values=c("solid","dashed")) +
+    theme(strip.background =element_rect(fill="white")) +
+    geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 0.5,dl.trans(x = x + .2))) +
+    theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) +
+    coord_cartesian(ylim = c(-0.2, 0.3)) +
+    
+    guides(color=FALSE,shape=FALSE,linetype=FALSE) +  labs(y="",x="Year",color="Category",linetype="") + theme(
+      strip.background = element_blank(),
+      strip.text.x = element_blank()
+    )  + theme(
+      axis.text.x = element_blank(),
+      axis.title.x = element_blank())
+  ,
+  ggplot(data=AZ_AFVA %>% filter(supercategory ==  "Birth"), aes(x=year_adj, y=prop)) + 
+    geom_hline(yintercept = 0,alpha=0.5,size=0.25)+
+    
+    #  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
+    
+    geom_point(aes(color=Category2,shape=chrom),size=0.75) + 
+    facet_grid(  supercategory ~sexCat,scales="free")+
+    
+    theme_bw(base_size = base_font_size) + 
+    scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
+    scale_color_manual(values=fills_to_use[1])+  
+    scale_shape_manual(values=c(16,1)) +
+    theme(strip.background =element_rect(fill="white")) +
+    geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 0.5,dl.trans(x = x + .2))) +
+    theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) +
+    
+    coord_cartesian(ylim = c(-0.1, 0.55)) +
+    
+    guides(color=FALSE,shape=FALSE,linetype=FALSE) +  labs(y="",x="Year",color="Category",linetype="") + theme(
+      strip.background = element_blank(),
+      strip.text.x = element_blank()
+    )  + theme(
+      axis.text.x = element_blank(),
+      axis.title.x = element_blank())
+  ,
   
-  geom_point(aes(color=Category3,shape=chrom),size=0.75) + 
- # geom_line(aes(linetype=chrom,color=Category3)) + 
-  guides(color=FALSE,linetype=FALSE) +
-  #facet_grid(SexCat ~ Supercategory,scales="free")+
-  facet_grid(  supercategory ~sexCat,scales="free")+
+  ggplot(data=AZ_AFVA %>% filter(supercategory ==  "Cov(I,B)"), aes(x=year_adj, y=prop)) + 
+    geom_hline(yintercept = 0,alpha=0.5,size=0.25)+
+    
+    #  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
+    
+    geom_point(aes(color=Category2,shape=chrom),size=0.75) + 
+    
+    facet_grid(  supercategory ~sexCat,scales="free")+
+    
+    theme_bw(base_size = base_font_size) + 
+    scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
+    scale_color_manual(values=fills_to_use[c(5,2,6)])+  
+    scale_shape_manual(values=c(16,1)) +
+    # scale_linetype_manual(values=c("solid","dashed")) +
+    
+    theme(strip.background =element_rect(fill="white")) +
+    geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 0.5,dl.trans(x = x + .2))) +
+    theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) +
+    
+    coord_cartesian(ylim = c(-0.05, 0.1))  +
+    
+    guides(color=FALSE,shape=FALSE,linetype=FALSE) +  labs(y="",x="Year",color="Category",linetype="") + theme(
+      strip.background = element_blank(),
+      strip.text.x = element_blank()
+    )  + theme(
+      axis.text.x = element_blank(),
+      axis.title.x = element_blank())
+  ,
+  ggplot(data=AZ_AFVA %>% filter(supercategory ==  "Immigrant"), aes(x=year_adj, y=prop)) + 
+    geom_hline(yintercept = 0,alpha=0.5,size=0.25)+
+    
+    #  geom_line(aes(linetype=chrom,color=Category2),alpha=0.5) + 
+    
+    geom_point(aes(color=Category2,shape=chrom),size=0.75) + 
+    
+    facet_grid(  supercategory ~sexCat,scales="free")+
+    
+    theme_bw(base_size = base_font_size) + 
+    scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
+    scale_color_manual(values=fills_to_use[4])+  
+    scale_shape_manual(values=c(16,1)) +
+    # scale_linetype_manual(values=c("solid","dashed")) +
+    theme(strip.background =element_rect(fill="white")) +
+    geom_dl(aes(label = Category4,color=Category2), method = list("last.qp",cex = 0.5,dl.trans(x = x + .2))) +
+    theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) +
+    
+    coord_cartesian(ylim = c(-0.01, 0.08)) +
+    
+    guides(color=FALSE,shape=FALSE,linetype=FALSE) +  labs(y="",x="Year",color="Category",linetype="") + theme(
+      strip.background = element_blank(),
+      strip.text.x = element_blank()
+    )  + theme(
+      axis.text.x = element_blank(),
+      axis.title.x = element_blank())
   
-  theme_bw(base_size = 8) + 
-  scale_x_continuous(breaks=c(2000,2005,2010),limits = c(1999,2015))+  
-  scale_color_manual(
-    #breaks=c("FM","MF"),
-    values=fills_to_use)+  
-  scale_shape_manual(values=c(16,1)) +
   
-  labs(y=varp_title2,x="Year",color="Category",linetype="") + 
-  theme(strip.background =element_rect(fill="white")) +
-  geom_dl(aes(label = Category4,color=Category3), method = list("last.qp",cex = 0.5,dl.trans(x = x + .2))) +
-  theme( panel.grid.minor = element_blank(),panel.grid.major = element_blank()) +
-  coord_cartesian(ylim = c(-0.25, 0.5))
+  ,  labels = NA, ncol = 1, align = 'v',axis='rl')
+
+
+
+
 
 dev.off()
+
 
 

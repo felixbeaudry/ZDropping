@@ -1,0 +1,16 @@
+Category	prop1	prop2	sampleCat	errCat1 errCat2	errCov
+MSMI	propMS	propMI	xMsxMi	xMserrMI	errMSxMi	errMSerrMI
+MSMB	propMS	propMB	xMsxMb	xMserrMB	errMSxMb	errMSerrMB
+MIMB	propMI	propMB	xMixMb	xMierrMB	errMIxMb	errMIerrMB
+FSFI	propFS	propFI	xFsxFi	xFserrFI	errFSxFi	errFSerrFI
+FSFB	propFS	propFB	xFsxFb	xFserrFB	errFSxFb	errFSerrFB
+FIFB	propFI	propFB	xFixFb	xFierrFB	errFIxFb	errFIerrFB
+MSFS	propMS	propFS	xMsxFs	xMserrFS	errMSxFs	errMSerrFS
+MIFI	propMI	propFI	xMixFi	xMierrFI	errMIxFi	errMIerrFI
+MBFB	propMB	propFB	xMbxFb	xMberrFB	errMBxFb	errMBerrFB
+MSFI	propMS	propFI	xMsxFi	xMserrFI	errMSxFi	errMSerrFI
+MSFB	propMS	propFB	xMsxFb	xMserrFB	errMSxFb	errMSerrFB
+MIFB	propMI	propFB	xMixFb	xMierrFB	errMIxFb	errMIerrFB
+FSMI	propFS	propMI	xFsxMi	xFserrMI	errFSxMi	errFSerrMI
+FSMB	propFS	propMB	xFsxMb	xFserrMB	errFSxMb	errFSerrMB
+FIMB	propFI	propMB	xFixMb	xFierrMB	errFIxMb	errFIerrMB
