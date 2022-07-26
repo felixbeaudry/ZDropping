@@ -268,7 +268,7 @@ OBSvEXPer <- function(core_data,alleleFreqVarAvg,chrom){
   dev.off()
   
   print(
-    cor(EO$V2, EO$sum)
+    c("correlation: ",cor(EO$V2, EO$sum,method =  "spearman"))
   )
   EO_lm <- lm(V2~ 0 + sum,data=EO)
   print(
@@ -904,4 +904,9 @@ ggplot(AZ_baseVprune,aes(x=prop,y=prop_prune,color=Category2,shape=chrom)) +
   theme(aspect.ratio = 1) 
 
 dev.off()
+
+cor(AZ_baseVprune$prop[AZ_baseVprune$chrom == "A"],AZ_baseVprune$prop_prune[AZ_baseVprune$chrom == "A"])
+cor(AZ_baseVprune$prop[AZ_baseVprune$chrom == "Z"],AZ_baseVprune$prop_prune[AZ_baseVprune$chrom == "Z"])
+
+
 
