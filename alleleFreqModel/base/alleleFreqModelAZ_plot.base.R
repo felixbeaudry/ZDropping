@@ -233,6 +233,7 @@ mendAndFamer <- function(birthCatFile,core_data,prop_data){
 }
 
 OBSvEXPer <- function(core_data,alleleFreqVarAvg,chrom){
+  
   obsDiff <- laply(c(2000:2013), function(x) {
     yr<-as.character(x)
     cbind(yr,(core_data[core_data$Year==x & core_data$Category=='xt1-xt' & core_data$type == 'sample','avg'] 
@@ -266,9 +267,9 @@ OBSvEXPer <- function(core_data,alleleFreqVarAvg,chrom){
     theme(aspect.ratio = 1)
   )
   dev.off()
-  
+  cor_summary <- cor.test(EO$V2, EO$sum,method =  "spearman")
   print(
-    c("correlation: ",cor(EO$V2, EO$sum,method =  "spearman"))
+    cor_summary
   )
   EO_lm <- lm(V2~ 0 + sum,data=EO)
   print(
@@ -905,8 +906,8 @@ ggplot(AZ_baseVprune,aes(x=prop,y=prop_prune,color=Category2,shape=chrom)) +
 
 dev.off()
 
-cor(AZ_baseVprune$prop[AZ_baseVprune$chrom == "A"],AZ_baseVprune$prop_prune[AZ_baseVprune$chrom == "A"])
-cor(AZ_baseVprune$prop[AZ_baseVprune$chrom == "Z"],AZ_baseVprune$prop_prune[AZ_baseVprune$chrom == "Z"])
+cor.test(AZ_baseVprune$prop[AZ_baseVprune$chrom == "A"],AZ_baseVprune$prop_prune[AZ_baseVprune$chrom == "A"],method = "spearman")
+cor.test(AZ_baseVprune$prop[AZ_baseVprune$chrom == "Z"],AZ_baseVprune$prop_prune[AZ_baseVprune$chrom == "Z"],method = "spearman")
 
 
 
