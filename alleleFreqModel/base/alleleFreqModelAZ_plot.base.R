@@ -882,8 +882,12 @@ dev.off()
 library(data.table)
 
 AZ_AFVA_prune <- fread('~/Desktop/ZDropping/jul8/LDpruned1June/AZ_AFVA_prune.txt')
-AZ_AFVA_prune <- AZ_AFVA_prune[,c("Category","Year","prop","chrom")]
+AZ_AFVA_prune$CIsize_prune <- AZ_AFVA_prune$q95_prop - AZ_AFVA_prune$q5_prop
+
+AZ_AFVA_prune <- AZ_AFVA_prune[,c("Category","Year","prop","CIsize_prune","chrom")]
 names(AZ_AFVA_prune)[3] <- "prop_prune"
+
+AZ_AFVA$CIsize <- AZ_AFVA$q95_prop - AZ_AFVA$q5_prop
 
 AZ_baseVprune <- left_join(AZ_AFVA,AZ_AFVA_prune)
 
@@ -909,5 +913,7 @@ dev.off()
 cor.test(AZ_baseVprune$prop[AZ_baseVprune$chrom == "A"],AZ_baseVprune$prop_prune[AZ_baseVprune$chrom == "A"],method = "spearman")
 cor.test(AZ_baseVprune$prop[AZ_baseVprune$chrom == "Z"],AZ_baseVprune$prop_prune[AZ_baseVprune$chrom == "Z"],method = "spearman")
 
-
+#compare size of confidence intervals for full and pruned set
+wilcox.test(AZ_AFVA$CIsize[AZ_AFVA$chrom == "A"],AZ_AFVA$CIsize[AZ_AFVA$chrom == "Z"])
+#t.test(AZ_AFVA$CIsize[AZ_AFVA$chrom == "Z"],AZ_AFVA$CIsize_prune[AZ_AFVA$chrom == "Z"])
 
