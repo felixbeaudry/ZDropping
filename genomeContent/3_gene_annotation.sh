@@ -1,11 +1,10 @@
 #genome BUSCO, to set base-line
-#SBATCH -c 20 --mem=50G
 
-genome_version = FSJV2
+genome_version = FSJ2
 
 module load busco/5.2.2
 busco -m genome \
-    -i /scratch/nchen11_lab/pacbio/${genome_version}.mask/FSJ.hifiasm.scaff.fasta.masked \
+    -i ${genome_version}.mask/${genome_version}.fasta.masked \
     -o ${genome_version}.hardmasked.busco -l aves_odb10 -f -c 20
 
 ##PROTEIN##
@@ -33,22 +32,19 @@ module unload perl/5.24.0/b1
 module load braker/2.1.6 diamond/0.9.24/b2 prothint/2.6.0 genemark/b1 augustus/3.4.0 perl/5.32.0/b1
 
 #ID runs, in case you run many times (which you very likely will)
-run=r110122
-
-mkdir /scratch/fbeaudry/BRAKER2/${run}
 
 perl braker/2.1.6/scripts/braker.pl --softmasking --cores=21 --gff3 \
     --epmode --species ${genome_version} --useexisting \
-    --genome=/scratch/nchen11_lab/pacbio/FSJV3.mask/FSJ.V3.fa.masked \
+    --genome=${genome_version}.fa.masked \
     --prot_seq=all_proteins.nospe.fa \
-    --workingdir=/scratch/fbeaudry/BRAKER2/${run} \
-    --DIAMOND_PATH=/software/diamond/0.9.24/b2/bin/ \
-    --PROTHINT_PATH=/software/prothint/2.6.0/bin/ \
-    --GENEMARK_PATH=/software/genemark/4.68 \
-    --AUGUSTUS_SCRIPTS_PATH=/software/augustus/3.4.0/scripts \
-    --AUGUSTUS_BIN_PATH=/software/augustus/3.4.0/bin \
-    --CDBTOOLS_PATH=/home/fbeaudry/cdbfasta/ \
-    --AUGUSTUS_CONFIG_PATH=/home/fbeaudry/FSJgenome/augustus/Augustus/config/ 
+    --workingdir=BRAKER2/${run} \
+    --DIAMOND_PATH=diamond/0.9.24/b2/bin/ \
+    --PROTHINT_PATH=prothint/2.6.0/bin/ \
+    --GENEMARK_PATH=genemark/4.68 \
+    --AUGUSTUS_SCRIPTS_PATH=augustus/3.4.0/scripts \
+    --AUGUSTUS_BIN_PATH=augustus/3.4.0/bin \
+    --CDBTOOLS_PATH=cdbfasta/ \
+    --AUGUSTUS_CONFIG_PATH=augustus/Augustus/config/ 
 
 module unload python3/3.8.3
 
