@@ -1,6 +1,5 @@
 #script to plot the genetic contributions of male and female immigrants for autosomes and Z - fig 3
-#Rose Driscoll
-#Last updated 05 October 2021
+#Rose Driscoll & Felix Beaudry
 
 library(dplyr)
 library(ggplot2)
@@ -43,10 +42,11 @@ pedigree_immdata_breeder_nonbreeder_imms <- filter(pedigree_immdata, !is.na(ImmC
   mutate(does_breed = ifelse(Indiv %in% pedigree_immdata$Dad, TRUE, 
                              ifelse(Indiv %in% pedigree_immdata$Mom, TRUE, FALSE)))
 # Now count up how many imms that end up breeding or not come in each year
-pedigree_immdata_breeder_nonbreeder_imms_count <- group_by(pedigree_immdata_breeder_nonbreeder_imms, ImmCohort, Sex, does_breed) %>%
-  dplyr::summarize(num_imms = n()) %>%
-  complete(ImmCohort, Sex, does_breed, fill = list(num_imms = 0)) %>%
-  filter(!is.na(ImmCohort))
+pedigree_immdata_breeder_nonbreeder_imms_count <- pedigree_immdata_breeder_nonbreeder_imms %>%
+  group_by( ImmCohort, Sex, does_breed) %>%
+  dplyr::reframe(num_imms = n()) %>% 
+  tidyr::complete(ImmCohort, Sex, does_breed, fill = list(num_imms = 0))
+
 pedigree_immdata_breeder_nonbreeder_imms_perc <- pedigree_immdata_breeder_nonbreeder_imms_count %>%
   group_by( ImmCohort,does_breed) %>% transmute(Sex, percent = num_imms/sum(num_imms))
 # make males negative
@@ -64,11 +64,12 @@ pedigree_immdata_breeder_nonbreeder_imms_count_males_negative <- mutate(pedigree
 # plot unsexed birds
 (unsexed_breed_nonbreed <- ggplot(filter(pedigree_immdata_breeder_nonbreeder_imms_count_males_negative, Sex == 0)) +
     geom_bar(aes(x = ImmCohort, y= num_imms_males_negative, fill = interaction(does_breed, Sex)), position = "stack", stat = "identity", alpha = 0.75) +
-    scale_fill_manual(values = c("gray85")) +
+  #  scale_fill_manual(values = c("gray85")) +
     labs(x = "Year", y = "") +
     plottheme +
     scale_y_continuous(breaks = c(0, 10, 20)) +
-    theme(legend.position = "none", plot.margin=unit(c(0.2,0.1,0,0.15),'cm')))
+    theme(legend.position = "none", plot.margin=unit(c(0.2,0.1,0,0.15),'cm'))
+  )
 # plot to make a legend
 for_legend <- mutate(pedigree_immdata_breeder_nonbreeder_imms_count_males_negative, fill_group = paste(does_breed, Sex, sep = "."))
 for_legend$fill_group <- factor(for_legend$fill_group, levels = c("FALSE.2", "FALSE.1", "FALSE.0", "TRUE.2", "TRUE.1"))
@@ -84,7 +85,9 @@ sexed_unsexed_breed_nonbreed_plot <- plot_grid(sexed_breed_nonbreed, unsexed_bre
 sexed_unsexed_breed_nonbreed_plot_w_legend <- plot_grid(sexed_unsexed_breed_nonbreed_plot, sexed_unsexed_breed_nonbreed_legend, ncol = 2, nrow = 1, rel_widths = c(0.8, 0.25))
 
 #linear model
-immigrating_lm <- lm(data=pedigree_immdata_breeder_nonbreeder_imms_count, num_imms ~ Sex + ImmCohort)
+
+pedigree_immdata_breeder_nonbreeder_imms_count$ImmCohort_zeroed <- pedigree_immdata_breeder_nonbreeder_imms_count$ImmCohort - min(pedigree_immdata_breeder_nonbreeder_imms_count$ImmCohort)
+immigrating_lm <- lm(data=pedigree_immdata_breeder_nonbreeder_imms_count, num_imms ~ Sex + ImmCohort_zeroed)
 summary(immigrating_lm)
 
 
