@@ -1,6 +1,6 @@
 #script to make input files for alleleFreqModel from plink and pedigree
-#Felix Beaudry & Rose Driscoll 
-#Last updated: Oct 15 2021
+#Felix Beaudry & Rose Driscoll & Nancy Chen
+#Last updated: May 31 2022
 
 library(tidyverse)
 library(data.table)
@@ -8,7 +8,7 @@ library(data.table)
 
 ####top####
 
-ped_geno <- fread('genotypeFiles/geno.anon.ped')
+ped_geno <- read.table('genotypeFiles/geno.anon.ped', header = FALSE, sep = ' ', stringsAsFactors = FALSE)
 ped <- ped_geno[,c(1:6)]
 
 write.table(ped, 
@@ -21,12 +21,12 @@ write.table(ped,
             eol = "\n", na = "NA", dec = ".", row.names = FALSE, 
             col.names = TRUE, qmethod = c("escape", "double"))
 
-map<-read.table('genotypeFiles/geno.map')
-map$map_pos <- seq(1,length(map$V1))
+map<-read.table('genotypeFiles/geno.anon.map')
 write.table(map, 
             file = "alleleFreqModel/working_files/geno.map", append = F, quote = FALSE, sep = " ", 
             eol = "\n", na = "NA", dec = ".", row.names = FALSE, 
             col.names = TRUE, qmethod = c("escape", "double"))
+map$map_pos <- seq(1, length(map$V1))
 
 #calculate positions for data subsets
 #Apos <- sort(c(5+(2*map$map_pos[map$V1 %in% c(0:38)]),6+(2*map$map_pos[map$V1 %in% c(0:38)])))
@@ -63,39 +63,32 @@ indivlist <- fread('genotypeFiles/indivlist.txt')
 #indivlist <- left_join(indivlist,ped,by=c("USFWS"="Indiv"))
 #names(indivlist)<-c('Year','Indiv','Category','Genotyped','Mom','Dad','Sex','simSex')
 
-indivlist$Indiv <- as.character(indivlist$Indiv)
-
-#
-ped_genod <- ped_geno[ped_geno$ID %in% indivlist$Indiv[indivlist$Genotyped == "Y"],]
-
-tmpped<-ped_genod
-ped_genod<-tmpped[,2:5]
-
-#convert genotype data to one column per SNP
-for (x in seq(7,(6 + length(map$V2)*2),by=2)) { #cycle through SNPs
-  cols <- c(x,x+1)
-  thisped<-tmpped[,..cols]
-  thisped$geno<-rowSums(thisped[,1:2])-2
-  thisped[thisped$geno<0,'geno']<-NA
-  ped_genod<-cbind(ped_genod,thisped$geno)
+# convert genotype data to one column per SNP
+tmpped <- ped_geno[ped_geno$V7 != 0, ]
+ped_geno_sumd <- tmpped[, 2:5] 
+# cycle through SNPs
+for (x in seq(7, (6 + length(map$V2) * 2), by = 2)) {
+	thisped <- tmpped[, c(x, x+1)]
+	thisped$geno <- rowSums(thisped[, 1:2]) - 2
+	thisped[thisped$geno < 0, 'geno'] <- NA
+	ped_geno_sumd <- cbind(ped_geno_sumd, thisped$geno)
 }
+names(ped_geno_sumd)<-c('Indiv', 'Dad', 'Mom', 'Sex', paste("SNP",c(1:(length(map$V2))), sep = ""))
 
-names(ped_genod)<-c('Indiv','Dad','Mom','Sex',paste("SNP",c(1:(length(map$V2))),sep=""))
+# separate into autosomal and Z SNPs
+ped_geno_sumd_A <- ped_geno_sumd[, c(1:4, 4 + map$map_pos[map$V1 %in% c(0:32)])]
+ped_geno_sumd_Z <- ped_geno_sumd[, c(1:4, 4 + map$map_pos[map$V1 == 39])]
 
-#correct female genotypes on Z to indicate that they are heterozygous (1 instead of 2)
-Zpos_g <- c(4 + map$map_pos[map$V1 == 39])
-ped_genod[ped_genod$Sex==2,Zpos_g] <- ped_genod[ped_genod$Sex==2,..Zpos_g]/2
+# combine
+indivlistgenoA <- left_join(indivlist, ped_geno_sumd_A[,c(1, 5:length(ped_geno_sumd_A))], by = c("Indiv" = "Indiv"))
+indivlistgenoZ <- left_join(indivlist, ped_geno_sumd_Z[,c(1, 5:length(ped_geno_sumd_Z))], by = c("Indiv" = "Indiv"))
 
-ped_genod$Indiv <- as.character(ped_genod$Indiv)
+# sex encoding: 1 = male, 2 = female
+maleCode <- 1
+femaleCode <- 2
 
-genocols <- c(1,5:length(ped_genod))
-indivlistgeno <- left_join(indivlist,ped_genod[,..genocols],by=c("Indiv"="Indiv"))
-
-Apos_g <- c(8 + map$map_pos[map$V1 %in% c(0:38)])
-Zpos_g <- c(8 + map$map_pos[map$V1 == 39])
-
-indivlistgeno_A <- cbind.data.frame(indivlistgeno[,c(1:8)],indivlistgeno[,..Apos_g])
-indivlistgeno_Z <- cbind.data.frame(indivlistgeno[,c(1:8)],indivlistgeno[,..Zpos_g])
+# correct female genotypes on Z to indicate that they are heterozygous (1 instead of 2)
+indivlistgenoZ[indivlistgenoZ$simSex == femaleCode, c(8:length(indivlistgenoZ))] <- indivlistgenoZ[indivlistgenoZ$simSex == femaleCode, c(8:length(indivlistgenoZ))] / 2
 
 save(indivlistgeno_A,file='alleleFreqModel/working_files/intermediate_files/indivlistgeno_A.rdata')
 save(indivlistgeno_Z,file='alleleFreqModel/working_files/intermediate_files/indivlistgeno_Z.rdata')

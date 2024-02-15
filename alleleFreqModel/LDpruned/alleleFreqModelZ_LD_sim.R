@@ -1,7 +1,7 @@
 #script to model variance in allele frequency change over time
 #run sims for n SNPs to get empirical estimates of covariances and errors for Z loci
 #Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
-#Last updated: Jul 7 2021
+#Last updated: 31 May 2022
 
 library(plyr)
 library(foreach)
@@ -12,19 +12,14 @@ library(dplyr)
 ####set variables and make/import tables####
 #number of SNPs to simulate
 nloci<-100000
-#nloci=2
 
 #get date script is run
 today<-format(Sys.Date(),format="%d%b%Y")
 
 #get input files: fixed list of indiv in each Category each year
-load(file='~/Downloads/genedropZplinkInput/indivlistgenoZpruned_01Jun2022.rdata')
-indivlistgeno <- indivlistgenoZ
-
-
-#indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
-#indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
-#indivlistgeno$Mom<-as.character(indivlistgeno$Mom)
+load(file='../working_files/intermediate_files/indivlistgeno_Zpruned.rdata')
+indivlistgeno <- indivlistgenoZ_LD[,-c(7)]
+colnames(indivlistgeno)[1:7] <- c("Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
 
 ####simulate starting genotypes####
 #get real frequency of each allele in 1990 (accounting for different total # of alleles in males & females)
@@ -172,10 +167,7 @@ simdataTrue<-merge(indivlist,simindivgenoAll[,c(2,8:(nloci+7))],
 
 
 #save
-save(simdataTrue,file='simdataTrueZ_pruned_01Jun2022.rdata')
-
-#simdataTrue[c(1:10),c(1:10)]
-#colnames(simdataTrue)[7] <- "Sex"
+save(simdataTrue,file='simdataTrueZ_pruned.rdata')
 
 ####calculate error in freq estimation due to sampling####
 
@@ -224,7 +216,7 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
 #stopCluster(cl)
 
 #save the data from this year
-save(sim,file=paste("SimAlleleFreqZYr_",year,"_pruned_01Jun2022.rdata",sep=''))
+save(sim,file=paste("SimAlleleFreqZYr_",year,"_pruned.rdata",sep=''))
 
 
 #Names for the values we just calculated (year and category/parameter)
@@ -247,10 +239,7 @@ for(year in c(1999:2013)){
   moms_of_sons<-data.frame(Indiv=moms_of_sons[!is.na(moms_of_sons)],stringsAsFactors=FALSE)
   #collect simulated moms of sons genotypes (including those simulated for ungenotyped indivs) from simdataTrueUnique
   moms_of_sons_geno<-merge(moms_of_sons,simdataTrueUnique[,c(1,8:(nloci+7))],by.x='Indiv',by.y='Indiv',
-                           all.x=TRUE)
-  
-  #simdataTrueUnique[,c(1:8)]
-  
+                           all.x=TRUE)  
   
   #collect simulated moms of sons genotypes (sampled based on real genotyping status) from simdataSampleUnique
   moms_of_sons_genoSample<-merge(moms_of_sons,simdataSampleUnique[,c(1,8:(nloci+7))],by.x='Indiv',
@@ -393,7 +382,7 @@ for(year in c(1999:2013)){
   # stopCluster(cl)
   
   #save p and x results from this year (in case run gets interrupted)
-  save(sim,file=paste("SimAlleleFreqZYr_",year,"_pruned_01Jun2022.rdata",sep=''))
+  save(sim,file=paste("SimAlleleFreqZYr_",year,"_pruned.rdata",sep=''))
   
   #categories (parameter names) and years to combine with the results of our calculations
   simName<-data.frame(Year=rep(year,each=69),Category=c(
@@ -434,7 +423,7 @@ simAlleleFreq[frqYr==1998 & frqCat=='errT',c(3:(nloci+2))]<-
   simAlleleFreq[frqYr==1998 & frqCat=='xt',c(3:(nloci+2))]-
   simAlleleFreq[frqYr==1998 & frqCat=='pt',c(3:(nloci+2))]
 
-save(simAlleleFreq,file="simAlleleFreqZ_SR_intermediate_pruned_01Jun2022.rdata")
+save(simAlleleFreq,file="simAlleleFreqZ_SR_intermediate_pruned.rdata")
 
 
 #calcuate error for each year based on difference b/w p and x
@@ -635,7 +624,7 @@ for(year in c(1999:2013)){
   
 }
 
-save(simAlleleFreq,file="simAlleleFreqZ_pruned_01Jun2022.rdata")
+save(simAlleleFreq,file="simAlleleFreqZ_pruned.rdata")
 
 ####calculate variances and covariances####
 simVar<-data.frame(Year=rep(c(1999:2013),each=115),Category=rep(c(
@@ -1028,4 +1017,4 @@ for(year in c(1999:2013)){
 }
 
 #save output
-save(simVar,file="simVarZ_pruned_01Jun2022.rdata")
+save(simVar,file=paste("simVarZ_pruned_",today,".rdata",sep=''))

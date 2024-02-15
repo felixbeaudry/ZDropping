@@ -21,12 +21,6 @@ plottheme <- theme( axis.line.x = element_line(colour="black",size=0.3), axis.li
                     legend.title = element_text(size=8), legend.key = element_rect(colour=NA,fill=NA), legend.key.size=unit(0.25,"cm"))
 
 #indivlist
-#load("working_files/simindivFIXmin2obs.rdata")
-#ped<-read.table('working_files/FSJpedgeno_Zsexlinked.ped',header=FALSE,sep=' ',stringsAsFactors=FALSE)
-#pedinfo <- ped[,1:5]
-#colnames(pedinfo) <- c("Family", "USFWS", "Dad", "Mom", "Sex")
-#indivlist <- merge(simindivFIXmin2obs[,1:6],pedinfo[,c(2,5)],by='USFWS')
-#indivlist <- indivlist[order(indivlist$Year),]
 load(file='working_files/intermediate_files/indivlistgeno_A.rdata')
 indivlist <- indivlistgeno_A[,c(1:8)]
 

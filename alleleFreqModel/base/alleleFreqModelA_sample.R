@@ -1,7 +1,7 @@
 #script to model variance in allele frequency change over time
 #estimate sample values using real data for autosomal loci
 #Nancy Chen, Rose Driscoll & Felix Beaudry
-#Last updated: 7 July 2021
+#Last updated: 9 May 2022
 
 library(plyr)
 library(tidyverse)
@@ -10,8 +10,8 @@ library(tidyverse)
 ####get & make starting data.frames####
 
 #get input files
-load(file='~/Downloads/genedropZplinkInput/indivlistgenoA_26Apr2022.rdata')
-indivlistgeno <- indivlistgenoA
+load(file='../working_files/intermediate_files/indivlistgeno_A.rdata')
+indivlistgeno <- indivlistgeno_A[,-c(7)]
 colnames(indivlistgeno)[1:7] <- c("Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
 
 ####allele frequencies####
@@ -38,7 +38,6 @@ SNPcat<-sampleFreq$Category
 
 igYear<-indivlistgeno$Year
 
-#snp="SNP1"
 for(snp in names(indivlistgeno)[8:length(indivlistgeno)]){
   
   # number of genotyped chromosomes
@@ -311,10 +310,10 @@ for(year in c(1999:2013)){
 	  mean(as.numeric(sampleFreq[SNPyr==year & SNPcat=='xFfam-xt',c(3:length(sampleFreq))])^2)
 }
 
-#today<-format(Sys.Date(),format="%d%b%Y")
 
 #save output
-save(sampleVar,file=paste("sampleVar_A9May.rdata",sep=''))
+today<-format(Sys.Date(),format="%d%b%Y")
+save(sampleVar,file=paste("sampleVarA_",today,".rdata",sep=''))
 
 
 

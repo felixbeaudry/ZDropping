@@ -1,6 +1,6 @@
 #script to analyze gene dropping results for tests of selection
 #Rose Driscoll and Nancy Chen
-#Last updated: 03 October 2021
+#Last updated: 19 January 2024
 
 
 library(dplyr)
@@ -8,7 +8,7 @@ library(plyr)
 
 ## First, the sex-linked SNPs
 
-snplist<-data.frame(SNP=1:249, Chr=rep("Z", times=249),stringsAsFactors=FALSE)
+snplist<-data.frame(SNP=1:250, Chr=rep("Z", times=249),stringsAsFactors=FALSE)
 
 #net change in allele freq between 1999-2013
 pval_1999to2013_sexlinked<-data.frame(snp=snplist$SNP,stringsAsFactors=FALSE)
@@ -177,8 +177,8 @@ for (i in snplist$SNP)
 ## Combine and save tables
 
 # re-number pseudoautosomal snps to come after sex-linked snps
-pval_1999to2013_pseudoautosomal$snp <- pval_1999to2013_pseudoautosomal$snp + 249
-pval_change_pseudoautosomal$snp <- pval_change_pseudoautosomal$snp + 249
+pval_1999to2013_pseudoautosomal$snp <- pval_1999to2013_pseudoautosomal$snp + 250
+pval_change_pseudoautosomal$snp <- pval_change_pseudoautosomal$snp + 250
 
 # combine tables
 pval_change <- bind_rows(pval_change_sexlinked, pval_change_pseudoautosomal)

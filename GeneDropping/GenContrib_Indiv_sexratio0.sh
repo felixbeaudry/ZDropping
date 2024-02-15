@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #pipeline for estimating expected genetic contributions of 926 individual breeders, assigning all unsexed individuals as females
-#input files: pedigree.txt, 926_breeders.txt, & IndivDataUSFWS.txt
+#input files: pedigree.txt, 926_breeders.txt, & IndivData.txt
 #Nancy Chen, Rose Driscoll and Felix Beaudry
 #Last updated: 27 Apr 2022
 

@@ -1,15 +1,15 @@
 #script to model variance in allele frequency change over time
 #estimate sample values using real data for Z loci
 #Nancy Chen, Rose Driscoll & Felix Beaudry
-#Last updated: 7 July 2021
+#Last updated: 9 May 2022
 
 library(plyr)
 library(tidyverse)
 
 
 ####get & make starting data.frames####
-load(file='~/Downloads/genedropZplinkInput/indivlistgenoZ_26Apr2022.rdata')
-indivlistgeno <- indivlistgenoZ
+load(file='../working_files/intermediate_files/indivlistgeno_Z.rdata')
+indivlistgeno <- indivlistgeno_Z[,-c(7)]
 colnames(indivlistgeno)[1:7] <- c("Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
 
 snp_length <- length(indivlistgeno)-7
@@ -309,6 +309,7 @@ for(year in c(1999:2013)){
 
 
 #save output
-save(sampleVar,file=paste("sampleVar_Z9May.rdata",sep=''))
+today<-format(Sys.Date(),format="%d%b%Y")
+save(sampleVar,file=paste("sampleVarZ_",today,".rdata",sep=''))
 
 

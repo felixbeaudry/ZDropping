@@ -1,8 +1,7 @@
 ## Plotting results of A & Z allele frequency model + simulations to estimate error
 ##  Felix Beaudry and Rose Driscoll 
 ## June 12 2021
-
-setwd('~/Desktop/ZDropping/jul8/LDpruned1June')
+## note: add correct dates to input file names before running
 
 library(plyr)
 library(ggplot2)
@@ -268,14 +267,14 @@ OBSvEXPer <- function(core_data,alleleFreqVarAvg,chrom){
 
 ####start calculations for autosomal loci####
 
-load(file='indivlistgenoA_26Apr2022.rdata')
+load(file='../working_files/intermediate_files/indivlistgeno_A.rdata')
 
 ## Number of all & Genotyped indivs; proportion of indivs in each category
-prop_A <- propsTabler(indivlistgenoA,chrom = "A")
+prop_A <- propsTabler(indivlistgeno_A,chrom = "A")
 
 #cat sample and sim tables
-load("sampleVar_A_pruned_01Jun2022.rdata") #samplevar
-load("simVarA_pruned_21Jun2022.rdata") #simvar
+load("sampleVarA_pruned.rdata") #samplevar
+load("simVarA_pruned.rdata") #simvar
 
 names(simVar) <- names(sampleVar)
 simVar$type <- "sim"
@@ -284,7 +283,7 @@ sampleVar$type <- "sample"
 core_data_A <- rbind(sampleVar,simVar) 
 
 #bootstrap from windows
-load("allVar_boot_A_w3.4mb_03Jun2022_pruned.rdata") #bootstrap
+load("allVar_boot_A_w3.4mb_pruned.rdata") #bootstrap
 allVar_q_A <- bootstrapper(allVar)
 
 #calculate final terms for each year, according to formula: (roughly) fraction of population * (change in frequency - error)
@@ -316,13 +315,13 @@ OBSvEXPer(core_data = core_data_A,alleleFreqVarAvg=alleleFreqVarAvg_A,chrom="A")
 ####start Z####
 
 #indivlist
-load(file='indivlistgenoZ_26Apr2022.rdata')
+load(file='../working_files/intermediate_files/indivlistgeno_Z.rdata')
 
-prop_Z <- propsTabler(indivlistgenoZ,chrom="Z")
+prop_Z <- propsTabler(indivlistgeno_Z,chrom="Z")
 
 
-load("sampleVar_Z_pruned_01Jun2022.rdata") #samplevar
-load("simVarZ_pruned_01Jun2022.rdata") #simvar
+load("sampleVarZ_pruned.rdata") #samplevar
+load("simVarZ_pruned.rdata") #simvar
 
 names(simVar) <- names(sampleVar)
 simVar$type <- "sim"
@@ -331,7 +330,7 @@ sampleVar$type <- "sample"
 core_data_Z <- rbind(sampleVar,simVar) 
 
 
-load("allVar_boot_Z_w3.4mb_01Jun2022_pruned.rdata") #bootstrap
+load("allVar_boot_Z_w3.4mb_pruned.rdata") #bootstrap
 
 allVar_q_Z <- bootstrapper(allVar)
 

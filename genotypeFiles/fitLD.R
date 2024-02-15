@@ -1,6 +1,6 @@
 ####ld####
 
-ld.bychr <- fread('FSJfullPedFiltDogFINAL12July2016final.bychr.ld')[,-c(1,2,4,5)] %>% left_join(marey_zerod[,c(1,13,12)],by=c("SNP_A"="SNPname")) %>% left_join(marey_zerod[,c(1,13,12)],by=c("SNP_B"="SNPname")) %>% filter(homolog.x == homolog.y)
+ld.bychr <- fread('pedigree.bychr.ld')[,-c(1,2,4,5)] %>% left_join(marey_zerod[,c(1,13,12)],by=c("SNP_A"="SNPname")) %>% left_join(marey_zerod[,c(1,13,12)],by=c("SNP_B"="SNPname")) %>% filter(homolog.x == homolog.y)
 
 ld.bychr$mb_distance <- abs(ld.bychr$mb.x - ld.bychr$mb.y)
 

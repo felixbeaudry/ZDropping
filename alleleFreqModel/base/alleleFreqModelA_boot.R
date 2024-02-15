@@ -1,6 +1,6 @@
 #script to estimate variance in variance in allele frequency change over time by bootstrapping  for autosomal loci
 #Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
-#Last updated: Jul 7 2021
+#Last updated: 31 May 2022
 
 library(plyr)
 library(tidyr)
@@ -10,25 +10,23 @@ library(doParallel)
 library(data.table)
 `%notin%` <- Negate(`%in%`)
 
-##
-
-load(file='~/Downloads/genedropZplinkInput/indivlistgenoA_26Apr2022.rdata')
-indivlistgeno <- indivlistgenoA
+####get input files####
+load(file='../working_files/intermediate_files/indivlistgeno_A.rdata')
+indivlistgeno <- indivlistgeno_A[,-c(7)]
 colnames(indivlistgeno)[1:7] <- c("Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
 
 #A SNP info
-map<-read.table('~/Downloads/genedropZplinkInput/FSJfullPedFiltDogFINAL12July2016finalNumCoreDemoMAF05_V2positions.map')
+map <- fread('../working_files/geno.map')
 ASNPS <- map[map$V1 %in% c(0:38),]
 names(ASNPS) <- c('Chr', 'SNP', 'genMap', 'SNPpos')
-ASNPS$SNP_name <- names(indivlistgenoA[,-c(1:7)])
+ASNPS$SNP_name <- names(indivlistgeno[,-c(1:7)])
 ASNPS <- ASNPS[ASNPS$Chr %in% c(1:38),]
-ASNPS$map_pos <- seq(1,length(ASNPS$Chr))
 
-chip <- fread('~/Downloads/genedropZplinkInput/snp.annot.txt', fill = TRUE, header = TRUE)
-ASNPS_chip <- left_join(ASNPS, chip, by = c("SNP" = "snp.id"))
+chip <- fread('../../genomeContent/genome_files/snp_annotation.txt', fill = TRUE, header = TRUE)
+ASNPS_chip <- left_join(ASNPS, chip[, 1:4], by = c("SNP" = "SNP"))
 
-sizes <- fread('./working_files/FSJ.chrom.sizes')
-
+#which scaffolds to keep
+sizes <- fread('../working_files/FSJ.chrom.sizes')
 sizes <- sizes[sizes$V1 %in% c( 
   "ScYP8k313HRSCAF58ch1"   , "ScYP8k312HRSCAF54ch1A"   , "ScYP8k3629HRSCAF770ch2" ,  "ScYP8k3866HRSCAF1020ch3" , "ScYP8k311HRSCAF50ch4","ScYP8k314HRSCAF84ch4A"  ,
   "ScYP8k39HRSCAF32ch6" , "ScYP8k35HRSCAF18ch5"     , "ScYP8k34HRSCAF13ch7"   , "ScYP8k31HRSCAF1ch8"   ,  "ScYP8k33HRSCAF8ch9" , "ScYP8k32HRSCAF3ch10"   , 
@@ -41,7 +39,6 @@ nloci<- 5000 #set sim loci number relative to window size; regular sim nloci / g
 
 #loop across scaffolds making windows of SNPs
 win_global = 0
-#lg = "ScYP8k313HRSCAF58ch1"
 for(lg in unique(sizes$V1)){
   
   size_tmp <- sizes$V2[sizes$V1 == lg]
@@ -1418,6 +1415,7 @@ save(allVar,file=paste("allVar_int_boot_A_w",(w_size/1000000),"mb_",today,".rdat
 
 }
 
+#save output
 today<-format(Sys.Date(),format="%d%b%Y")
 save(allVar,file=paste("allVar_boot_A_w",(w_size/1000000),"mb_",today,".rdata",sep=''))
 

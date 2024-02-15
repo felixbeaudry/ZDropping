@@ -8,7 +8,7 @@ bwa index ${genome_version}.fa
 
 #align chip markers to primary assembly
 bwa mem ${genome_version} \
-	genome_files/beadchipSeq.fq >${genome_version}.beadChip.sam
+	genome_files/beadchipSeqAnon.fq >${genome_version}.beadChip.sam
 
 #make list of scaffold lengths
 python juicer/misc/generate_site_positions.py DpnII ${genome_version} \
@@ -18,7 +18,7 @@ awk 'BEGIN{OFS="\t"}{print $1, $NF}' ${genome_version}_DpnII.txt > ${genome_vers
 #makes an agp from sizes file, only designed for primary assembly
 Rscript --vanilla linkerScripts/make_agp.R ${genome_version}.chrom.sizes
 
-chromonomer-1.13/chromonomer -p genome_files/crimap.fixed.txt  \
+chromonomer-1.13/chromonomer -p genome_files/crimap.temp.txt  \
 	-o ./ \
 	-s ${genome_version}.beadChip.sam  \
 	-a ${genome_version}.agp \

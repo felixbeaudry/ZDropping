@@ -1,6 +1,6 @@
 #script to estimate variance in variance in allele frequency change over time by bootstrapping  for Z loci
 #Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
-#Last updated: Jul 7 2021
+#Last updated: 31 May 2022
 
 library(plyr)
 library(tidyr)
@@ -13,21 +13,21 @@ library(data.table)
 
 
 ####get input files####
-load(file='~/Downloads/genedropZplinkInput/indivlistgenoZpruned_01Jun2022.rdata')
-indivlistgeno <- indivlistgenoZ
+load(file='../working_files/intermediate_files/indivlistgeno_Zpruned.rdata')
+indivlistgeno <- indivlistgenoZ_LD[,-c(7)]
 colnames(indivlistgeno)[1:7] <- c("Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
 
 #Z SNP info
-map<-read.table('~/Downloads/genedropZplinkInput/FSJfullPedFiltDogFINAL12July2016finalNumCoreDemoMAF05_V2positions_pruned.map')
+map <- fread('../working_files/geno.pruned.map')
 ZSNPS <- map[map$V1 == 39 ,]
 names(ZSNPS) <- c('Chr', 'SNP', 'genMap', 'SNPpos')
-ZSNPS$map_pos <- seq(1,length(ZSNPS$V1))
 ZSNPS$SNP_name <- names(indivlistgeno[,-c(1:7)])
 
-chip <- fread('~/Downloads/genedropZplinkInput/snp.annot.txt', fill = TRUE, header = TRUE)
-ZSNPS_chip <- left_join(ZSNPS, chip, by = c("SNP" = "snp.id"))
+chip <- fread('../../genomeContent/genome_files/snp_annotation.txt', fill = TRUE, header = TRUE)
+ZSNPS_chip <- left_join(ZSNPS, chip, by = c("SNP" = "SNP"))
 
-sizes <- fread('./working_files/FSJ.chrom.sizes')
+#which scaffolds to keep
+sizes <- fread('../working_files/FSJ.chrom.sizes')
 Z_size <- sizes$V2[sizes$V1 %in% unique(ZSNPS_chip$scaffold)] 
 
 w_size = 3400000
@@ -143,8 +143,6 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   markers <- markersInPedOrder_chip_Z$SNP[markersInPedOrder_chip_Z$bootstrap == win]
   markers <- c(na.omit(markers))
     
-  #snp="SNP10732"
-  #match(snp,markers)
   for(snp in markers){ 
     sampleFreq[SNPyr==1998 & SNPcat=='nt',snp]<-
       2*sum(!is.na(indivlistgeno[igYear==1998&indivlistgeno$Sex==1,snp])) +
@@ -1353,6 +1351,7 @@ for(win in unique(na.omit(markersInPedOrder_chip_Z$bootstrap))){
   
 }
 
+#save output
 today<-format(Sys.Date(),format="%d%b%Y")
 save(allVar,file=paste("allVar_boot_Z_w",(w_size/1000000),"mb_",today,"_pruned.rdata",sep=''))
 

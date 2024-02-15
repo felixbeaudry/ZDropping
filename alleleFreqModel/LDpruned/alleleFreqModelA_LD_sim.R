@@ -1,7 +1,7 @@
 #script to model variance in allele frequency change over time
 #run sims for n loci to get empirical estimates of covariances and errors for autosomal loci
 #Nancy Chen & Graham Coop & Rose Driscoll & Felix Beaudry
-#Last updated: Jul 7 2021
+#Last updated: 21 June 2022
 
 library(plyr)
 library(foreach)
@@ -17,16 +17,10 @@ nloci<-100000
 #get date script is run
 today<-format(Sys.Date(),format="%d%b%Y")
 
-
-#get sample allele freq for simulations, from _sample script
-load(file='~/Downloads/genedropZplinkInput/indivlistgenoApruned_01Jun2022.rdata')
-indivlistgeno <- indivlistgenoA
+#get input files
+load(file='../working_files/intermediate_files/indivlistgeno_Apruned.rdata')
+indivlistgeno <- indivlistgenoA_LD[,-c(7)]
 colnames(indivlistgeno)[1:7] <- c("Year","Indiv", "Category", "Genotyped", "Mom", "Dad", "Sex")
-
-#indivlistgeno$Indiv<-as.character(indivlistgeno$Indiv)
-#indivlistgeno$Dad<-as.character(indivlistgeno$Dad)
-#indivlistgeno$Mom<-as.character(indivlistgeno$Mom)
-
 
 ####simulate starting genotypes####
 #get real frequency of each allele in 1990 (accounting for different total # of alleles in males & females)
@@ -177,9 +171,8 @@ simdataTrue<-merge(indivlist,simindivgenoAll[,c(2,8:(nloci+7))],
 
 
 #save
-save(simdataTrue,file='simdataTrueA_pruned_21Jun2022.rdata')
+save(simdataTrue,file='simdataTrueA_pruned.rdata')
 #load('working_files/intermediate_files/simdataTrueA.rdata')
-
 
 ####calculate error in freq estimation due to sampling####
 
@@ -229,7 +222,7 @@ sim<-foreach(i=names(simdataTrue)[8:(nloci+7)],.combine=cbind) %do% {
 #stopCluster(cl)
 
 #save the data from this year
-save(sim,file=paste("SimAlleleFreqAYr_",year,"_pruned_21Jun2022.rdata",sep=''))
+save(sim,file=paste("SimAlleleFreqAYr_",year,"_pruned.rdata",sep=''))
 
 #Names for the values we just calculated (year and category/parameter)
 simName<-data.frame(Year=rep(year,each=3),Category=c('pt','xt','errT'),stringsAsFactors=FALSE)
@@ -403,7 +396,7 @@ for(year in c(1999:2013)){
  # stopCluster(cl)
   #sim <- tmp[,3]
   #save p and x results from this year (in case run gets interrupted)
-  save(sim,file=paste("SimAlleleFreqA_",year,"_pruned_21Jun2022.rdata",sep=''))
+  save(sim,file=paste("SimAlleleFreqA_",year,"_pruned.rdata",sep=''))
   
   #categories (parameter names) and years to combine with the results of our calculations
   simName<-data.frame(Year=rep(year,each=72),Category=c(
@@ -443,7 +436,7 @@ simAlleleFreq[frqYr==1998 & frqCat=='errT',c(3:(nloci+2))]<-
   simAlleleFreq[frqYr==1998 & frqCat=='xt',c(3:(nloci+2))]-
   simAlleleFreq[frqYr==1998 & frqCat=='pt',c(3:(nloci+2))]
 
-save(simAlleleFreq,file="simAlleleFreqA_SR_intermediate_pruned_21Jun2022.rdata")
+save(simAlleleFreq,file="simAlleleFreqA_SR_intermediate_pruned.rdata")
 
 #calcuate error for each year based on difference b/w p and x
 for(year in c(1999:2013)){
@@ -526,7 +519,7 @@ for(year in c(1999:2013)){
     simAlleleFreq[frqYr==year & frqCat=='xt',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==(year-1) & frqCat=='xt',c(3:(nloci+2))]
 
-    simAlleleFreq[frqYr==year & frqCat=='xMs-xt',c(3:(nloci+2))]<-
+  simAlleleFreq[frqYr==year & frqCat=='xMs-xt',c(3:(nloci+2))]<-
     simAlleleFreq[frqYr==year & frqCat=='xMs',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==(year-1) & frqCat=='xt',c(3:(nloci+2))]
   simAlleleFreq[frqYr==year & frqCat=='xFs-xt',c(3:(nloci+2))]<-
@@ -552,7 +545,7 @@ for(year in c(1999:2013)){
     simAlleleFreq[frqYr==year & frqCat=='errT',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==(year-1) & frqCat=='errT',c(3:(nloci+2))]
 
-    simAlleleFreq[frqYr==year & frqCat=='errMS-errT',c(3:(nloci+2))]<-
+  simAlleleFreq[frqYr==year & frqCat=='errMS-errT',c(3:(nloci+2))]<-
     simAlleleFreq[frqYr==year & frqCat=='errMS',c(3:(nloci+2))]-
     simAlleleFreq[frqYr==(year-1) & frqCat=='errT',c(3:(nloci+2))]
   simAlleleFreq[frqYr==year & frqCat=='errFS-errT',c(3:(nloci+2))]<-
@@ -644,7 +637,7 @@ for(year in c(1999:2013)){
   
 }
 
-save(simAlleleFreq,file="simAlleleFreqA_pruned_21Jun2022.rdata")
+save(simAlleleFreq,file="simAlleleFreqA_pruned.rdata")
 #load("simAlleleFreqA_11Mar2021.rdata")
 
 ####calculate variances and covariances####
@@ -1042,4 +1035,4 @@ for(year in c(1999:2013)){
     mean(as.numeric(simAlleleFreq[frqYr==year & frqCat=='errFFAM-errT',c(3:(nloci+2))])^2)
 }
 #save output
-save(simVar,file=paste("simVarA_pruned_21Jun2022.rdata",sep=''))
+save(simVar,file=paste("simVarA_pruned_",today,".rdata",sep=''))

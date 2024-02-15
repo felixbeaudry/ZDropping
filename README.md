@@ -62,7 +62,7 @@ Run `SignalsOfSelection_analyzeSelOutput_Z.R` to test for selection based on the
 Run `SignalsOfSelection_plot_figS5_figS6.R` to correct selection results for multiple comparisons genome-wide and create manhattanplots to display selection results.
 
 ## Allele Frequency Change Model
-The final directory, `\alleleFreqModel`, holds scripts to partition change in allele frequencies between years between demographic groups by sex for autosomal and Z-linked loci. This analysis is broken down into four steps: 1 - sampling, 2 - simulating error, 3 - bootstrapping, and 4 - plotting. This is repeated for the Z and autosomes seperately, given different inheritance patterns, but both are plotted together. These scripts assume a flexible sex ratio; we also ran a model assuming a fixed sex ratio but instead partitioned allele frequency change between years  relative to the total number of individuals of each sex. 
+The final directory, `\alleleFreqModel`, holds scripts to partition change in allele frequencies between years between demographic groups by sex for autosomal and Z-linked loci. This analysis is broken down into four steps: 1 - sampling, 2 - simulating error, 3 - bootstrapping, and 4 - plotting. This is repeated for the Z and autosomes separately, given different inheritance patterns, but both are plotted together. These scripts assume a flexible sex ratio; we also ran a model assuming a fixed sex ratio but instead partitioned allele frequency change between years relative to the total number of individuals of each sex. Finally, we also repeat the analysis with a LD-pruned dataset.
 
 #### Step 1 - Sample
 Run `alleleFreqModelA_sample.R` and `alleleFreqModelZ_sample.R` to calculate variance in allele frequencies between years. These scripts will also set up the files necessary for the next step.
@@ -85,5 +85,20 @@ Run `alleleFreqModelA_sexRatio_sample.R` and `alleleFreqModelZ_sexRatio_sample.R
 #### Step 2 - Simulate error
 Run `alleleFreqModelA_sexRatio_sim.R` and `alleleFreqModelA_sexRatio_sim.R` for autosomal and Z loci respectively to calculate error.
 
-#### Step 4 - Plot
+#### Step 3 - Plot
 `alleleFreqModelAZ_sexRatio_plot.R` will combine Z and autosomal analyses into one set of plots for easy comparison.
+
+### LD-pruned model
+Scripts for the LD-pruned model follow the same format as the base model. First extract LD-pruned SNPs in plink and create the pruned plink files with `makeGenotypeInputLD.R`.
+
+### Step 1 - Sample
+Run `alleleFreqModelA_LD_sample.R` and `alleleFreqModelZ_LD_sample.R` to calculate variance in allele frequencies between years. These scripts will also set up the files necessary for the next step.
+
+#### Step 2 - Simulate error
+Run `alleleFreqModelA_LD_sim.R` and `alleleFreqModelZ_LD_sim.R` for autosomal and Z loci respectively to calculate error.
+
+#### Step 3 - Bootstrap
+Run `alleleFreqModelA_LD_boot.R` and `alleleFreqModelZ_LD_boot.R` to calculate confidence intervals 
+
+#### Step 4 - Plot
+`alleleFreqModelAZ_plot.ldprune.R` will combine Z and autosomal analyses into one set of plots for easy comparison.
