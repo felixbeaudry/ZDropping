@@ -1,6 +1,5 @@
 #script to plot the genetic contributions of male and female immigrants for autosomes and Z - fig 3
-#Rose Driscoll
-#Last updated 05 October 2021
+#Rose Driscoll and Felix Beaudry
 
 library(dplyr)
 library(ggplot2)
@@ -44,9 +43,10 @@ pedigree_immdata_breeder_nonbreeder_imms <- filter(pedigree_immdata, !is.na(ImmC
                              ifelse(Indiv %in% pedigree_immdata$Mom, TRUE, FALSE)))
 # Now count up how many imms that end up breeding or not come in each year
 pedigree_immdata_breeder_nonbreeder_imms_count <- group_by(pedigree_immdata_breeder_nonbreeder_imms, ImmCohort, Sex, does_breed) %>%
-  dplyr::summarize(num_imms = n()) %>%
-  complete(ImmCohort, Sex, does_breed, fill = list(num_imms = 0)) %>%
+  dplyr::reframe(num_imms = n()) %>%
+  tidyr::complete(ImmCohort, Sex, does_breed, fill = list(num_imms = 0)) %>%
   filter(!is.na(ImmCohort))
+
 pedigree_immdata_breeder_nonbreeder_imms_perc <- pedigree_immdata_breeder_nonbreeder_imms_count %>%
   group_by( ImmCohort,does_breed) %>% transmute(Sex, percent = num_imms/sum(num_imms))
 # make males negative
@@ -84,7 +84,8 @@ sexed_unsexed_breed_nonbreed_plot <- plot_grid(sexed_breed_nonbreed, unsexed_bre
 sexed_unsexed_breed_nonbreed_plot_w_legend <- plot_grid(sexed_unsexed_breed_nonbreed_plot, sexed_unsexed_breed_nonbreed_legend, ncol = 2, nrow = 1, rel_widths = c(0.8, 0.25))
 
 #linear model
-immigrating_lm <- lm(data=pedigree_immdata_breeder_nonbreeder_imms_count, num_imms ~ Sex + ImmCohort)
+pedigree_immdata_breeder_nonbreeder_imms_count$ImmCohort_zerod <- pedigree_immdata_breeder_nonbreeder_imms_count$ImmCohort - min(pedigree_immdata_breeder_nonbreeder_imms_count$ImmCohort)
+immigrating_lm <- lm(data=pedigree_immdata_breeder_nonbreeder_imms_count, num_imms ~ Sex + ImmCohort_zerod)
 summary(immigrating_lm)
 
 
