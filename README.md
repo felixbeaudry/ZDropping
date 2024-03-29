@@ -37,8 +37,12 @@ We use gene dropping to simulate the expected genetic contributions of individua
 #### Step 1 - Gene dropping
 Use `GenContrib_Indiv.sh` to run the gene dropping simulations for a set of 926 breeders. This script also runs `GenContrib_Indiv_input.R` in order to generate the pedigrees that are the input for the gene dropping simulations.
 
+Use `GenContrib_Indiv.sexratio0.5.sh` and `GenContrib_Indiv.sexratio0.sh` to run the gene dropping simulations for the same set of 926 breeders with unsexed individuals assigned a sex using sex ratio 0.5 (50:50 males and females) and sex ratio 0 (all females) respectively. `GenContrib_Indiv.sh`, above, uses sex ratio 1 (all males).
+
 #### Step 2 - Plotting
 `GenContrib_Indiv_plot_fig1_pair.R` and `GenContrib_Indiv_plot_fig2.R` plot the individual expected genetic contributions for a selected pair of breeders and the full set of 926 breeders respectively.
+
+`GenContrib_Indiv_plot_figS1_sexratio.R` plots the comparison of individual expected genetic contributions for the full set of 926 breeders with different sex ratios used to assign sex to unsexed individuals.
 
 ### Expected genetic contributions of immigrants
 We use gene dropping to simulate the combined expected genetic contributions of immigrants into the population. This analysis is broken down into two steps: 1 - gene dropping, and 2 - plotting. 
@@ -59,7 +63,7 @@ Use `SignalsOfSelection_Sel.sh` to run the gene dropping simulations with real g
 Run `SignalsOfSelection_analyzeSelOutput_Z.R` to test for selection based on the gene dropping simulations.
 
 #### Step 3 - Plot
-Run `SignalsOfSelection_plot_figS5_figS6.R` to correct selection results for multiple comparisons genome-wide and create manhattanplots to display selection results.
+Run `SignalsOfSelection_plot_figS6_figS7.R` to correct selection results for multiple comparisons genome-wide and create manhattanplots to display selection results.
 
 ## Allele Frequency Change Model
 The final directory, `\alleleFreqModel`, holds scripts to partition change in allele frequencies between years between demographic groups by sex for autosomal and Z-linked loci. This analysis is broken down into four steps: 1 - sampling, 2 - simulating error, 3 - bootstrapping, and 4 - plotting. This is repeated for the Z and autosomes separately, given different inheritance patterns, but both are plotted together. These scripts assume a flexible sex ratio; we also ran a model assuming a fixed sex ratio but instead partitioned allele frequency change between years relative to the total number of individuals of each sex. Finally, we also repeat the analysis with a LD-pruned dataset.

@@ -124,8 +124,8 @@ mated_pair_ped <- recordPlot()
 # Part B: autosomal expected genetic contributions vs. genealogical contributions
 
 #get autosomal expected genetic contribution data for the male
-obsIndivMA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.A.1.drop.data.txt',sep=''),header=TRUE)
-simIndivMA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.A.1.drop.sim.txt',sep=''),header=TRUE)
+obsIndivMA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.A.1.1.drop.data.txt',sep=''),header=TRUE)
+simIndivMA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.A.1.1.drop.sim.txt',sep=''),header=TRUE)
 
 #make sure number of simulations adds up to 1000000
 ddply(simIndivMA[simIndivMA$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
@@ -152,8 +152,8 @@ simIndivMASum<-ddply(simIndivMA,.(Year),summarize, mean=mean(unlist(rep(allele_c
 
 
 #get autosomal expected genetic contribution data for the female
-obsIndivFA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.A.1.drop.data.txt',sep=''),header=TRUE)
-simIndivFA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.A.1.drop.sim.txt',sep=''),header=TRUE)
+obsIndivFA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.A.1.1.drop.data.txt',sep=''),header=TRUE)
+simIndivFA<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.A.1.1.drop.sim.txt',sep=''),header=TRUE)
 
 #make sure number of simulations adds up to 1000000
 ddply(simIndivFA[simIndivFA$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
@@ -203,8 +203,8 @@ simIndivMASum[simIndivMASum$Year==1999,"q3"]<-0
 
 #get Z expected genetic contribution data for the male
 
-obsIndivMZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.Z.1.drop.data.txt',sep=''),header=TRUE)
-simIndivMZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.Z.1.drop.sim.txt',sep=''),header=TRUE)
+obsIndivMZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.Z.1.1.drop.data.txt',sep=''),header=TRUE)
+simIndivMZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',m,'.ped.Z.1.1.drop.sim.txt',sep=''),header=TRUE)
 
 #make sure number of simulations adds up to 1000000
 ddply(simIndivMZ[simIndivMZ$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
@@ -230,8 +230,8 @@ simIndivMZSum<-ddply(simIndivMZ,.(Year),summarize, mean=mean(unlist(rep(allele_c
                    q3=quantile(unlist(rep(allele_count/totAlleles,all_alleles_count)),0.975))
 
 #get Z expected genetic contribution data for the female
-obsIndivFZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.Z.1.drop.data.txt',sep=''),header=TRUE)
-simIndivFZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.Z.1.drop.sim.txt',sep=''),header=TRUE)
+obsIndivFZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.Z.1.1.drop.data.txt',sep=''),header=TRUE)
+simIndivFZ<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',f,'.ped.Z.1.1.drop.sim.txt',sep=''),header=TRUE)
 
 #make sure number of simulations adds up to 1000000
 ddply(simIndivFZ[simIndivFZ$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))

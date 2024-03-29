@@ -79,8 +79,8 @@ breeders_926$Kids <- breeders_926$Indiv %in% c(pedigree$Dad, pedigree$Mom)
 for (i in breeders_926[breeders_926$Kids,'Indiv']) {
   
   #get autosomal data for individual i
-  obsIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.A.1.drop.data.txt',sep=''),header=TRUE)
-  simIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.A.1.drop.sim.txt',sep=''),header=TRUE)
+  obsIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.A.1.1.drop.data.txt',sep=''),header=TRUE)
+  simIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.A.1.1.drop.sim.txt',sep=''),header=TRUE)
   
   #make sure number of sims adds up to 1000000
   ddply(simIndiv[simIndiv$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
@@ -111,8 +111,8 @@ for (i in breeders_926[breeders_926$Kids,'Indiv']) {
   
   
   #get Z data for individual i
-  obsIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.Z.1.drop.data.txt',sep=''),header=TRUE)
-  simIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.Z.1.drop.sim.txt',sep=''),header=TRUE)
+  obsIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.Z.1.1.drop.data.txt',sep=''),header=TRUE)
+  simIndiv<-read.table(file=paste('working_files/intermediate_files/IndivContrib_',i,'.ped.Z.1.1.drop.sim.txt',sep=''),header=TRUE)
   
   #make sure number of sims adds up to 1000000
   ddply(simIndiv[simIndiv$allele==2,],.(cohort),summarize, sum=sum(all_alleles_count))
